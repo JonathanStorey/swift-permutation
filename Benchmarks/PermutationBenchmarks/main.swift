@@ -1,0 +1,71 @@
+// repository: https://github.com/JonathanStorey/swift-permutation
+// path: main.swift
+// dependencies: [PermutableCollection.swift]
+
+import Permutation
+
+/// Keeps the optimizer from discarding a result.
+@inline(never) func blackHole<T>(_ value: T) {
+    withExtendedLifetime(value) {}
+}
+
+/// Returns the median time of running the body on a fresh, uniquely owned copy made outside the timed region.
+func median<C>(iterations: Int, make: () -> C, _ body: (inout C) -> Void) -> Duration {
+    let clock: ContinuousClock = ContinuousClock()
+    var samples: [Duration] = []
+    samples.reserveCapacity(iterations)
+    for _ in 0..<iterations {
+        var subject: C = make()
+        let elapsed: Duration = clock.measure { body(&subject) }
+        blackHole(subject)
+        samples.append(elapsed)
+    }
+    samples.sort()
+    return samples[samples.count / 2]
+}
+
+/// The duration in microseconds.
+func microseconds(_ duration: Duration) -> Double {
+    let (seconds, attoseconds): (Int64, Int64) = duration.components
+    return Double(seconds) * 1_000_000 + Double(attoseconds) / 1_000_000_000_000
+}
+
+/// The value rounded to one decimal place.
+func rounded(_ value: Double) -> String {
+    String((value * 10).rounded() / 10)
+}
+
+/// A table cell with the time and how it compares to the permutable time.
+func cell(_ time: Double?, against permutable: Double) -> String {
+    guard let time: Double = time else { return "—" }
+    return "\(rounded(time)) µs (\(rounded(time / permutable))×)"
+}
+
+let sizes: [Int] = [1_000, 100_000]
+print("Median time per operation. The multiplier is that time divided by the PermutableCollection time, so below 1× is faster than PermutableCollection.")
+print("")
+print("| Operation | Count | PermutableCollection | MutableCollection | RangeReplaceableCollection |")
+print("|---|---:|---:|---:|---:|")
+for size in sizes {
+    var generator: SeededGenerator = SeededGenerator(state: 42)
+    let base: [Int] = Array(0..<size).shuffled(using: &generator)
+    let iterations: Int = max(11, 2_000_000 / size)
+    for comparison in Comparison.all {
+        var expected: Cards = Cards(elements: base)
+        comparison.permutable(&expected)
+        if let mutable: (inout [Int]) -> Void = comparison.mutable, comparison.mutableMatches {
+            var actual: [Int] = base
+            mutable(&actual)
+            precondition(actual == expected.elements, "\(comparison.operation) through MutableCollection gave a different order.")
+        }
+        if let rangeReplaceable: (inout [Int]) -> Void = comparison.rangeReplaceable {
+            var actual: [Int] = base
+            rangeReplaceable(&actual)
+            precondition(actual == expected.elements, "\(comparison.operation) through RangeReplaceableCollection gave a different order.")
+        }
+        let permutable: Double = microseconds(median(iterations: iterations, make: { Cards(elements: base.map { $0 }) }, comparison.permutable))
+        let mutable: Double? = comparison.mutable.map { body in microseconds(median(iterations: iterations, make: { base.map { $0 } }, body)) }
+        let rangeReplaceable: Double? = comparison.rangeReplaceable.map { body in microseconds(median(iterations: iterations, make: { base.map { $0 } }, body)) }
+        print("| `\(comparison.operation)` | \(size) | \(rounded(permutable)) µs | \(cell(mutable, against: permutable)) | \(cell(rangeReplaceable, against: permutable)) |")
+    }
+}
