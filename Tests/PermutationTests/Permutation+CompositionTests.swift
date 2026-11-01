@@ -14,7 +14,7 @@ import Testing
             let first: Permutation = deck.shuffle()
             let second: Permutation = deck.rotate(toStartAt: 3)
             var replay: Deck = Deck(cards: original)
-            replay.permute(using: first.followed(by: second))
+            replay.apply(first.followed(by: second))
             #expect(replay.cards == deck.cards)
         }
     }
@@ -30,7 +30,7 @@ import Testing
         let swap: Permutation = deck.move(from: 0, to: 1)
         let reverse: Permutation = deck.reverse()
         var replay: Deck = Deck(cards: ["a", "b", "c", "d", "e"])
-        replay.permute(using: swap.followed(by: reverse))
+        replay.apply(swap.followed(by: reverse))
         #expect(replay.cards == deck.cards)
         #expect(swap.followed(by: reverse).minimumCount == 5)
     }

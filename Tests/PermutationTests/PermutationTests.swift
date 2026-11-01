@@ -15,7 +15,7 @@ import Testing
         let original: [String] = (0..<25).map(String.init)
         var deck: Deck = Deck(cards: original)
         let permutation: Permutation = deck.shuffle()
-        deck.permute(using: permutation.inverted)
+        deck.apply(permutation.inverted)
         #expect(deck.cards == original)
     }
 

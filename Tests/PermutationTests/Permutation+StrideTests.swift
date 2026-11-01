@@ -27,9 +27,9 @@ import Testing
         var generator: SeededGenerator = SeededGenerator(state: 3)
         let permutation: Permutation = Permutation(shuffles: 10, using: &generator)
         var repeated: Deck = Deck(cards: original)
-        repeated.permute(using: permutation.followed(by: permutation).followed(by: permutation))
+        repeated.apply(permutation.followed(by: permutation).followed(by: permutation))
         var advanced: Deck = Deck(cards: original)
-        advanced.permute(using: permutation.advanced(by: 3))
+        advanced.apply(permutation.advanced(by: 3))
         #expect(advanced.cards == repeated.cards)
     }
 
@@ -38,8 +38,8 @@ import Testing
         var generator: SeededGenerator = SeededGenerator(state: 4)
         let permutation: Permutation = Permutation(shuffles: 10, using: &generator)
         var deck: Deck = Deck(cards: original)
-        deck.permute(using: permutation)
-        deck.permute(using: permutation.advanced(by: -1))
+        deck.apply(permutation)
+        deck.apply(permutation.advanced(by: -1))
         #expect(deck.cards == original)
     }
 }

@@ -19,7 +19,7 @@ import Testing
         permutation.shuffle()
         #expect(permutation.minimumCount <= 12)
         var replay: Deck = Deck(cards: (0..<12).map(String.init))
-        replay.permute(using: permutation)
+        replay.apply(permutation)
         #expect(replay.cards.sorted() == (0..<12).map(String.init).sorted())
     }
 

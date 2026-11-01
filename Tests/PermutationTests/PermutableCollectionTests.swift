@@ -7,12 +7,19 @@ import Testing
 
 @Suite struct PermutableCollectionTests {
 
-    @Test func applyMatchesPermuteUsing() {
-        var source: Deck = Deck(cards: (0..<10).map(String.init))
-        let permutation: Permutation = source.shuffle()
-        var deck: Deck = Deck(cards: (0..<10).map(String.init))
-        deck.apply(permutation)
-        #expect(deck.cards == source.cards)
+    @Test func applyLeavesOffsetsBeyondTheCycleInPlace() {
+        var deck: Deck = Deck(cards: ["a", "b", "c", "d", "e", "f"])
+        deck.apply(Permutation(shuffles: 3))
+        #expect(deck.cards[3...] == ["d", "e", "f"])
+        #expect(deck.cards[..<3].sorted() == ["a", "b", "c"])
+    }
+
+    @Test func applyOnRandomAccessCollectionMatchesPlainCollection() {
+        let original: [String] = (0..<25).map(String.init)
+        var deck: Deck = Deck(cards: original)
+        var hand: Hand = Hand(cards: original)
+        hand.apply(deck.shuffle())
+        #expect(hand.cards == deck.cards)
     }
 
     @Test func applyingLeavesOriginalAndReturnsPermutedCopy() {
@@ -72,21 +79,6 @@ import Testing
         #expect(pivot == deck.endIndex)
     }
 
-    @Test func permuteLeavesOffsetsBeyondTheCycleInPlace() {
-        var deck: Deck = Deck(cards: ["a", "b", "c", "d", "e", "f"])
-        deck.permute(using: Permutation(shuffles: 3))
-        #expect(deck.cards[3...] == ["d", "e", "f"])
-        #expect(deck.cards[..<3].sorted() == ["a", "b", "c"])
-    }
-
-    @Test func permuteOnRandomAccessCollectionMatchesPlainCollection() {
-        let original: [String] = (0..<25).map(String.init)
-        var deck: Deck = Deck(cards: original)
-        var hand: Hand = Hand(cards: original)
-        hand.permute(using: deck.shuffle())
-        #expect(hand.cards == deck.cards)
-    }
-
     @Test func reverseLeavesMiddleElementInPlace() {
         var deck: Deck = Deck(cards: ["a", "b", "c", "d", "e"])
         let permutation: Permutation = deck.reverse()
@@ -116,7 +108,7 @@ import Testing
         var deck: Deck = Deck(cards: ["a", "b", "c", "d", "e", "f"])
         let permutation: Permutation = deck.rotate(toStartAt: 2)
         #expect(deck.cards == ["c", "d", "e", "f", "a", "b"])
-        deck.permute(using: permutation.inverted)
+        deck.apply(permutation.inverted)
         #expect(deck.cards == ["a", "b", "c", "d", "e", "f"])
     }
 
