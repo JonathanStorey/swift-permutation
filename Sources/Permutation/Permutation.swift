@@ -8,41 +8,6 @@ public struct Permutation: Hashable, Sendable {
     /// The cycles written one after another, each starting with its largest offset, in increasing order of those starting offsets.
     public let cycle: [Int]
 
-    /// Creates the permutation that reverses `0..<count`, writing each swapped pair directly with its larger offset first.
-    @inlinable init(reversing count: Int) {
-        var line: [Int] = []
-        line.reserveCapacity(count)
-        for offset in (0..<(count / 2)).reversed() {
-            line.append(count - 1 - offset)
-            line.append(offset)
-        }
-        cycle = line
-    }
-
-    /// Creates the permutation that moves the element at offset `shift` to the front of `0..<count`, writing one cycle per residue class modulo the greatest common divisor.
-    @inlinable init(rotating count: Int, by shift: Int) {
-        guard count > 0, shift % count != 0 else {
-            cycle = []
-            return
-        }
-        let step: Int = (shift % count + count) % count
-        var divisor: Int = count
-        var remainder: Int = step
-        while remainder != 0 {
-            (divisor, remainder) = (remainder, divisor % remainder)
-        }
-        var line: [Int] = []
-        line.reserveCapacity(count)
-        for start in (count - divisor)..<count {
-            var offset: Int = start
-            repeat {
-                line.append(offset)
-                offset = offset >= step ? offset - step : offset + count - step
-            } while offset != start
-        }
-        cycle = line
-    }
-
     /// Creates a permutation where `sources[i]` is the offset whose element moves into `i`, writing each cycle from the back in one walk without validating the mapping.
     @inlinable init(sources: [Int]) {
         var isVisited: [Bool] = [Bool](repeating: false, count: sources.count)

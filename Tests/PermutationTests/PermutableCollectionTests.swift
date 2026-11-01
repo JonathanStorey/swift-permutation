@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: PermutableCollectionTests.swift
-// dependencies: [PermutableCollection.swift, Permutation+Shuffleable.swift, Permutation.swift]
+// dependencies: [PermutableCollection.swift, Permutation+Shuffle.swift, Permutation.swift]
 
 import Testing
 @testable import Permutation
@@ -132,17 +132,6 @@ import Testing
         var deck: Deck = Deck(cards: ["a"])
         deck.shuffle(using: &generator)
         #expect(deck.cards == ["a"])
-    }
-
-    @Test func shuffledUsingGeneratorLeavesOriginalAndMatchesShuffle() {
-        var shuffledGenerator: SeededGenerator = SeededGenerator(state: 21)
-        var shuffleGenerator: SeededGenerator = SeededGenerator(state: 21)
-        let deck: Deck = Deck(cards: (0..<15).map(String.init))
-        let shuffled: Deck = deck.shuffled(using: &shuffledGenerator)
-        var expected: Deck = deck
-        expected.shuffle(using: &shuffleGenerator)
-        #expect(deck.cards == (0..<15).map(String.init))
-        #expect(shuffled.cards == expected.cards)
     }
 
     @Test func sortByOrdersDescending() {

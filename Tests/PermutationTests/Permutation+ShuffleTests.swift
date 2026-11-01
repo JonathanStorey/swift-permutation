@@ -1,11 +1,11 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
-// path: Permutation+ShuffleableTests.swift
-// dependencies: [PermutableCollection.swift, Permutation+Shuffleable.swift, Permutation.swift]
+// path: Permutation+ShuffleTests.swift
+// dependencies: [PermutableCollection.swift, Permutation+Shuffle.swift, Permutation.swift]
 
 import Testing
 @testable import Permutation
 
-@Suite struct PermutationShuffleableTests {
+@Suite struct PermutationShuffleTests {
 
     @Test func permutationShuffleOfEmptyPermutationIsEmpty() {
         var permutation: Permutation = Permutation(shuffles: 0)

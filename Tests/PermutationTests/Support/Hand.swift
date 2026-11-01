@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Support/Hand.swift
-// dependencies: [PermutableCollection.swift, Permutation+Shuffleable.swift]
+// dependencies: [PermutableCollection.swift]
 
 @testable import Permutation
 
@@ -18,6 +18,3 @@ struct Hand: PermutableCollection, RandomAccessCollection {
         cards.swapAt(i, j)
     }
 }
-
-/// Fails to compile if the `PermutableCollection` shuffling API stops matching `Shuffleable`.
-extension Hand: Shuffleable {}

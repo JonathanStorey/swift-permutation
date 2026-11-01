@@ -1,5 +1,5 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
-// path: Permutation+Shuffleable.swift
+// path: Permutation+Shuffle.swift
 // dependencies: [Permutation.swift]
 
 extension Permutation {
@@ -29,25 +29,6 @@ extension Permutation {
         line.removeLast(line.count - kept)
         self.init(cycle: line)
     }
-}
-
-/// The shuffling API that `Permutation` and every `PermutableCollection` share, kept internal so it only checks that their signatures match.
-protocol Shuffleable {
-
-    /// Rearranges the value into a uniformly random order, and returns the permutation applied.
-    @discardableResult mutating func shuffle() -> Permutation
-
-    /// Rearranges the value into a uniformly random order, using the given generator as a source for randomness, and returns the permutation applied.
-    @discardableResult mutating func shuffle<R: RandomNumberGenerator>(using generator: inout R) -> Permutation
-
-    /// Returns a copy of the value in a uniformly random order.
-    func shuffled() -> Self
-
-    /// Returns a copy of the value in a uniformly random order, using the given generator as a source for randomness.
-    func shuffled<R: RandomNumberGenerator>(using generator: inout R) -> Self
-}
-
-extension Permutation: Shuffleable {
 
     /// Replaces the permutation with a uniformly random permutation of `0..<minimumCount`, and returns the new permutation.
     @inlinable @discardableResult public mutating func shuffle() -> Permutation {
