@@ -1,0 +1,11 @@
+public protocol Shuffleable {
+
+// contains the default mutation shuffle() and shuffled() and shuffled(generator), etc... that MutableCollection supports.
+
+}
+
+public extension Perumtation: Shuffleable {
+
+// conformance goes here
+
+}
