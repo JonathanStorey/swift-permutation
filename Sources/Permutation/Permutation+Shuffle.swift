@@ -61,27 +61,7 @@ extension Permutation {
     /// Creates a permutation of `0..<count` shuffled in the given style, using the given generator as a source for randomness in the random styles.
     public init<R: RandomNumberGenerator>(shuffles count: Int, _ style: Shuffle, using generator: inout R) {
         precondition(count >= 0, "The count must not be negative.")
-        switch style {
-        case .random:
-            self = Permutation(shuffles: count, using: &generator)
-        case .cyclic:
-            self = count < 2 ? Permutation(cycle: []) : Permutation(cycle: [count - 1] + Array(0..<(count - 1)).shuffled(using: &generator))
-        case .derangement:
-            precondition(count != 1, "A single offset cannot be deranged.")
-            var candidate: Permutation
-            repeat {
-                candidate = Permutation(shuffles: count, using: &generator)
-            } while candidate.cycle.count != count
-            self = candidate
-        case .riffle:
-            let isSecond: [Bool] = (0..<count).map { _ in Bool.random(using: &generator) }
-            let sources: [Int] = (0..<count).filter { !isSecond[$0] } + (0..<count).filter { isSecond[$0] }
-            self = Permutation(sources: sources).inverted
-        case .outFaro:
-            self = Permutation(faro: count, half: (count + 1) / 2, firstStep: 0)
-        case .inFaro:
-            self = Permutation(faro: count, half: count / 2, firstStep: 1)
-        }
+        self = Permutation.shuffling(count, style, using: &generator)
     }
 
     /// Creates the perfect riffle that interleaves the first `half` offsets with the rest, sending the first packet to every other offset starting at `firstStep`, built by tracing each orbit of the interleaving.
@@ -101,6 +81,35 @@ extension Permutation {
             cycles.append(cycle)
         }
         self.init(cycles: cycles)
+    }
+
+    /// Returns a permutation of `0..<count` shuffled in the given style.
+    private static func shuffling<R: RandomNumberGenerator>(_ count: Int, _ style: Shuffle, using generator: inout R) -> Permutation {
+        switch style {
+        case .random:
+            return Permutation(shuffles: count, using: &generator)
+        case .cyclic:
+            guard count > 1 else { return Permutation(cycle: []) }
+            return Permutation(cycle: [count - 1] + Array(0..<(count - 1)).shuffled(using: &generator))
+        case .derangement:
+            precondition(count != 1, "A single offset cannot be deranged.")
+            while true {
+                let candidate: Permutation = Permutation(shuffles: count, using: &generator)
+                if candidate.cycle.count == count { return candidate }
+            }
+        case .riffle:
+            var isSecond: [Bool] = []
+            isSecond.reserveCapacity(count)
+            for _ in 0..<count {
+                isSecond.append(Bool.random(using: &generator))
+            }
+            let sources: [Int] = (0..<count).filter { !isSecond[$0] } + (0..<count).filter { isSecond[$0] }
+            return Permutation(sources: sources).inverted
+        case .outFaro:
+            return Permutation(faro: count, half: (count + 1) / 2, firstStep: 0)
+        case .inFaro:
+            return Permutation(faro: count, half: count / 2, firstStep: 1)
+        }
     }
 
     /// Replaces the permutation with one of `0..<minimumCount` shuffled in the given style, and returns the new permutation.
