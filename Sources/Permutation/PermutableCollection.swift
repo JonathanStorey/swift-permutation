@@ -94,13 +94,13 @@ public extension PermutableCollection {
     }
 
     /// Applies the permutation and returns it.
-    @inlinable @usableFromInline mutating func permute(returning permutation: Permutation) -> Permutation {
+    @inlinable @usableFromInline internal mutating func permute(returning permutation: Permutation) -> Permutation {
         permute(using: permutation)
         return permutation
     }
 
     /// Applies the permutation built from source offsets and returns it.
-    @inlinable @usableFromInline mutating func permute(sources: [Int]) -> Permutation {
+    @inlinable @usableFromInline internal mutating func permute(sources: [Int]) -> Permutation {
         permute(returning: Permutation(sources: sources))
     }
 }
