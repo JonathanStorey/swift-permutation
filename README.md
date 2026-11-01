@@ -32,4 +32,4 @@ swift test
 swift run -c release PermutationBenchmarks
 ```
 
-It prints a Markdown table of median times. The multiplier beside each `MutableCollection` and `RangeReplaceableCollection` time is that time divided by the `PermutableCollection` time, so a value below 1× is faster. `partition(by:)` through `MutableCollection` is unstable, so it is timed but not checked for the same order.
+It prints a Markdown table of median times. Each `MutableCollection` and `RangeReplaceableCollection` time says how many times faster or slower it is than the `PermutableCollection` time. `partition(by:)` through `MutableCollection` is unstable, so it is timed but not checked for the same order.

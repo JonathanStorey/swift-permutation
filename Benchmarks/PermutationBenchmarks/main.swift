@@ -35,14 +35,15 @@ func rounded(_ value: Double) -> String {
     String((value * 10).rounded() / 10)
 }
 
-/// A table cell with the time and how it compares to the permutable time.
+/// A table cell with the time and how many times faster or slower it is than the permutable time.
 func cell(_ time: Double?, against permutable: Double) -> String {
     guard let time: Double = time else { return "—" }
-    return "\(rounded(time)) µs (\(rounded(time / permutable))×)"
+    let comparison: String = time <= permutable ? "\(rounded(permutable / time))× faster" : "\(rounded(time / permutable))× slower"
+    return "\(rounded(time)) µs (\(comparison))"
 }
 
 let sizes: [Int] = [1_000, 100_000]
-print("Median time per operation. The multiplier is that time divided by the PermutableCollection time, so below 1× is faster than PermutableCollection.")
+print("Median time per operation, with each MutableCollection and RangeReplaceableCollection time compared to the PermutableCollection time.")
 print("")
 print("| Operation | Count | PermutableCollection | MutableCollection | RangeReplaceableCollection |")
 print("|---|---:|---:|---:|---:|")
