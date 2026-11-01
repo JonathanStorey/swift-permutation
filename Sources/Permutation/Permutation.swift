@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Permutation.swift
-// dependencies: [Permutation+Sources.swift]
+// dependencies: []
 
 /// A reordering stored as cycles in Foata's single-line notation, leaving offsets outside the cycles in place so it applies to any collection long enough.
 public struct Permutation: Hashable, Sendable {
@@ -42,20 +42,5 @@ public struct Permutation: Hashable, Sendable {
                 try body(start, offset)
             }
         }
-    }
-}
-
-extension Permutation {
-
-    /// Returns the permutation that applies this permutation and then the next, over the larger of their minimum counts.
-    public func squashed(with next: Permutation) -> Permutation {
-        let count: Int = Swift.max(minimumCount, next.minimumCount)
-        let first: [Int] = destinations(count: count)
-        let second: [Int] = next.destinations(count: count)
-        var sources: [Int] = Array(0..<count)
-        for offset in sources.indices {
-            sources[second[first[offset]]] = offset
-        }
-        return Permutation(sources: sources)
     }
 }

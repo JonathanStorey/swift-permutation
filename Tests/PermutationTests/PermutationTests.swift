@@ -28,32 +28,4 @@ import Testing
     @Test func minimumCountOfEmptyPermutationIsZero() {
         #expect(Permutation(shuffles: 0).minimumCount == 0)
     }
-
-    @Test func squashedWithAppliesBothInOrder() {
-        let original: [String] = (0..<8).map(String.init)
-        for _ in 0..<50 {
-            var deck: Deck = Deck(cards: original)
-            let first: Permutation = deck.shuffle()
-            let second: Permutation = deck.rotate(toStartAt: 3)
-            var replay: Deck = Deck(cards: original)
-            replay.permute(using: first.squashed(with: second))
-            #expect(replay.cards == deck.cards)
-        }
-    }
-
-    @Test func squashedWithInvertedIsEmpty() {
-        var deck: Deck = Deck(cards: ["a", "b", "c", "d", "e"])
-        let permutation: Permutation = deck.shuffle()
-        #expect(permutation.squashed(with: permutation.inverted).cycle.isEmpty)
-    }
-
-    @Test func squashedWithShorterPermutationLeavesLaterOffsetsToTheLonger() {
-        var deck: Deck = Deck(cards: ["a", "b", "c", "d", "e"])
-        let swap: Permutation = deck.move(from: 0, to: 1)
-        let reverse: Permutation = deck.reverse()
-        var replay: Deck = Deck(cards: ["a", "b", "c", "d", "e"])
-        replay.permute(using: swap.squashed(with: reverse))
-        #expect(replay.cards == deck.cards)
-        #expect(swap.squashed(with: reverse).minimumCount == 5)
-    }
 }
