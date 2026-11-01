@@ -7,6 +7,22 @@ import Testing
 
 @Suite struct PermutableCollectionTests {
 
+    @Test func applyMatchesPermuteUsing() {
+        var source: Deck = Deck(cards: (0..<10).map(String.init))
+        let permutation: Permutation = source.shuffle()
+        var deck: Deck = Deck(cards: (0..<10).map(String.init))
+        deck.apply(permutation)
+        #expect(deck.cards == source.cards)
+    }
+
+    @Test func applyingLeavesOriginalAndReturnsPermutedCopy() {
+        let deck: Deck = Deck(cards: ["a", "b", "c", "d"])
+        var reversed: Deck = deck
+        let permutation: Permutation = reversed.reverse()
+        #expect(deck.applying(permutation).cards == ["d", "c", "b", "a"])
+        #expect(deck.cards == ["a", "b", "c", "d"])
+    }
+
     @Test func moveFromOffsetsToEndKeepsRelativeOrder() {
         var deck: Deck = Deck(cards: ["a", "b", "c", "d", "e"])
         deck.move(fromOffsets: [3, 1], toOffset: 5)

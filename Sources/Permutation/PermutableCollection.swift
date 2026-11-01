@@ -14,6 +14,18 @@ public protocol PermutableCollection: Collection {
 
 public extension PermutableCollection {
 
+    /// Applies the permutation to the elements in place, the same as `permute(using:)`.
+    @inlinable mutating func apply(_ permutation: Permutation) {
+        permute(using: permutation)
+    }
+
+    /// Returns a copy of the collection with the permutation applied to its elements.
+    @inlinable func applying(_ permutation: Permutation) -> Self {
+        var copy: Self = self
+        copy.permute(using: permutation)
+        return copy
+    }
+
     /// Moves the element at the source index so it ends up at the destination index, shifting the elements between them, and returns the permutation applied.
     @inlinable @discardableResult mutating func move(from source: Index, to destination: Index) -> Permutation {
         var sources: [Int] = Array(0..<count)
