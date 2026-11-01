@@ -58,22 +58,4 @@ extension Permutation {
         }
         return Permutation(sources: sources)
     }
-
-    /// Returns the offset each element of `0..<count` moves to, walking the cycles once.
-    private func destinations(count: Int) -> [Int] {
-        var destinations: [Int] = Array(0..<count)
-        var start: Int = -1
-        var previous: Int = -1
-        for offset in cycle {
-            if offset > start {
-                if start >= 0 { destinations[previous] = start }
-                start = offset
-            } else {
-                destinations[previous] = offset
-            }
-            previous = offset
-        }
-        if start >= 0 { destinations[previous] = start }
-        return destinations
-    }
 }
