@@ -15,7 +15,7 @@ public protocol PermutableCollection: Collection {
 public extension PermutableCollection {
 
     /// Moves the element at the source index so it ends up at the destination index, shifting the elements between them, and returns the permutation applied.
-    @discardableResult mutating func move(from source: Index, to destination: Index) -> Permutation {
+    @inlinable @discardableResult mutating func move(from source: Index, to destination: Index) -> Permutation {
         var sources: [Int] = Array(0..<count)
         let offset: Int = sources.remove(at: distance(from: startIndex, to: source))
         sources.insert(offset, at: distance(from: startIndex, to: destination))
@@ -23,7 +23,7 @@ public extension PermutableCollection {
     }
 
     /// Moves the elements at the given offsets to just before the element at the destination offset, keeping their relative order, and returns the permutation applied.
-    @discardableResult mutating func move(fromOffsets source: some Sequence<Int>, toOffset destination: Int) -> Permutation {
+    @inlinable @discardableResult mutating func move(fromOffsets source: some Sequence<Int>, toOffset destination: Int) -> Permutation {
         let moved: [Int] = Set(source).sorted()
         precondition(moved.allSatisfy { (0..<count).contains($0) } && (0...count).contains(destination), "Every offset must be within the collection.")
         var isMoved: [Bool] = [Bool](repeating: false, count: count)
@@ -43,7 +43,7 @@ public extension PermutableCollection {
     }
 
     /// Moves the elements that satisfy the predicate after those that do not, keeping the relative order within each group, and returns the index of the first moved element.
-    @discardableResult mutating func partition(by belongsInSecondPartition: (Element) throws -> Bool) rethrows -> Index {
+    @inlinable @discardableResult mutating func partition(by belongsInSecondPartition: (Element) throws -> Bool) rethrows -> Index {
         var first: [Int] = []
         var second: [Int] = []
         for (offset, element) in enumerated() {
@@ -58,7 +58,7 @@ public extension PermutableCollection {
     }
 
     /// Applies the permutation with the minimal number of `swapAt(_:_:)` calls, walking the indices once so each swap is O(1), which requires `swapAt(_:_:)` to keep indices valid.
-    mutating func permute(using permutation: Permutation) {
+    @inlinable mutating func permute(using permutation: Permutation) {
         guard !permutation.cycle.isEmpty else { return }
         precondition(permutation.minimumCount <= count, "Every offset in the cycle must be within the collection.")
         let positions: [Index] = Array(indices.prefix(permutation.minimumCount))
@@ -66,41 +66,41 @@ public extension PermutableCollection {
     }
 
     /// Reverses the elements in place and returns the permutation applied.
-    @discardableResult mutating func reverse() -> Permutation {
+    @inlinable @discardableResult mutating func reverse() -> Permutation {
         permute(returning: Permutation(reversing: count))
     }
 
     /// Rotates the elements so the element at the given index becomes the first, and returns the permutation applied.
-    @discardableResult mutating func rotate(toStartAt newStart: Index) -> Permutation {
+    @inlinable @discardableResult mutating func rotate(toStartAt newStart: Index) -> Permutation {
         permute(returning: Permutation(rotating: count, by: distance(from: startIndex, to: newStart)))
     }
 
     /// Shuffles the elements in place through a permutation shuffled directly in cycle form, and returns the permutation applied.
-    @discardableResult mutating func shuffle() -> Permutation {
+    @inlinable @discardableResult mutating func shuffle() -> Permutation {
         permute(returning: Permutation(shuffles: count))
     }
 
     /// Shuffles the elements in place, giving the same order as `Array.shuffle(using:)` with the same generator state, and returns the permutation applied.
-    @discardableResult mutating func shuffle<R: RandomNumberGenerator>(using generator: inout R) -> Permutation {
+    @inlinable @discardableResult mutating func shuffle<R: RandomNumberGenerator>(using generator: inout R) -> Permutation {
         var sources: [Int] = Array(0..<count)
         sources.shuffle(using: &generator)
         return permute(sources: sources)
     }
 
     /// Sorts the elements in place through a single permutation applied with one swap per element that moves within a cycle, and returns the permutation applied.
-    @discardableResult mutating func sort(by areInIncreasingOrder: (Element, Element) throws -> Bool) rethrows -> Permutation {
+    @inlinable @discardableResult mutating func sort(by areInIncreasingOrder: (Element, Element) throws -> Bool) rethrows -> Permutation {
         let elements: [Element] = Array(self)
         return try permute(sources: elements.indices.sorted { try areInIncreasingOrder(elements[$0], elements[$1]) })
     }
 
     /// Applies the permutation and returns it.
-    private mutating func permute(returning permutation: Permutation) -> Permutation {
+    @inlinable @usableFromInline internal mutating func permute(returning permutation: Permutation) -> Permutation {
         permute(using: permutation)
         return permutation
     }
 
     /// Applies the permutation built from source offsets and returns it.
-    private mutating func permute(sources: [Int]) -> Permutation {
+    @inlinable @usableFromInline internal mutating func permute(sources: [Int]) -> Permutation {
         permute(returning: Permutation(sources: sources))
     }
 }
@@ -108,7 +108,7 @@ public extension PermutableCollection {
 public extension PermutableCollection where Element: Comparable {
 
     /// Sorts the elements in ascending order through a single permutation, and returns the permutation applied.
-    @discardableResult mutating func sort() -> Permutation {
+    @inlinable @discardableResult mutating func sort() -> Permutation {
         sort(by: <)
     }
 }
@@ -116,7 +116,7 @@ public extension PermutableCollection where Element: Comparable {
 public extension PermutableCollection where Self: RandomAccessCollection {
 
     /// Applies the permutation with the minimal number of `swapAt(_:_:)` calls, offsetting each index directly in O(1).
-    mutating func permute(using permutation: Permutation) {
+    @inlinable mutating func permute(using permutation: Permutation) {
         guard !permutation.cycle.isEmpty else { return }
         precondition(permutation.minimumCount <= count, "Every offset in the cycle must be within the collection.")
         permutation.forEachSwap { swapAt(index(startIndex, offsetBy: $0), index(startIndex, offsetBy: $1)) }
