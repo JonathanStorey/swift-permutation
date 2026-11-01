@@ -7,14 +7,14 @@ import Testing
 
 @Suite struct PermutationMergeTests {
 
-    @Test func mergeOfDisjointChangesAppliesBoth() {
+    @Test func mergingOfDisjointChangesAppliesBoth() {
         var generator: SeededGenerator = SeededGenerator(state: 12)
         let base: Permutation = Permutation(shuffles: 8, using: &generator)
         let ourChange: Permutation = Permutation(cycle: [1, 0])
         let theirChange: Permutation = Permutation(cycle: [5, 3, 4])
         let ours: Permutation = base.followed(by: ourChange)
         let theirs: Permutation = base.followed(by: theirChange)
-        let merged: Permutation? = ours.merge(with: theirs, from: base)
+        let merged: Permutation? = ours.merging(with: theirs, from: base)
         var expected: Deck = Deck(cards: (0..<8).map(String.init))
         expected.apply(ours)
         expected.apply(theirChange)
@@ -22,46 +22,46 @@ import Testing
         if let merged: Permutation = merged { actual.apply(merged) }
         #expect(merged != nil)
         #expect(actual.cards == expected.cards)
-        #expect(merged == theirs.merge(with: ours, from: base))
+        #expect(merged == theirs.merging(with: ours, from: base))
     }
 
-    @Test func mergeOfIdenticalChangesAppliesItOnce() {
+    @Test func mergingOfIdenticalChangesAppliesItOnce() {
         let base: Permutation = Permutation(cycle: [2, 0, 1])
         let ours: Permutation = base.followed(by: Permutation(cycle: [4, 3]))
-        #expect(ours.merge(with: ours, from: base) == ours)
+        #expect(ours.merging(with: ours, from: base) == ours)
     }
 
-    @Test func mergeOfOverlappingDifferentCyclesIsNil() {
+    @Test func mergingOfOverlappingDifferentCyclesIsNil() {
         let base: Permutation = Permutation(cycle: [])
         let ours: Permutation = Permutation(cycle: [1, 0])
         let theirs: Permutation = Permutation(cycle: [2, 1])
-        #expect(ours.merge(with: theirs, from: base) == nil)
+        #expect(ours.merging(with: theirs, from: base) == nil)
     }
 
-    @Test func mergeWithSharedCycleKeepsItOnceAlongsideTheRest() {
+    @Test func mergingWithSharedCycleKeepsItOnceAlongsideTheRest() {
         let base: Permutation = Permutation(cycle: [])
         let ours: Permutation = Permutation(cycle: [1, 0, 3, 2])
         let theirs: Permutation = Permutation(cycle: [1, 0, 5, 4])
-        #expect(ours.merge(with: theirs, from: base) == Permutation(cycle: [1, 0, 3, 2, 5, 4]))
+        #expect(ours.merging(with: theirs, from: base) == Permutation(cycle: [1, 0, 3, 2, 5, 4]))
     }
 
-    @Test func mergeWithUnchangedSideReturnsTheOtherSide() {
+    @Test func mergingWithUnchangedSideReturnsTheOtherSide() {
         let base: Permutation = Permutation(cycle: [3, 1, 2])
         let ours: Permutation = base.followed(by: Permutation(cycle: [5, 0]))
-        #expect(ours.merge(with: base, from: base) == ours)
-        #expect(base.merge(with: ours, from: base) == ours)
+        #expect(ours.merging(with: base, from: base) == ours)
+        #expect(base.merging(with: ours, from: base) == ours)
     }
 
-    @Test func mergeWithoutBaseCombinesDisjointChanges() {
+    @Test func mergingWithoutBaseCombinesDisjointChanges() {
         let ours: Permutation = Permutation(cycle: [1, 0])
         let theirs: Permutation = Permutation(cycle: [4, 2, 3])
-        #expect(ours.merge(with: theirs) == Permutation(cycle: [1, 0, 4, 2, 3]))
-        #expect(ours.merge(with: theirs) == ours.merge(with: theirs, from: Permutation(cycle: [])))
+        #expect(ours.merging(with: theirs) == Permutation(cycle: [1, 0, 4, 2, 3]))
+        #expect(ours.merging(with: theirs) == ours.merging(with: theirs, from: Permutation(cycle: [])))
     }
 
-    @Test func mergeWithoutBaseOfConflictingCyclesIsNil() {
+    @Test func mergingWithoutBaseOfConflictingCyclesIsNil() {
         let ours: Permutation = Permutation(cycle: [2, 0, 1])
         let theirs: Permutation = Permutation(cycle: [2, 1])
-        #expect(ours.merge(with: theirs) == nil)
+        #expect(ours.merging(with: theirs) == nil)
     }
 }
