@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: PermutableCollectionTests.swift
-// dependencies: [PermutableCollection.swift, Permutation.swift]
+// dependencies: [PermutableCollection.swift, Permutation+Shuffleable.swift, Permutation.swift]
 
 import Testing
 @testable import Permutation
@@ -108,6 +108,30 @@ import Testing
         var deck: Deck = Deck(cards: ["a", "b", "c"])
         #expect(deck.rotate(toStartAt: deck.startIndex).cycle.isEmpty)
         #expect(deck.cards == ["a", "b", "c"])
+    }
+
+    @Test func shuffleKeepsEveryElement() {
+        var deck: Deck = Deck(cards: (0..<20).map(String.init))
+        deck.shuffle()
+        #expect(deck.cards.sorted() == (0..<20).map(String.init).sorted())
+    }
+
+    @Test func shuffleUsingGeneratorMatchesArray() {
+        var deckGenerator: SeededGenerator = SeededGenerator(state: 99)
+        var arrayGenerator: SeededGenerator = SeededGenerator(state: 99)
+        var deck: Deck = Deck(cards: (0..<30).map(String.init))
+        var array: [String] = (0..<30).map(String.init)
+        deck.shuffle(using: &deckGenerator)
+        array.shuffle(using: &arrayGenerator)
+        #expect(deck.cards == array)
+        #expect(deckGenerator.state == arrayGenerator.state)
+    }
+
+    @Test func shuffleUsingGeneratorOnSingleElementLeavesItInPlace() {
+        var generator: SeededGenerator = SeededGenerator(state: 3)
+        var deck: Deck = Deck(cards: ["a"])
+        deck.shuffle(using: &generator)
+        #expect(deck.cards == ["a"])
     }
 
     @Test func sortByOrdersDescending() {

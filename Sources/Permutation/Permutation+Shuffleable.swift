@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Permutation+Shuffleable.swift
-// dependencies: [PermutableCollection.swift, Permutation.swift]
+// dependencies: [Permutation.swift]
 
 extension Permutation {
 
@@ -65,20 +65,5 @@ extension Permutation: Shuffleable {
     /// Replaces the permutation with a uniformly random permutation of `0..<minimumCount`, using the given generator as a source for randomness.
     @inlinable public mutating func shuffle<R: RandomNumberGenerator>(using generator: inout R) {
         self = Permutation(shuffles: minimumCount, using: &generator)
-    }
-}
-
-public extension PermutableCollection {
-
-    /// Shuffles the elements in place through a permutation shuffled directly in cycle form, and returns the permutation applied.
-    @inlinable @discardableResult mutating func shuffle() -> Permutation {
-        permute(returning: Permutation(shuffles: count))
-    }
-
-    /// Shuffles the elements in place, giving the same order as `Array.shuffle(using:)` with the same generator state, and returns the permutation applied.
-    @inlinable @discardableResult mutating func shuffle<R: RandomNumberGenerator>(using generator: inout R) -> Permutation {
-        var sources: [Int] = Array(0..<count)
-        sources.shuffle(using: &generator)
-        return permute(sources: sources)
     }
 }

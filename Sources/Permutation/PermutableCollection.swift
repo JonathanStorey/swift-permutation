@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: PermutableCollection.swift
-// dependencies: [Permutation.swift]
+// dependencies: [Permutation+Shuffleable.swift, Permutation.swift]
 
 /// A collection that reorders its elements only by swapping them, so every reorder passes through `swapAt(_:_:)`.
 public protocol PermutableCollection: Collection {
@@ -73,6 +73,18 @@ public extension PermutableCollection {
     /// Rotates the elements so the element at the given index becomes the first, and returns the permutation applied.
     @inlinable @discardableResult mutating func rotate(toStartAt newStart: Index) -> Permutation {
         permute(returning: Permutation(rotating: count, by: distance(from: startIndex, to: newStart)))
+    }
+
+    /// Shuffles the elements in place through a permutation shuffled directly in cycle form, and returns the permutation applied.
+    @inlinable @discardableResult mutating func shuffle() -> Permutation {
+        permute(returning: Permutation(shuffles: count))
+    }
+
+    /// Shuffles the elements in place, giving the same order as `Array.shuffle(using:)` with the same generator state, and returns the permutation applied.
+    @inlinable @discardableResult mutating func shuffle<R: RandomNumberGenerator>(using generator: inout R) -> Permutation {
+        var sources: [Int] = Array(0..<count)
+        sources.shuffle(using: &generator)
+        return permute(sources: sources)
     }
 
     /// Sorts the elements in place through a single permutation applied with one swap per element that moves within a cycle, and returns the permutation applied.
