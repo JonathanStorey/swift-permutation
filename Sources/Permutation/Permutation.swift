@@ -8,26 +8,6 @@ public struct Permutation: Hashable, Sendable {
     /// The cycles written one after another, each starting with its largest offset, in increasing order of those starting offsets.
     public let cycle: [Int]
 
-    /// Creates a uniformly random permutation of `0..<count` by shuffling the Foata line directly.
-    public init(shuffles count: Int) {
-        precondition(count >= 0, "The count must not be negative.")
-        var line: [Int] = Array(0..<count)
-        line.shuffle()
-        var kept: Int = 0
-        var largest: Int = -1
-        for position in line.indices {
-            let offset: Int = line[position]
-            if offset > largest {
-                largest = offset
-                if position == line.count - 1 || line[position + 1] > offset { continue }
-            }
-            line[kept] = offset
-            kept += 1
-        }
-        line.removeLast(line.count - kept)
-        cycle = line
-    }
-
     /// Creates the permutation that reverses `0..<count`, writing each swapped pair directly with its larger offset first.
     @inlinable @usableFromInline init(reversing count: Int) {
         var line: [Int] = []
@@ -86,7 +66,7 @@ public struct Permutation: Hashable, Sendable {
     }
 
     /// Creates a permutation from a line already in Foata's single-line notation.
-    private init(cycle: [Int]) {
+    @inlinable @usableFromInline init(cycle: [Int]) {
         self.cycle = cycle
     }
 
