@@ -3,7 +3,7 @@
 // dependencies: [Permutation+Shuffleable.swift, Permutation.swift]
 
 /// A collection that reorders its elements only by swapping them, so every reorder passes through `swapAt(_:_:)`.
-public protocol PermutableCollection: Collection, Shuffleable {
+public protocol PermutableCollection: Collection {
 
     /// Moves the element at each offset in each cycle to the next offset in that cycle, wrapping from the last offset to the first.
     mutating func permute(using permutation: Permutation)
@@ -85,6 +85,20 @@ public extension PermutableCollection {
         var sources: [Int] = Array(0..<count)
         sources.shuffle(using: &generator)
         return permute(sources: sources)
+    }
+
+    /// Returns a copy of the collection with its elements shuffled.
+    @inlinable func shuffled() -> Self {
+        var copy: Self = self
+        copy.shuffle()
+        return copy
+    }
+
+    /// Returns a copy of the collection with its elements shuffled, giving the same order as `Array.shuffled(using:)` with the same generator state.
+    @inlinable func shuffled<R: RandomNumberGenerator>(using generator: inout R) -> Self {
+        var copy: Self = self
+        copy.shuffle(using: &generator)
+        return copy
     }
 
     /// Sorts the elements in place through a single permutation applied with one swap per element that moves within a cycle, and returns the permutation applied.

@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Support/Deck.swift
-// dependencies: [PermutableCollection.swift]
+// dependencies: [PermutableCollection.swift, Permutation+Shuffleable.swift]
 
 @testable import Permutation
 
@@ -22,3 +22,6 @@ struct Deck: PermutableCollection {
         cards.swapAt(i, j)
     }
 }
+
+/// Fails to compile if the `PermutableCollection` shuffling API stops matching `Shuffleable`.
+extension Deck: Shuffleable {}

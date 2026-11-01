@@ -31,40 +31,43 @@ extension Permutation {
     }
 }
 
-/// A value that can rearrange itself into a uniformly random order, with the same shuffling API as `MutableCollection` but returning the permutation applied.
-public protocol Shuffleable {
+/// The shuffling API that `Permutation` and every `PermutableCollection` share, kept internal so it only checks that their signatures match.
+protocol Shuffleable {
+
+    /// Rearranges the value into a uniformly random order, and returns the permutation applied.
+    @discardableResult mutating func shuffle() -> Permutation
 
     /// Rearranges the value into a uniformly random order, using the given generator as a source for randomness, and returns the permutation applied.
     @discardableResult mutating func shuffle<R: RandomNumberGenerator>(using generator: inout R) -> Permutation
-}
-
-public extension Shuffleable {
-
-    /// Rearranges the value into a uniformly random order, and returns the permutation applied.
-    @inlinable @discardableResult mutating func shuffle() -> Permutation {
-        var generator: SystemRandomNumberGenerator = SystemRandomNumberGenerator()
-        return shuffle(using: &generator)
-    }
 
     /// Returns a copy of the value in a uniformly random order.
-    @inlinable func shuffled() -> Self {
-        var generator: SystemRandomNumberGenerator = SystemRandomNumberGenerator()
-        return shuffled(using: &generator)
-    }
+    func shuffled() -> Self
 
     /// Returns a copy of the value in a uniformly random order, using the given generator as a source for randomness.
-    @inlinable func shuffled<R: RandomNumberGenerator>(using generator: inout R) -> Self {
-        var copy: Self = self
-        copy.shuffle(using: &generator)
-        return copy
-    }
+    func shuffled<R: RandomNumberGenerator>(using generator: inout R) -> Self
 }
 
 extension Permutation: Shuffleable {
+
+    /// Replaces the permutation with a uniformly random permutation of `0..<minimumCount`, and returns the new permutation.
+    @inlinable @discardableResult public mutating func shuffle() -> Permutation {
+        self = Permutation(shuffles: minimumCount)
+        return self
+    }
 
     /// Replaces the permutation with a uniformly random permutation of `0..<minimumCount`, using the given generator as a source for randomness, and returns the new permutation.
     @inlinable @discardableResult public mutating func shuffle<R: RandomNumberGenerator>(using generator: inout R) -> Permutation {
         self = Permutation(shuffles: minimumCount, using: &generator)
         return self
+    }
+
+    /// Returns a uniformly random permutation of `0..<minimumCount`.
+    @inlinable public func shuffled() -> Permutation {
+        Permutation(shuffles: minimumCount)
+    }
+
+    /// Returns a uniformly random permutation of `0..<minimumCount`, using the given generator as a source for randomness.
+    @inlinable public func shuffled<R: RandomNumberGenerator>(using generator: inout R) -> Permutation {
+        Permutation(shuffles: minimumCount, using: &generator)
     }
 }
