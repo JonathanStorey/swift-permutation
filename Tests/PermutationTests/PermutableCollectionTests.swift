@@ -54,6 +54,13 @@ import Testing
         #expect(deck.cards == ["a", "c", "d", "b", "e"])
     }
 
+    @Test func moveReturnsASingleCycle() {
+        var deck: Deck = Deck(cards: ["a", "b", "c", "d", "e"])
+        #expect(deck.move(from: 1, to: 3).cycle == [3, 2, 1])
+        #expect(deck.move(from: 3, to: 1).cycle == [3, 1, 2])
+        #expect(deck.cards == ["a", "b", "c", "d", "e"])
+    }
+
     @Test func moveToEarlierIndexShiftsOthersBack() {
         var deck: Deck = Deck(cards: ["a", "b", "c", "d", "e"])
         deck.move(from: 3, to: 0)

@@ -13,6 +13,17 @@ public struct Permutation: Hashable, Sendable {
         self.cycle = cycle
     }
 
+    /// Creates a permutation from cycles in any order and any rotation, rooting each at its largest offset, dropping fixed points, and ordering them by that offset.
+    init(cycles: [[Int]]) {
+        var rooted: [[Int]] = []
+        for cycle in cycles where cycle.count > 1 {
+            let root: Int = cycle.indices.max { cycle[$0] < cycle[$1] }!
+            rooted.append(Array(cycle[root...] + cycle[..<root]))
+        }
+        rooted.sort { $0[0] < $1[0] }
+        self.init(cycle: rooted.flatMap { $0 })
+    }
+
     /// The permutation that undoes this one, made by reversing each cycle after its largest offset.
     public var inverted: Permutation {
         var line: [Int] = cycle
@@ -30,6 +41,19 @@ public struct Permutation: Hashable, Sendable {
     /// The smallest collection count this permutation can be applied to, one more than its largest offset.
     public var minimumCount: Int {
         (cycle.max() ?? -1) + 1
+    }
+
+    /// The cycles split out of the line, each starting with its largest offset.
+    var cycles: [[Int]] {
+        var cycles: [[Int]] = []
+        for offset in cycle {
+            if let start: Int = cycles.last?.first, offset < start {
+                cycles[cycles.count - 1].append(offset)
+            } else {
+                cycles.append([offset])
+            }
+        }
+        return cycles
     }
 
     /// Calls the closure with each pair of offsets to swap, in order, deriving them in one pass with no allocation.

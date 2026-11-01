@@ -42,4 +42,9 @@ import Testing
         deck.apply(permutation.advanced(by: -1))
         #expect(deck.cards == original)
     }
+
+    @Test func advancedBySplitsCycleByGreatestCommonDivisor() {
+        let permutation: Permutation = Permutation(cycle: [1_000_005, 1_000_000, 1_000_001, 1_000_002, 1_000_003, 1_000_004])
+        #expect(permutation.advanced(by: 2).cycle == [1_000_004, 1_000_000, 1_000_002, 1_000_005, 1_000_001, 1_000_003])
+    }
 }

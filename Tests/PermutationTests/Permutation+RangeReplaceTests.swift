@@ -31,6 +31,12 @@ import Testing
         #expect(permutation.cycle == [2, 0, 4, 3])
     }
 
+    @Test func removeAtOnFarOffsetsSplicesWithoutTouchingTheRest() {
+        var permutation: Permutation = Permutation(cycle: [1, 0, 1_000_002, 1_000_000, 1_000_001])
+        permutation.remove(at: 1_000_001)
+        #expect(permutation.cycle == [1, 0, 1_000_001, 1_000_000])
+    }
+
     @Test func removeAtSplicesOffsetOutOfItsCycle() {
         var permutation: Permutation = Permutation(cycle: [2, 0, 4, 1, 3])
         permutation.remove(at: 1)

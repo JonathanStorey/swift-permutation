@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Permutation+Stride.swift
-// dependencies: [Permutation+Sources.swift, Permutation.swift]
+// dependencies: [Permutation.swift]
 
 extension Permutation {
 
@@ -10,26 +10,22 @@ extension Permutation {
         return self
     }
 
-    /// Returns the permutation that applies this one `distance` times, moving each offset `distance` steps along its cycle, so a negative distance applies the inverse.
+    /// Returns the permutation that applies this one `distance` times, splitting each cycle of length `L` into `gcd(L, distance)` cycles that step `distance` offsets at a time, so a negative distance applies the inverse.
     public func advanced(by distance: Int) -> Permutation {
-        let count: Int = minimumCount
-        let destinations: [Int] = self.destinations(count: count)
-        var sources: [Int] = Array(0..<count)
-        var isVisited: [Bool] = [Bool](repeating: false, count: count)
-        var orbit: [Int] = []
-        for start in 0..<count where !isVisited[start] {
-            orbit.removeAll(keepingCapacity: true)
-            var offset: Int = start
-            repeat {
-                isVisited[offset] = true
-                orbit.append(offset)
-                offset = destinations[offset]
-            } while offset != start
-            let shift: Int = (distance % orbit.count + orbit.count) % orbit.count
-            for (position, source) in orbit.enumerated() {
-                sources[orbit[(position + shift) % orbit.count]] = source
+        var advanced: [[Int]] = []
+        for cycle in cycles {
+            let length: Int = cycle.count
+            let step: Int = (distance % length + length) % length
+            guard step != 0 else { continue }
+            var divisor: Int = length
+            var remainder: Int = step
+            while remainder != 0 {
+                (divisor, remainder) = (remainder, divisor % remainder)
+            }
+            for start in 0..<divisor {
+                advanced.append((0..<(length / divisor)).map { cycle[(start + $0 * step) % length] })
             }
         }
-        return Permutation(sources: sources)
+        return Permutation(cycles: advanced)
     }
 }

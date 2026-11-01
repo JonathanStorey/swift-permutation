@@ -25,6 +25,12 @@ import Testing
         #expect(permutation.followed(by: permutation.inverted).cycle.isEmpty)
     }
 
+    @Test func followedByOnFarOffsetsComposesTheirCycles() {
+        let first: Permutation = Permutation(cycle: [1_000_001, 1_000_000])
+        let second: Permutation = Permutation(cycle: [1_000_002, 1_000_001])
+        #expect(first.followed(by: second).cycle == [1_000_002, 1_000_001, 1_000_000])
+    }
+
     @Test func followedByShorterPermutationLeavesLaterOffsetsToTheLonger() {
         var deck: Deck = Deck(cards: ["a", "b", "c", "d", "e"])
         let swap: Permutation = deck.move(from: 0, to: 1)

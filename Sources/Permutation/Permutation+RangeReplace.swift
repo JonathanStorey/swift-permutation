@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Permutation+RangeReplace.swift
-// dependencies: [Permutation+Sources.swift, Permutation.swift]
+// dependencies: [Permutation.swift]
 
 extension Permutation {
 
@@ -24,28 +24,17 @@ extension Permutation {
         replaceSubrange(range, withCount: 0)
     }
 
-    /// Splices each offset in the range out of its cycle, shifts every later offset by the change in count, and leaves the new offsets in place.
+    /// Splices each offset in the range out of its cycle by deleting it from the line, shifts every later offset by the change in count, and leaves the new offsets in place.
     public mutating func replaceSubrange(_ range: Range<Int>, withCount newCount: Int) {
         precondition(range.lowerBound >= 0, "The range must not contain negative offsets.")
         precondition(newCount >= 0, "The new count must not be negative.")
-        let count: Int = Swift.max(minimumCount, range.upperBound)
-        var destinations: [Int] = self.destinations(count: count)
-        var sources: [Int] = Array(0..<count)
-        for offset in sources.indices {
-            sources[destinations[offset]] = offset
-        }
-        for offset in range where destinations[offset] != offset {
-            let previous: Int = sources[offset]
-            let next: Int = destinations[offset]
-            destinations[previous] = next
-            sources[next] = previous
-        }
         let shift: Int = newCount - range.count
-        let shifted: (Int) -> Int = { offset in offset < range.lowerBound ? offset : offset + shift }
-        var replaced: [Int] = Array(0..<(count + shift))
-        for offset in 0..<count where !range.contains(offset) {
-            replaced[shifted(destinations[offset])] = shifted(offset)
+        let replaced: [[Int]] = cycles.map { cycle in
+            cycle.compactMap { offset -> Int? in
+                if offset < range.lowerBound { return offset }
+                return range.contains(offset) ? nil : offset + shift
+            }
         }
-        self = Permutation(sources: replaced)
+        self = Permutation(cycles: replaced)
     }
 }

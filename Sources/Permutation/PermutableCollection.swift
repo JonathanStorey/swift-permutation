@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: PermutableCollection.swift
-// dependencies: [Permutation+Reverse.swift, Permutation+Rotate.swift, Permutation+Shuffle.swift, Permutation+Sources.swift, Permutation.swift]
+// dependencies: [Permutation+Move.swift, Permutation+Reverse.swift, Permutation+Rotate.swift, Permutation+Shuffle.swift, Permutation+Sources.swift, Permutation.swift]
 
 /// A collection that reorders its elements only by swapping them, so every reorder passes through `swapAt(_:_:)`.
 public protocol PermutableCollection: Collection {
@@ -31,10 +31,7 @@ public extension PermutableCollection {
 
     /// Moves the element at the source index so it ends up at the destination index, shifting the elements between them, and returns the permutation applied.
     @inlinable @discardableResult mutating func move(from source: Index, to destination: Index) -> Permutation {
-        var sources: [Int] = Array(0..<count)
-        let offset: Int = sources.remove(at: distance(from: startIndex, to: source))
-        sources.insert(offset, at: distance(from: startIndex, to: destination))
-        return apply(sources: sources)
+        apply(returning: Permutation(moving: distance(from: startIndex, to: source), to: distance(from: startIndex, to: destination), count: count))
     }
 
     /// Moves the elements at the given offsets to just before the element at the destination offset, keeping their relative order, and returns the permutation applied.
