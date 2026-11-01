@@ -75,18 +75,6 @@ public extension PermutableCollection {
         permute(returning: Permutation(rotating: count, by: distance(from: startIndex, to: newStart)))
     }
 
-    /// Shuffles the elements in place through a permutation shuffled directly in cycle form, and returns the permutation applied.
-    @inlinable @discardableResult mutating func shuffle() -> Permutation {
-        permute(returning: Permutation(shuffles: count))
-    }
-
-    /// Shuffles the elements in place, giving the same order as `Array.shuffle(using:)` with the same generator state, and returns the permutation applied.
-    @inlinable @discardableResult mutating func shuffle<R: RandomNumberGenerator>(using generator: inout R) -> Permutation {
-        var sources: [Int] = Array(0..<count)
-        sources.shuffle(using: &generator)
-        return permute(sources: sources)
-    }
-
     /// Sorts the elements in place through a single permutation applied with one swap per element that moves within a cycle, and returns the permutation applied.
     @inlinable @discardableResult mutating func sort(by areInIncreasingOrder: (Element, Element) throws -> Bool) rethrows -> Permutation {
         let elements: [Element] = Array(self)

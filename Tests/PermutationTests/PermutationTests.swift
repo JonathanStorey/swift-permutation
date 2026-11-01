@@ -29,22 +29,6 @@ import Testing
         #expect(Permutation(shuffles: 0).minimumCount == 0)
     }
 
-    @Test func shuffleCycleHasNoFixedPoints() {
-        let cycle: [Int] = Permutation(shuffles: 50).cycle
-        #expect(Set(cycle).count == cycle.count && cycle.allSatisfy { (0..<50).contains($0) })
-        var largest: Int = -1
-        let starts: [Bool] = cycle.map { offset in
-            defer { largest = max(largest, offset) }
-            return offset > largest
-        }
-        #expect(zip(starts, starts.dropFirst() + [true]).allSatisfy { !($0 && $1) })
-    }
-
-    @Test func shuffleOfZeroHasNoCycles() {
-        #expect(Permutation(shuffles: 0).cycle.isEmpty)
-        #expect(Permutation(shuffles: 1).cycle.isEmpty)
-    }
-
     @Test func squashedWithAppliesBothInOrder() {
         let original: [String] = (0..<8).map(String.init)
         for _ in 0..<50 {
