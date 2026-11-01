@@ -7,6 +7,20 @@ import Testing
 
 @Suite struct PermutationCompositionTests {
 
+    @Test func commutatorOfDisjointPermutationsIsEmpty() {
+        let first: Permutation = Permutation(cycle: [1, 0])
+        let second: Permutation = Permutation(cycle: [3, 2])
+        #expect(first.commutator(with: second).cycle.isEmpty)
+        #expect(first.commutes(with: second))
+    }
+
+    @Test func commutatorOfSwapsSharingOneOffsetIsAThreeCycle() {
+        let first: Permutation = Permutation(cycle: [1, 0])
+        let second: Permutation = Permutation(cycle: [2, 1])
+        #expect(first.commutator(with: second).cycle.count == 3)
+        #expect(!first.commutes(with: second))
+    }
+
     @Test func followedByAppliesBothInOrder() {
         let original: [String] = (0..<8).map(String.init)
         for _ in 0..<50 {

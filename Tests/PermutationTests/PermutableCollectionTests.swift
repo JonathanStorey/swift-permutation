@@ -125,6 +125,15 @@ import Testing
         #expect(deck.cards == ["a", "b", "c"])
     }
 
+    @Test func shuffleFaroInterleavesHalves() {
+        var outDeck: Deck = Deck(cards: ["a", "b", "c", "d", "e", "f"])
+        outDeck.shuffle(.outFaro)
+        #expect(outDeck.cards == ["a", "d", "b", "e", "c", "f"])
+        var inDeck: Deck = Deck(cards: ["a", "b", "c", "d", "e", "f"])
+        inDeck.shuffle(.inFaro)
+        #expect(inDeck.cards == ["d", "a", "e", "b", "f", "c"])
+    }
+
     @Test func shuffleKeepsEveryElement() {
         var deck: Deck = Deck(cards: (0..<20).map(String.init))
         deck.shuffle()

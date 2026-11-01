@@ -79,13 +79,14 @@ public extension PermutableCollection {
         apply(returning: Permutation(rotating: count, by: distance(from: startIndex, to: newStart)))
     }
 
-    /// Shuffles the elements in place through a permutation shuffled directly in cycle form, and returns the permutation applied.
-    @inlinable @discardableResult mutating func shuffle() -> Permutation {
-        apply(returning: Permutation(shuffles: count))
+    /// Shuffles the elements in place in the given style, and returns the permutation applied.
+    @inlinable @discardableResult mutating func shuffle(_ style: Permutation.Shuffle = .random) -> Permutation {
+        style == .random ? apply(returning: Permutation(shuffles: count)) : apply(returning: Permutation(shuffles: count, style))
     }
 
-    /// Shuffles the elements in place, giving the same order as `Array.shuffle(using:)` with the same generator state, and returns the permutation applied.
-    @inlinable @discardableResult mutating func shuffle<R: RandomNumberGenerator>(using generator: inout R) -> Permutation {
+    /// Shuffles the elements in place in the given style, using the given generator as a source for randomness, and returns the permutation applied, giving the same order as `Array.shuffle(using:)` for the random style.
+    @inlinable @discardableResult mutating func shuffle<R: RandomNumberGenerator>(_ style: Permutation.Shuffle = .random, using generator: inout R) -> Permutation {
+        guard style == .random else { return apply(returning: Permutation(shuffles: count, style, using: &generator)) }
         var sources: [Int] = Array(0..<count)
         sources.shuffle(using: &generator)
         return apply(sources: sources)

@@ -4,6 +4,16 @@
 
 extension Permutation {
 
+    /// Returns the permutation that applies this one, then other, then undoes this one, then undoes other, which is empty exactly when the two commute.
+    public func commutator(with other: Permutation) -> Permutation {
+        followed(by: other).followed(by: inverted).followed(by: other.inverted)
+    }
+
+    /// Returns whether applying this permutation and other in either order gives the same result.
+    public func commutes(with other: Permutation) -> Bool {
+        followed(by: other) == other.followed(by: self)
+    }
+
     /// Returns the permutation that applies this permutation and then the next, multiplying them in cycle form over only the offsets either one moves.
     public func followed(by next: Permutation) -> Permutation {
         let first: [Int: Int] = successors

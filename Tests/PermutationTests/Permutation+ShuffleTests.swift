@@ -1,11 +1,40 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Permutation+ShuffleTests.swift
-// dependencies: [PermutableCollection.swift, Permutation+Shuffle.swift, Permutation.swift]
+// dependencies: [PermutableCollection.swift, Permutation+Shuffle.swift, Permutation+Stride.swift, Permutation.swift]
 
 import Testing
 @testable import Permutation
 
 @Suite struct PermutationShuffleTests {
+
+    @Test func cyclicShuffleIsOneCycleThroughEveryOffset() {
+        var generator: SeededGenerator = SeededGenerator(state: 31)
+        for count in 2..<12 {
+            let permutation: Permutation = Permutation(shuffles: count, .cyclic, using: &generator)
+            #expect(permutation.cycle.count == count)
+            #expect(permutation.cycle.first == count - 1)
+        }
+        #expect(Permutation(shuffles: 1, .cyclic).cycle.isEmpty)
+    }
+
+    @Test func derangementShuffleMovesEveryOffset() {
+        var generator: SeededGenerator = SeededGenerator(state: 32)
+        for count in [0, 2, 3, 10, 25] {
+            #expect(Permutation(shuffles: count, .derangement, using: &generator).cycle.count == count)
+        }
+    }
+
+    @Test func inFaroOnFiftyTwoCardsHasOrderFiftyTwo() {
+        let faro: Permutation = Permutation(shuffles: 52, .inFaro)
+        #expect(faro.advanced(by: 52).cycle.isEmpty)
+        #expect([1, 2, 4, 13, 26].allSatisfy { !faro.advanced(by: $0).cycle.isEmpty })
+    }
+
+    @Test func outFaroOnFiftyTwoCardsHasOrderEight() {
+        let faro: Permutation = Permutation(shuffles: 52, .outFaro)
+        #expect(faro.advanced(by: 8).cycle.isEmpty)
+        #expect((1..<8).allSatisfy { !faro.advanced(by: $0).cycle.isEmpty })
+    }
 
     @Test func permutationShuffleOfEmptyPermutationIsEmpty() {
         var permutation: Permutation = Permutation(shuffles: 0)
@@ -41,6 +70,16 @@ import Testing
         #expect(original == copy)
         let expected: Permutation = Permutation(shuffles: original.minimumCount, using: &expectedGenerator)
         #expect(shuffled == expected)
+    }
+
+    @Test func riffleInterleavesTwoPacketsInOrder() {
+        var generator: SeededGenerator = SeededGenerator(state: 33)
+        for _ in 0..<50 {
+            var deck: Deck = Deck(cards: (0..<20).map(String.init))
+            deck.shuffle(.riffle, using: &generator)
+            let ranks: [Int] = deck.cards.compactMap { Int($0) }
+            #expect((0...20).contains { cut in ranks.filter { $0 < cut } == Array(0..<cut) && ranks.filter { $0 >= cut } == Array(cut..<20) })
+        }
     }
 
     @Test func shuffleCycleHasNoFixedPoints() {
