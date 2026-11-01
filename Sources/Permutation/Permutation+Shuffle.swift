@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Permutation+Shuffle.swift
-// dependencies: [Permutation+Sources.swift, Permutation.swift]
+// dependencies: [Permutation.swift]
 
 extension Permutation {
 
@@ -16,7 +16,7 @@ extension Permutation {
         /// Every arrangement that leaves no offset in place equally likely.
         case derangement
 
-        /// One riffle in the Gilbert–Shannon–Reeds model: cut at a binomial point and interleave, dropping from each packet in proportion to its size.
+        /// One riffle in the Gilbert–Shannon–Reeds model, built as the inverse of sorting offsets stably by a random bit each.
         case riffle
 
         /// A perfect riffle that keeps the first and last offsets in place.
@@ -64,10 +64,13 @@ extension Permutation {
         self = Permutation.shuffling(count, style, using: &generator)
     }
 
-    /// Creates the perfect riffle that interleaves the first `half` offsets with the rest, sending the first packet to every other offset starting at `firstStep`, built by tracing each orbit of the interleaving.
+    /// Creates the perfect riffle that interleaves the first `half` offsets with the rest, sending the first packet to every other offset starting at `firstStep`.
     private init(faro count: Int, half: Int, firstStep: Int) {
-        let secondStep: Int = 1 - firstStep
-        let destination: (Int) -> Int = { offset in offset < half ? 2 * offset + firstStep : 2 * (offset - half) + secondStep }
+        self.init(tracing: count) { offset in offset < half ? 2 * offset + firstStep : 2 * (offset - half) + 1 - firstStep }
+    }
+
+    /// Creates the permutation that sends each offset of `0..<count` to the given destination, tracing each orbit of the formula into a cycle.
+    private init(tracing count: Int, destination: (Int) -> Int) {
         var isVisited: [Bool] = [Bool](repeating: false, count: count)
         var cycles: [[Int]] = []
         for start in 0..<count where !isVisited[start] {
@@ -103,8 +106,21 @@ extension Permutation {
             for _ in 0..<count {
                 isSecond.append(Bool.random(using: &generator))
             }
-            let sources: [Int] = (0..<count).filter { !isSecond[$0] } + (0..<count).filter { isSecond[$0] }
-            return Permutation(sources: sources).inverted
+            let firstCount: Int = isSecond.lazy.filter { !$0 }.count
+            var ranks: [Int] = []
+            ranks.reserveCapacity(count)
+            var firstRank: Int = 0
+            var secondRank: Int = firstCount
+            for offset in 0..<count {
+                if isSecond[offset] {
+                    ranks.append(secondRank)
+                    secondRank += 1
+                } else {
+                    ranks.append(firstRank)
+                    firstRank += 1
+                }
+            }
+            return Permutation(tracing: count) { ranks[$0] }.inverted
         case .outFaro:
             return Permutation(faro: count, half: (count + 1) / 2, firstStep: 0)
         case .inFaro:
