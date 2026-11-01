@@ -4,11 +4,20 @@
 
 extension Permutation {
 
+    /// Returns the two-way merge of this permutation and theirs, treating the original order as their common base, or nil when a cycle from one side shares an offset with a different cycle from the other.
+    public func merge(with theirs: Permutation) -> Permutation? {
+        Permutation.merge(cycles, theirs.cycles).map(Permutation.init(cycles:))
+    }
+
     /// Returns the three-way merge of this permutation and theirs, both descended from base, by merging each side's change cycle by cycle, or nil when a cycle from one side shares an offset with a different cycle from the other.
     public func merge(with theirs: Permutation, from base: Permutation) -> Permutation? {
         let undo: Permutation = base.inverted
-        let ourCycles: [[Int]] = undo.followed(by: self).cycles
-        let theirCycles: [[Int]] = undo.followed(by: theirs).cycles
+        guard let merged: [[Int]] = Permutation.merge(undo.followed(by: self).cycles, undo.followed(by: theirs).cycles) else { return nil }
+        return base.followed(by: Permutation(cycles: merged))
+    }
+
+    /// Returns every cycle from either side once, or nil when a cycle from one side shares an offset with a different cycle from the other.
+    private static func merge(_ ourCycles: [[Int]], _ theirCycles: [[Int]]) -> [[Int]]? {
         var theirCycleIndex: [Int: Int] = [:]
         for (index, cycle) in theirCycles.enumerated() {
             for offset in cycle {
@@ -30,6 +39,6 @@ extension Permutation {
         for (index, cycle) in theirCycles.enumerated() where !isShared[index] {
             merged.append(cycle)
         }
-        return base.followed(by: Permutation(cycles: merged))
+        return merged
     }
 }

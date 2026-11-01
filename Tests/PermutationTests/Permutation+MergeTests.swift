@@ -38,6 +38,13 @@ import Testing
         #expect(ours.merge(with: theirs, from: base) == nil)
     }
 
+    @Test func mergeWithSharedCycleKeepsItOnceAlongsideTheRest() {
+        let base: Permutation = Permutation(cycle: [])
+        let ours: Permutation = Permutation(cycle: [1, 0, 3, 2])
+        let theirs: Permutation = Permutation(cycle: [1, 0, 5, 4])
+        #expect(ours.merge(with: theirs, from: base) == Permutation(cycle: [1, 0, 3, 2, 5, 4]))
+    }
+
     @Test func mergeWithUnchangedSideReturnsTheOtherSide() {
         let base: Permutation = Permutation(cycle: [3, 1, 2])
         let ours: Permutation = base.followed(by: Permutation(cycle: [5, 0]))
@@ -45,10 +52,16 @@ import Testing
         #expect(base.merge(with: ours, from: base) == ours)
     }
 
-    @Test func mergeWithSharedCycleKeepsItOnceAlongsideTheRest() {
-        let base: Permutation = Permutation(cycle: [])
-        let ours: Permutation = Permutation(cycle: [1, 0, 3, 2])
-        let theirs: Permutation = Permutation(cycle: [1, 0, 5, 4])
-        #expect(ours.merge(with: theirs, from: base) == Permutation(cycle: [1, 0, 3, 2, 5, 4]))
+    @Test func mergeWithoutBaseCombinesDisjointChanges() {
+        let ours: Permutation = Permutation(cycle: [1, 0])
+        let theirs: Permutation = Permutation(cycle: [4, 2, 3])
+        #expect(ours.merge(with: theirs) == Permutation(cycle: [1, 0, 4, 2, 3]))
+        #expect(ours.merge(with: theirs) == ours.merge(with: theirs, from: Permutation(cycle: [])))
+    }
+
+    @Test func mergeWithoutBaseOfConflictingCyclesIsNil() {
+        let ours: Permutation = Permutation(cycle: [2, 0, 1])
+        let theirs: Permutation = Permutation(cycle: [2, 1])
+        #expect(ours.merge(with: theirs) == nil)
     }
 }
