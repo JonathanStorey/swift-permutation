@@ -32,16 +32,16 @@ extension Permutation {
 }
 
 /// A value that can rearrange itself into a uniformly random order, with the same shuffling API as `MutableCollection`.
-public protocol Shuffleable {
+protocol Shuffleable {
 
     /// Rearranges the value into a uniformly random order, using the given generator as a source for randomness.
-    mutating func shuffle<R: RandomNumberGenerator>(using generator: inout R)
+    @discardableResult mutating func shuffle<R: RandomNumberGenerator>(using generator: inout R) -> Permutation
 }
 
 public extension Shuffleable {
 
     /// Rearranges the value into a uniformly random order.
-    @inlinable mutating func shuffle() {
+    @inlinable mutating func shuffle() -> Permutation {
         var generator: SystemRandomNumberGenerator = SystemRandomNumberGenerator()
         shuffle(using: &generator)
     }
@@ -63,7 +63,7 @@ public extension Shuffleable {
 extension Permutation: Shuffleable {
 
     /// Replaces the permutation with a uniformly random permutation of `0..<minimumCount`, using the given generator as a source for randomness.
-    @inlinable public mutating func shuffle<R: RandomNumberGenerator>(using generator: inout R) {
+    @inlinable public mutating func shuffle<R: RandomNumberGenerator>(using generator: inout R) -> Permutation {
         self = Permutation(shuffles: minimumCount, using: &generator)
     }
 }
