@@ -29,7 +29,7 @@ public struct Permutation: Hashable, Sendable {
     }
 
     /// Creates the permutation that reverses `0..<count`, writing each swapped pair directly with its larger offset first.
-    init(reversing count: Int) {
+    @inlinable @usableFromInline init(reversing count: Int) {
         var line: [Int] = []
         line.reserveCapacity(count)
         for offset in (0..<(count / 2)).reversed() {
@@ -40,7 +40,7 @@ public struct Permutation: Hashable, Sendable {
     }
 
     /// Creates the permutation that moves the element at offset `shift` to the front of `0..<count`, writing one cycle per residue class modulo the greatest common divisor.
-    init(rotating count: Int, by shift: Int) {
+    @inlinable @usableFromInline init(rotating count: Int, by shift: Int) {
         guard count > 0, shift % count != 0 else {
             cycle = []
             return
@@ -64,7 +64,7 @@ public struct Permutation: Hashable, Sendable {
     }
 
     /// Creates a permutation where `sources[i]` is the offset whose element moves into `i`, writing each cycle from the back in one walk without validating the mapping.
-    init(sources: [Int]) {
+    @inlinable @usableFromInline init(sources: [Int]) {
         var isVisited: [Bool] = [Bool](repeating: false, count: sources.count)
         var line: [Int] = [Int](repeating: 0, count: sources.count)
         var end: Int = sources.count
@@ -110,7 +110,7 @@ public struct Permutation: Hashable, Sendable {
     }
 
     /// Calls the closure with each pair of offsets to swap, in order, deriving them in one pass with no allocation.
-    func forEachSwap(_ body: (Int, Int) throws -> Void) rethrows {
+    @inlinable @usableFromInline func forEachSwap(_ body: (Int, Int) throws -> Void) rethrows {
         var start: Int = -1
         for offset in cycle {
             if offset > start {
