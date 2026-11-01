@@ -3,7 +3,7 @@
 // dependencies: [Permutation+Shuffleable.swift, Permutation.swift]
 
 /// A collection that reorders its elements only by swapping them, so every reorder passes through `swapAt(_:_:)`.
-public protocol PermutableCollection: Collection {
+public protocol PermutableCollection: Collection, Shuffleable {
 
     /// Moves the element at each offset in each cycle to the next offset in that cycle, wrapping from the last offset to the first.
     mutating func permute(using permutation: Permutation)

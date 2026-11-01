@@ -31,19 +31,19 @@ extension Permutation {
     }
 }
 
-/// A value that can rearrange itself into a uniformly random order, with the same shuffling API as `MutableCollection`.
-protocol Shuffleable {
+/// A value that can rearrange itself into a uniformly random order, with the same shuffling API as `MutableCollection` but returning the permutation applied.
+public protocol Shuffleable {
 
-    /// Rearranges the value into a uniformly random order, using the given generator as a source for randomness.
+    /// Rearranges the value into a uniformly random order, using the given generator as a source for randomness, and returns the permutation applied.
     @discardableResult mutating func shuffle<R: RandomNumberGenerator>(using generator: inout R) -> Permutation
 }
 
 public extension Shuffleable {
 
-    /// Rearranges the value into a uniformly random order.
-    @inlinable mutating func shuffle() -> Permutation {
+    /// Rearranges the value into a uniformly random order, and returns the permutation applied.
+    @inlinable @discardableResult mutating func shuffle() -> Permutation {
         var generator: SystemRandomNumberGenerator = SystemRandomNumberGenerator()
-        shuffle(using: &generator)
+        return shuffle(using: &generator)
     }
 
     /// Returns a copy of the value in a uniformly random order.
@@ -62,8 +62,9 @@ public extension Shuffleable {
 
 extension Permutation: Shuffleable {
 
-    /// Replaces the permutation with a uniformly random permutation of `0..<minimumCount`, using the given generator as a source for randomness.
-    @inlinable public mutating func shuffle<R: RandomNumberGenerator>(using generator: inout R) -> Permutation {
+    /// Replaces the permutation with a uniformly random permutation of `0..<minimumCount`, using the given generator as a source for randomness, and returns the new permutation.
+    @inlinable @discardableResult public mutating func shuffle<R: RandomNumberGenerator>(using generator: inout R) -> Permutation {
         self = Permutation(shuffles: minimumCount, using: &generator)
+        return self
     }
 }
