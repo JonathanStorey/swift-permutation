@@ -2,6 +2,35 @@
 // path: Permutation+Shuffleable.swift
 // dependencies: [PermutableCollection.swift, Permutation.swift]
 
+extension Permutation {
+
+    /// Creates a uniformly random permutation of `0..<count` by shuffling the Foata line directly.
+    @inlinable public init(shuffles count: Int) {
+        var generator: SystemRandomNumberGenerator = SystemRandomNumberGenerator()
+        self.init(shuffles: count, using: &generator)
+    }
+
+    /// Creates a uniformly random permutation of `0..<count` by shuffling the Foata line directly, using the given generator as a source for randomness.
+    @inlinable public init<R: RandomNumberGenerator>(shuffles count: Int, using generator: inout R) {
+        precondition(count >= 0, "The count must not be negative.")
+        var line: [Int] = Array(0..<count)
+        line.shuffle(using: &generator)
+        var kept: Int = 0
+        var largest: Int = -1
+        for position in line.indices {
+            let offset: Int = line[position]
+            if offset > largest {
+                largest = offset
+                if position == line.count - 1 || line[position + 1] > offset { continue }
+            }
+            line[kept] = offset
+            kept += 1
+        }
+        line.removeLast(line.count - kept)
+        self.init(cycle: line)
+    }
+}
+
 /// A value that can rearrange itself into a uniformly random order, with the same shuffling API as `MutableCollection`.
 public protocol Shuffleable {
 
@@ -32,32 +61,6 @@ public extension Shuffleable {
 }
 
 extension Permutation: Shuffleable {
-
-    /// Creates a uniformly random permutation of `0..<count` by shuffling the Foata line directly.
-    @inlinable public init(shuffles count: Int) {
-        var generator: SystemRandomNumberGenerator = SystemRandomNumberGenerator()
-        self.init(shuffles: count, using: &generator)
-    }
-
-    /// Creates a uniformly random permutation of `0..<count` by shuffling the Foata line directly, using the given generator as a source for randomness.
-    @inlinable public init<R: RandomNumberGenerator>(shuffles count: Int, using generator: inout R) {
-        precondition(count >= 0, "The count must not be negative.")
-        var line: [Int] = Array(0..<count)
-        line.shuffle(using: &generator)
-        var kept: Int = 0
-        var largest: Int = -1
-        for position in line.indices {
-            let offset: Int = line[position]
-            if offset > largest {
-                largest = offset
-                if position == line.count - 1 || line[position + 1] > offset { continue }
-            }
-            line[kept] = offset
-            kept += 1
-        }
-        line.removeLast(line.count - kept)
-        self.init(cycle: line)
-    }
 
     /// Replaces the permutation with a uniformly random permutation of `0..<minimumCount`, using the given generator as a source for randomness.
     @inlinable public mutating func shuffle<R: RandomNumberGenerator>(using generator: inout R) {
