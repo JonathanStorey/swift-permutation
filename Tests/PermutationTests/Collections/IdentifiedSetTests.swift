@@ -14,9 +14,9 @@ import Testing
 
     /// Checks that every id finds its element and its position, so the three stores agree.
     func expectConsistent(_ set: IdentifiedSet<Player>) {
-        #expect(set.slots.count == set.count)
-        #expect(set.slotOfID.count == set.count)
-        #expect(Set(set.sources) == Set(set.slots.indices))
+        #expect(set.elements.count == set.count)
+        #expect(set.offsets.count == set.count)
+        #expect(Set(set.sources) == Set(set.elements.indices))
         for (position, player) in set.enumerated() {
             #expect(set[id: player.id] == player)
             #expect(set.firstIndex(id: player.id) == position)
@@ -105,7 +105,7 @@ import Testing
 
     // MARK: Removing
 
-    @Test func removeFillsTheSlotAndKeepsLookupsConsistent() {
+    @Test func removeFillsTheGapAndKeepsLookupsConsistent() {
         var set: IdentifiedSet<Player> = IdentifiedSet([ann, bob, cy])
         set.reverse()
         let removed: Player? = set.remove(id: 3)
@@ -138,12 +138,12 @@ import Testing
 
     @Test func reordersLeaveStorageInPlace() {
         var set: IdentifiedSet<Player> = IdentifiedSet([ann, bob, cy])
-        let storage: [Player] = set.slots
-        let ids: [Int: Int] = set.slotOfID
+        let storage: [Player] = set.elements
+        let offsets: [Int: Int] = set.offsets
         set.sort { $0.name > $1.name }
         #expect(Array(set) == [cy, bob, ann])
-        #expect(set.slots == storage)
-        #expect(set.slotOfID == ids)
+        #expect(set.elements == storage)
+        #expect(set.offsets == offsets)
     }
 
     @Test func reorderingAndUndoingRestoresTheOrder() {

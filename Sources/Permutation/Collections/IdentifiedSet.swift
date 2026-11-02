@@ -4,22 +4,22 @@
 
 /// An ordered collection of identifiable elements in which no two elements share an id, reordered only through permutations.
 ///
-/// Elements stay in fixed storage slots and never move when the collection is reordered. The order lives in `sources`, which maps each position to a slot, so every reorder rotates integers and never hashes an id or copies an element.
+/// Elements stay where they were stored and never move when the collection is reordered. The order lives in `sources`, which maps each position to a storage offset, so every reorder rotates integers and never hashes an id or copies an element.
 public struct IdentifiedSet<Element: Identifiable> {
 
     /// The elements in storage order, which reordering never changes.
-    @usableFromInline var slots: [Element]
+    @usableFromInline var elements: [Element]
 
-    /// The storage slot of each element, keyed by its id.
-    @usableFromInline var slotOfID: [Element.ID: Int]
+    /// The storage offset of each element, keyed by its id.
+    @usableFromInline var offsets: [Element.ID: Int]
 
-    /// The storage slot shown at each position.
+    /// The storage offset shown at each position.
     @usableFromInline var sources: [Int]
 
     /// Creates an empty set.
     public init() {
-        slots = []
-        slotOfID = [:]
+        elements = []
+        offsets = [:]
         sources = []
     }
 
@@ -40,7 +40,7 @@ extension IdentifiedSet: RandomAccessCollection {
 
     /// The element at the position.
     @inlinable public subscript(position: Int) -> Element {
-        slots[sources[position]]
+        elements[sources[position]]
     }
 }
 
@@ -48,7 +48,7 @@ extension IdentifiedSet: RandomAccessCollection {
 
 extension IdentifiedSet: PermutableCollection {
 
-    /// Applies the permutation by rotating each cycle of `sources` through one carried slot, leaving the elements and their ids untouched.
+    /// Applies the permutation by rotating each cycle of `sources` through one carried storage offset, leaving the elements and their ids untouched.
     @inlinable public mutating func apply(_ permutation: Permutation) {
         guard !permutation.cycle.isEmpty else { return }
         precondition(permutation.minimumCount <= count, "Every offset in the cycle must be within the collection.")
@@ -68,7 +68,7 @@ extension IdentifiedSet: PermutableCollection {
         sources[start] = carried
     }
 
-    /// Exchanges the elements at the two positions by swapping their slots.
+    /// Exchanges the elements at the two positions by swapping their storage offsets in `sources`.
     @inlinable public mutating func swapAt(_ i: Int, _ j: Int) {
         sources.swapAt(i, j)
     }
@@ -83,7 +83,7 @@ public extension IdentifiedSet {
     /// Setting a value replaces the element in place or appends it when the id is new, and setting nil removes it. The new value must keep the id it is stored under.
     subscript(id id: Element.ID) -> Element? {
         @inlinable get {
-            slotOfID[id].map { slots[$0] }
+            offsets[id].map { elements[$0] }
         }
         set {
             guard let newValue else {
@@ -97,12 +97,12 @@ public extension IdentifiedSet {
 
     /// Returns whether an element has the id, in O(1).
     @inlinable func contains(id: Element.ID) -> Bool {
-        slotOfID[id] != nil
+        offsets[id] != nil
     }
 
     /// The position of the element with the id, or nil when there is none, in O(n).
     func firstIndex(id: Element.ID) -> Int? {
-        slotOfID[id].flatMap { sources.firstIndex(of: $0) }
+        offsets[id].flatMap { sources.firstIndex(of: $0) }
     }
 }
 
@@ -118,10 +118,10 @@ public extension IdentifiedSet {
     /// Inserts the element at the position unless its id is already present, returning whether it was added.
     @discardableResult mutating func insert(_ element: Element, at index: Int) -> Bool {
         precondition(index >= startIndex && index <= endIndex, "Index out of range.")
-        guard slotOfID[element.id] == nil else { return false }
-        slotOfID[element.id] = slots.count
-        sources.insert(slots.count, at: index)
-        slots.append(element)
+        guard offsets[element.id] == nil else { return false }
+        offsets[element.id] = elements.count
+        sources.insert(elements.count, at: index)
+        elements.append(element)
         return true
     }
 }
@@ -132,22 +132,22 @@ public extension IdentifiedSet {
 
     /// Replaces the element with the same id in place, returning the old element, or returns nil and changes nothing when the id is absent.
     @discardableResult mutating func replace(_ element: Element) -> Element? {
-        guard let slot: Int = slotOfID[element.id] else { return nil }
-        let old: Element = slots[slot]
-        slots[slot] = element
+        guard let offset: Int = offsets[element.id] else { return nil }
+        let old: Element = elements[offset]
+        elements[offset] = element
         return old
     }
 
     /// Replaces the element at the position, returning the old element, and may change the id as long as no other element has the new one.
     @discardableResult mutating func replace(at index: Int, with element: Element) -> Element {
-        let slot: Int = sources[index]
-        let old: Element = slots[slot]
+        let offset: Int = sources[index]
+        let old: Element = elements[offset]
         if old.id != element.id {
-            precondition(slotOfID[element.id] == nil, "Another element already has this id.")
-            slotOfID[old.id] = nil
-            slotOfID[element.id] = slot
+            precondition(offsets[element.id] == nil, "Another element already has this id.")
+            offsets[old.id] = nil
+            offsets[element.id] = offset
         }
-        slots[slot] = element
+        elements[offset] = element
         return old
     }
 }
@@ -178,19 +178,19 @@ public extension IdentifiedSet {
         firstIndex(id: id).map { remove(at: $0) }
     }
 
-    /// Removes the element at the position and returns it, filling its storage slot with the last slot's element.
+    /// Removes the element at the position and returns it, moving the last stored element into the gap.
     @discardableResult mutating func remove(at index: Int) -> Element {
-        let slot: Int = sources.remove(at: index)
-        let removed: Element = slots[slot]
-        slotOfID[removed.id] = nil
-        let last: Int = slots.count - 1
-        if slot != last {
-            let moved: Element = slots[last]
-            slots[slot] = moved
-            slotOfID[moved.id] = slot
-            sources[sources.firstIndex(of: last)!] = slot
+        let offset: Int = sources.remove(at: index)
+        let removed: Element = elements[offset]
+        offsets[removed.id] = nil
+        let last: Int = elements.count - 1
+        if offset != last {
+            let moved: Element = elements[last]
+            elements[offset] = moved
+            offsets[moved.id] = offset
+            sources[sources.firstIndex(of: last)!] = offset
         }
-        slots.removeLast()
+        elements.removeLast()
         return removed
     }
 
