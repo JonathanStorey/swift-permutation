@@ -55,16 +55,4 @@ public struct Permutation: Hashable, Sendable {
         }
         return cycles
     }
-
-    /// Calls the closure with each pair of offsets to swap, in order, deriving them in one pass with no allocation.
-    @inlinable func forEachSwap(_ body: (Int, Int) throws -> Void) rethrows {
-        var start: Int = -1
-        for offset in cycle {
-            if offset > start {
-                start = offset
-            } else {
-                try body(start, offset)
-            }
-        }
-    }
 }
