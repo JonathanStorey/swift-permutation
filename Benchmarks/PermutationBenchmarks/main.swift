@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: main.swift
-// dependencies: [Collections/PermutableCollection.swift]
+// dependencies: [Collections/IdentifiedSet.swift, Collections/PermutableCollection.swift, IdentifiedComparison.swift, Record.swift]
 
 import Permutation
 
@@ -78,9 +78,7 @@ print("| Operation | Count | IdentifiedSet | Array | Array + id index |")
 print("|---|---:|---:|---:|---:|")
 for size in sizes {
     var generator: SeededGenerator = SeededGenerator(state: 42)
-    let records: [Record] = (0..<size).map { rank in
-        Record(id: UUID(), rank: rank, payload: SIMD8(repeating: Int64(rank)))
-    }.shuffled(using: &generator)
+    let records: [Record] = (0..<size).map(Record.init(rank:)).shuffled(using: &generator)
     let iterations: Int = max(11, 2_000_000 / size)
     for comparison in IdentifiedComparison.all {
         var expected: IdentifiedSet<Record> = IdentifiedSet(records)
