@@ -46,33 +46,13 @@ public struct Permutation: Hashable, Sendable {
     /// The cycles split out of the line, each starting with its largest offset.
     var cycles: [[Int]] {
         var cycles: [[Int]] = []
-        forEachCycle { cycles.append($0) }
+        for offset in cycle {
+            if let start: Int = cycles.last?.first, offset < start {
+                cycles[cycles.count - 1].append(offset)
+            } else {
+                cycles.append([offset])
+            }
+        }
         return cycles
-    }
-
-    /// Calls the closure with each cycle in order, each starting with its largest offset, where the element at each offset moves to the next offset and the last moves to the first.
-    @inlinable public func forEachCycle(_ body: ([Int]) throws -> Void) rethrows {
-        var current: [Int] = []
-        for offset in cycle {
-            if let start: Int = current.first, offset < start {
-                current.append(offset)
-            } else {
-                if !current.isEmpty { try body(current) }
-                current = [offset]
-            }
-        }
-        if !current.isEmpty { try body(current) }
-    }
-
-    /// Calls the closure with each pair of offsets to swap, in order, deriving them in one pass with no allocation.
-    @inlinable func forEachSwap(_ body: (Int, Int) throws -> Void) rethrows {
-        var start: Int = -1
-        for offset in cycle {
-            if offset > start {
-                start = offset
-            } else {
-                try body(start, offset)
-            }
-        }
     }
 }
