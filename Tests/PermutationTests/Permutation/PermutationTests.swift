@@ -39,7 +39,7 @@ import Testing
         deck.apply(permutation)
         var rotated: [String] = original
         permutation.forEachCycle { cycle in
-            let last: Int = rotated[cycle[cycle.count - 1]]
+            let last: String = rotated[cycle[cycle.count - 1]]
             for position in stride(from: cycle.count - 1, to: 0, by: -1) {
                 rotated[cycle[position]] = rotated[cycle[position - 1]]
             }
