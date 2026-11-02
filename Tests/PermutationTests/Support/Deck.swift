@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Support/Deck.swift
-// dependencies: [PermutableCollection.swift]
+// dependencies: [Collections/PermutableCollection.swift]
 
 @testable import Permutation
 

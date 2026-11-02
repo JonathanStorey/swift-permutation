@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: main.swift
-// dependencies: [PermutableCollection.swift]
+// dependencies: [Collections/PermutableCollection.swift]
 
 import Permutation
 

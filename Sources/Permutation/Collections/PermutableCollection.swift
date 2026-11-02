@@ -1,5 +1,5 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
-// path: PermutableCollection.swift
+// path: Collections/PermutableCollection.swift
 // dependencies: [Permutation+Move.swift, Permutation+Reverse.swift, Permutation+Rotate.swift, Permutation+Shuffle.swift, Permutation+Sources.swift, Permutation.swift]
 
 /// A collection that reorders its elements only by swapping them, so every reorder passes through `swapAt(_:_:)`.
