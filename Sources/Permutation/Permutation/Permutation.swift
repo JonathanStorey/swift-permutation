@@ -1,5 +1,5 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
-// path: Permutation.swift
+// path: Permutation/Permutation.swift
 // dependencies: []
 
 /// A reordering stored as cycles in Foata's single-line notation, leaving offsets outside the cycles in place so it applies to any collection long enough.

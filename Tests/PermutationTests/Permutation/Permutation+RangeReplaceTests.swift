@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
-// path: Permutation+RangeReplaceTests.swift
-// dependencies: [Permutation+RangeReplace.swift, Permutation.swift]
+// path: Permutation/Permutation+RangeReplaceTests.swift
+// dependencies: [Permutation/Permutation+RangeReplace.swift, Permutation/Permutation.swift]
 
 import Testing
 @testable import Permutation

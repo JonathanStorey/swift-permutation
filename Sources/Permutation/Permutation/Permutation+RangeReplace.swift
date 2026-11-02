@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
-// path: Permutation+RangeReplace.swift
-// dependencies: [Permutation.swift]
+// path: Permutation/Permutation+RangeReplace.swift
+// dependencies: [Permutation/Permutation.swift]
 
 extension Permutation {
 

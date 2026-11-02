@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
-// path: Permutation+Stride.swift
-// dependencies: [Permutation.swift]
+// path: Permutation/Permutation+Stride.swift
+// dependencies: [Permutation/Permutation.swift]
 
 extension Permutation {
 
