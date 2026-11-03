@@ -17,7 +17,7 @@ import Testing
         #expect(set.elements.count == set.count)
         #expect(set.offsets.count == set.count)
         #expect(set.offsets.sorted() == Array(set.elements.indices))
-        #expect(set.offsets.table.count { $0 >= 0 } == set.count)
+        #expect(set.offsets.table.count { $0 != Offsets.vacant } == set.count)
         for (position, player) in set.enumerated() {
             #expect(set[id: player.id] == player)
             #expect(set.firstIndex(id: player.id) == position)
@@ -148,7 +148,7 @@ import Testing
     @Test func reordersLeaveStorageInPlace() {
         var set: IdentifiedSet<Player> = IdentifiedSet([ann, bob, cy])
         let storage: [Player] = set.elements
-        let table: [Int32] = set.offsets.table
+        let table: [UInt64] = set.offsets.table
         set.sort { $0.name > $1.name }
         #expect(Array(set) == [cy, bob, ann])
         #expect(set.elements == storage)

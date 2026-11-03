@@ -4,13 +4,13 @@
 
 /// The order and hash index of a keyed collection whose elements stay where they were stored.
 ///
-/// As a collection, `Offsets` is the storage offset of the element at each position, so reordering it reorders its owner without moving an element. Behind it sits an open-addressing hash table of storage offsets, which a reorder never touches.
+/// As a collection, `Offsets` is the storage offset of the element at each position, so reordering it reorders its owner without moving an element. Behind it sits an open-addressing hash table of storage offsets, which a reorder never touches. Each bucket also keeps 32 bits of its key's hash, so a probe loads an element only when those bits match, and deletion and growth never rehash.
 ///
 /// `Offsets` never stores an element or a key. Every call that reads or changes membership takes the owner's elements and a key function, which must be the same on every call.
 @usableFromInline struct Offsets {
 
-    /// Storage offsets placed by the hash of their element's key with linear probing, where -1 marks an empty bucket. Its count is zero or a power of two.
-    @usableFromInline var table: [Int32]
+    /// Buckets placed by the hash of their element's key with linear probing. Each packs the low 32 bits of the hash above the storage offset, and `Offsets.vacant` marks an empty bucket. Its count is zero or a power of two.
+    @usableFromInline var table: [UInt64]
 
     /// The storage offset at each position.
     @usableFromInline var sources: [Int32]
@@ -75,7 +75,7 @@ extension Offsets {
     /// The storage offset of the element with the key, or nil when there is none.
     @inlinable func offset<Element, Key: Hashable>(of key: Key, in elements: [Element], by keyOf: (Element) -> Key) -> Int? {
         guard case .found(let bucket) = probe(for: key, hash: key.hashValue, in: elements, by: keyOf) else { return nil }
-        return Int(table[bucket])
+        return Offsets.offset(in: table[bucket])
     }
 
     /// The position showing the storage offset, in O(n).
@@ -92,15 +92,16 @@ extension Offsets {
     @inlinable mutating func insert<Element, Key: Hashable>(_ element: Element, at position: Int, into elements: inout [Element], by keyOf: (Element) -> Key) -> Bool {
         precondition(position >= startIndex && position <= endIndex, "Index out of range.")
         let key: Key = keyOf(element)
-        let probed: Probe = probe(for: key, hash: key.hashValue, in: elements, by: keyOf)
-        guard case .empty(let bucket) = probed else { return false }
+        let hash: Int = key.hashValue
+        guard case .empty(let bucket) = probe(for: key, hash: hash, in: elements, by: keyOf) else { return false }
         precondition(elements.count < Int(Int32.max), "Offsets holds at most Int32.max elements.")
+        let offset: Int = elements.count
         elements.append(element)
-        let offset: Int = elements.count - 1
         if elements.count * 4 > table.count * 3 {
-            rebuild(for: elements, by: keyOf)
+            grow(toHold: elements.count)
+            place(Offsets.bucket(hash: hash, offset: offset))
         } else {
-            table[bucket] = Int32(truncatingIfNeeded: offset)
+            table[bucket] = Offsets.bucket(hash: hash, offset: offset)
         }
         sources.insert(Int32(truncatingIfNeeded: offset), at: position)
         return true
@@ -108,7 +109,7 @@ extension Offsets {
 
     /// Appends each element whose key is not already present, sizing the table once for the whole sequence.
     @inlinable mutating func append<Element, Key: Hashable>(contentsOf newElements: some Sequence<Element>, into elements: inout [Element], by keyOf: (Element) -> Key) {
-        reserveCapacity(count + newElements.underestimatedCount, for: elements, by: keyOf)
+        reserveCapacity(count + newElements.underestimatedCount)
         for element in newElements {
             _ = insert(element, at: endIndex, into: &elements, by: keyOf)
         }
@@ -118,10 +119,11 @@ extension Offsets {
     @inlinable mutating func remove<Element, Key: Hashable>(at position: Int, from elements: inout [Element], by keyOf: (Element) -> Key) -> Element {
         let offset: Int32 = sources[position]
         let removed: Element = elements[Int(offset)]
-        empty(bucket(holding: Int(offset), hash: keyOf(removed).hashValue), in: elements, by: keyOf)
+        empty(bucket(holding: Int(offset), hash: keyOf(removed).hashValue))
         let last: Int32 = Int32(truncatingIfNeeded: elements.count - 1)
         if offset != last {
-            table[bucket(holding: Int(last), hash: keyOf(elements[Int(last)]).hashValue)] = offset
+            let lastHash: Int = keyOf(elements[Int(last)]).hashValue
+            table[bucket(holding: Int(last), hash: lastHash)] = Offsets.bucket(hash: lastHash, offset: Int(offset))
             for earlier in 0..<position where sources[earlier] == last {
                 sources[earlier] = offset
                 break
@@ -147,8 +149,10 @@ extension Offsets {
         }
         guard kept.count < count else { return }
         elements = kept
-        sources = (0..<Int32(truncatingIfNeeded: kept.count)).map { $0 }
-        rebuild(for: elements, by: keyOf)
+        sources = Array(0..<Int32(truncatingIfNeeded: kept.count))
+        table = []
+        grow(toHold: elements.count)
+        for offset in elements.indices { place(Offsets.bucket(hash: keyOf(elements[offset]).hashValue, offset: offset)) }
     }
 
     /// Replaces the element at the storage offset and returns the old one, re-indexing it when its key changes, which requires that no other element has the new key.
@@ -164,16 +168,15 @@ extension Offsets {
         guard case .empty = probe(for: newKey, hash: newHash, in: elements, by: keyOf) else {
             preconditionFailure("Another element already has this key.")
         }
-        empty(bucket(holding: offset, hash: oldKey.hashValue), in: elements, by: keyOf)
+        empty(bucket(holding: offset, hash: oldKey.hashValue))
         elements[offset] = element
-        place(offset, hash: newHash)
+        place(Offsets.bucket(hash: newHash, offset: offset))
         return old
     }
 
     /// Sizes the table to hold the count without growing.
-    @inlinable mutating func reserveCapacity<Element, Key: Hashable>(_ minimumCount: Int, for elements: [Element], by keyOf: (Element) -> Key) {
-        guard minimumCount * 4 > table.count * 3 else { return }
-        rebuild(for: elements, by: keyOf, capacity: minimumCount)
+    @inlinable mutating func reserveCapacity(_ minimumCount: Int) {
+        grow(toHold: minimumCount)
     }
 
     /// Removes every offset and releases the table.
@@ -193,57 +196,77 @@ extension Offsets {
         case empty(Int)
     }
 
+    /// The value of an empty bucket, which no real bucket can equal because offsets stay below `Int32.max`.
+    @inlinable static var vacant: UInt64 { .max }
+
+    /// A bucket packing the low 32 bits of the hash above the storage offset.
+    @inlinable static func bucket(hash: Int, offset: Int) -> UInt64 {
+        UInt64(UInt32(truncatingIfNeeded: hash)) << 32 | UInt64(UInt32(truncatingIfNeeded: offset))
+    }
+
+    /// The storage offset kept in a bucket.
+    @inlinable static func offset(in bucket: UInt64) -> Int {
+        Int(UInt32(truncatingIfNeeded: bucket))
+    }
+
+    /// The hash bits kept in a bucket, which also decide its home.
+    @inlinable static func fragment(in bucket: UInt64) -> Int {
+        Int(bucket >> 32)
+    }
+
     /// The bitmask that wraps a hash or bucket into the table.
     @inlinable var mask: Int { table.count - 1 }
 
-    /// Probes from the key's hash until it finds the key or an empty bucket. An empty table reports an empty bucket at 0.
+    /// Probes from the key's home until it finds the key or an empty bucket, loading an element only when the stored hash bits match. An empty table reports an empty bucket at 0.
     @inlinable func probe<Element, Key: Hashable>(for key: Key, hash: Int, in elements: [Element], by keyOf: (Element) -> Key) -> Probe {
         guard !table.isEmpty else { return .empty(0) }
-        var bucket: Int = hash & mask
+        let fragment: Int = Int(UInt32(truncatingIfNeeded: hash))
+        var index: Int = fragment & mask
         while true {
-            let offset: Int32 = table[bucket]
-            if offset < 0 { return .empty(bucket) }
-            if keyOf(elements[Int(offset)]) == key { return .found(bucket) }
-            bucket = (bucket + 1) & mask
+            let bucket: UInt64 = table[index]
+            if bucket == Offsets.vacant { return .empty(index) }
+            if Offsets.fragment(in: bucket) == fragment, keyOf(elements[Offsets.offset(in: bucket)]) == key { return .found(index) }
+            index = (index + 1) & mask
         }
     }
 
-    /// The bucket holding the storage offset, found by probing from its element's hash.
+    /// The index of the bucket holding the storage offset, found by probing from its element's hash.
     @inlinable func bucket(holding offset: Int, hash: Int) -> Int {
-        let target: Int32 = Int32(truncatingIfNeeded: offset)
-        var bucket: Int = hash & mask
-        while table[bucket] != target { bucket = (bucket + 1) & mask }
-        return bucket
+        let target: UInt64 = Offsets.bucket(hash: hash, offset: offset)
+        var index: Int = Offsets.fragment(in: target) & mask
+        while table[index] != target { index = (index + 1) & mask }
+        return index
     }
 
-    /// Puts the storage offset in the first empty bucket probing from the hash.
-    @inlinable mutating func place(_ offset: Int, hash: Int) {
-        var bucket: Int = hash & mask
-        while table[bucket] >= 0 { bucket = (bucket + 1) & mask }
-        table[bucket] = Int32(truncatingIfNeeded: offset)
+    /// Puts the bucket in the first empty slot probing from its home.
+    @inlinable mutating func place(_ bucket: UInt64) {
+        var index: Int = Offsets.fragment(in: bucket) & mask
+        while table[index] != Offsets.vacant { index = (index + 1) & mask }
+        table[index] = bucket
     }
 
-    /// Empties the bucket and shifts later entries of the same probe run back, so no lookup stops early at the gap.
-    @inlinable mutating func empty<Element, Key: Hashable>(_ bucket: Int, in elements: [Element], by keyOf: (Element) -> Key) {
-        var hole: Int = bucket
+    /// Empties the slot and shifts later buckets of the same probe run back, so no lookup stops early at the gap. Each bucket's home comes from its stored hash bits, so nothing is rehashed.
+    @inlinable mutating func empty(_ index: Int) {
+        var hole: Int = index
         var next: Int = (hole + 1) & mask
-        while table[next] >= 0 {
-            let ideal: Int = keyOf(elements[Int(table[next])]).hashValue & mask
-            if (next - ideal) & mask >= (next - hole) & mask {
+        while table[next] != Offsets.vacant {
+            let home: Int = Offsets.fragment(in: table[next]) & mask
+            if (next - home) & mask >= (next - hole) & mask {
                 table[hole] = table[next]
                 hole = next
             }
             next = (next + 1) & mask
         }
-        table[hole] = -1
+        table[hole] = Offsets.vacant
     }
 
-    /// Rebuilds the table at the smallest power of two that keeps the larger of the capacity and the element count at most three-quarters full.
-    @inlinable mutating func rebuild<Element, Key: Hashable>(for elements: [Element], by keyOf: (Element) -> Key, capacity minimumCount: Int = 0) {
-        let count: Int = Swift.max(elements.count, minimumCount)
+    /// Grows the table to the smallest power of two that keeps the count at most three-quarters full, re-placing buckets from their stored hash bits.
+    @inlinable mutating func grow(toHold count: Int) {
         var capacity: Int = 8
         while count * 4 > capacity * 3 { capacity *= 2 }
-        table = Array(repeating: -1, count: capacity)
-        for offset in elements.indices { place(offset, hash: keyOf(elements[offset]).hashValue) }
+        guard capacity > table.count else { return }
+        let old: [UInt64] = table
+        table = Array(repeating: Offsets.vacant, count: capacity)
+        for bucket in old where bucket != Offsets.vacant { place(bucket) }
     }
 }

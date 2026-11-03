@@ -22,7 +22,7 @@ import Testing
         #expect(offsets.map { elements[$0] } == order)
         #expect(offsets.sorted() == Array(elements.indices))
         #expect(offsets.table.isEmpty || offsets.table.count & (offsets.table.count - 1) == 0)
-        #expect(offsets.table.count { $0 >= 0 } == elements.count)
+        #expect(offsets.table.count { $0 != Offsets.vacant } == elements.count)
         #expect(elements.count * 4 <= offsets.table.count * 3 || elements.isEmpty)
         for (offset, element) in elements.enumerated() {
             #expect(offsets.offset(of: element, in: elements, by: { $0 }) == offset)
@@ -69,7 +69,7 @@ import Testing
     @Test func reserveCapacityPreventsGrowth() {
         var offsets: Offsets = Offsets()
         var elements: [Int] = []
-        offsets.reserveCapacity(100, for: elements, by: { $0 })
+        offsets.reserveCapacity(100)
         let capacity: Int = offsets.table.count
         for value in 0..<100 { _ = offsets.insert(value, at: 0, into: &elements, by: { $0 }) }
         #expect(offsets.table.count == capacity)
@@ -110,7 +110,7 @@ import Testing
             var elements: [String] = []
             for value in 0..<count { _ = offsets.insert(String(value), at: value, into: &elements, by: { $0 }) }
             let permutation: Permutation = Permutation(shuffles: count, using: &generator)
-            let table: [Int32] = offsets.table
+            let table: [UInt64] = offsets.table
             offsets.apply(permutation)
             var deck: Deck = Deck(cards: elements)
             deck.apply(permutation)
