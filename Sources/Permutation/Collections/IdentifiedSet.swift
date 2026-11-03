@@ -121,6 +121,42 @@ public extension IdentifiedSet {
     @inlinable @discardableResult mutating func insert(_ element: Element, at index: Int) -> Bool {
         offsets.insert(element, at: index, into: &elements, by: Self.id)
     }
+
+    /// Appends every element, or none of them when any id is already present or repeats within the batch, returning whether they were added.
+    @inlinable @discardableResult mutating func append(contentsOf newElements: some Sequence<Element>) -> Bool {
+        insert(contentsOf: newElements, at: endIndex)
+    }
+
+    /// Inserts every element as one block at the position, or none of them when any id is already present or repeats within the batch, returning whether they were added.
+    @inlinable @discardableResult mutating func insert(contentsOf newElements: some Sequence<Element>, at index: Int) -> Bool {
+        precondition(index >= startIndex && index <= endIndex, "Index out of range.")
+        let batch: [Element] = Array(newElements)
+        var batchIDs: Set<Element.ID> = Set(minimumCapacity: batch.count)
+        for element in batch {
+            guard !contains(id: element.id), batchIDs.insert(element.id).inserted else { return false }
+        }
+        insertBlock(batch, at: index)
+        return true
+    }
+
+    /// Inserts elements whose ids are all new and distinct as one block at the position, appending them first and then moving the block in a single shift.
+    @inlinable internal mutating func insertBlock(_ batch: [Element], at index: Int) {
+        guard !batch.isEmpty else { return }
+        let start: Int = endIndex
+        offsets.reserveCapacity(count + batch.count, for: elements, by: Self.id)
+        for element in batch { offsets.insert(element, at: offsets.endIndex, into: &elements, by: Self.id) }
+        guard index < start else { return }
+        let block: ArraySlice<Int32> = offsets.sources[start...]
+        offsets.sources.removeSubrange(start...)
+        offsets.sources.insert(contentsOf: block, at: index)
+    }
+
+    /// Reserves room for the count of elements, so adding up to it neither copies storage nor rebuilds the id index.
+    @inlinable mutating func reserveCapacity(_ minimumCapacity: Int) {
+        elements.reserveCapacity(minimumCapacity)
+        offsets.sources.reserveCapacity(minimumCapacity)
+        offsets.reserveCapacity(minimumCapacity, for: elements, by: Self.id)
+    }
 }
 
 // MARK: - Replacing
@@ -156,6 +192,28 @@ public extension IdentifiedSet {
         insert(element, at: index)
         return nil
     }
+
+    /// Replaces each element with an id already present in place, and appends the rest in order. When an id repeats within the batch, the later element wins.
+    @inlinable mutating func update(orAppend newElements: some Sequence<Element>) {
+        update(orInsert: newElements, at: endIndex)
+    }
+
+    /// Replaces each element with an id already present in place, and inserts the rest in order as one block at the position. When an id repeats within the batch, the later element wins.
+    @inlinable mutating func update(orInsert newElements: some Sequence<Element>, at index: Int) {
+        precondition(index >= startIndex && index <= endIndex, "Index out of range.")
+        var added: [Element] = []
+        var addedPositions: [Element.ID: Int] = [:]
+        for element in newElements {
+            if replace(element) != nil { continue }
+            if let position: Int = addedPositions[element.id] {
+                added[position] = element
+            } else {
+                addedPositions[element.id] = added.count
+                added.append(element)
+            }
+        }
+        insertBlock(added, at: index)
+    }
 }
 
 // MARK: - Removing
@@ -177,10 +235,34 @@ public extension IdentifiedSet {
         try offsets.removeAll(from: &elements, by: Self.id, where: shouldBeRemoved)
     }
 
+    /// Removes the elements at the positions, such as the offsets SwiftUI's `onDelete` passes, in one pass that also stores the rest in their shown order.
+    @inlinable mutating func remove(atOffsets positions: some Sequence<Int>) {
+        let doomed: Set<Element.ID> = Set(positions.map { self[$0].id })
+        guard !doomed.isEmpty else { return }
+        removeAll { doomed.contains($0.id) }
+    }
+
     /// Removes every element.
     @inlinable mutating func removeAll() {
         elements = []
         offsets.removeAll()
+    }
+}
+
+// MARK: - Views
+
+public extension IdentifiedSet {
+
+    /// The ids in order, read through the elements without copying them.
+    @inlinable var ids: some RandomAccessCollection<Element.ID> {
+        lazy.map(\.id)
+    }
+
+    /// The elements that match, in order, as a set with its own id index.
+    @inlinable func filter(_ isIncluded: (Element) throws -> Bool) rethrows -> IdentifiedSet {
+        var kept: IdentifiedSet = self
+        try kept.removeAll { try !isIncluded($0) }
+        return kept
     }
 }
 
