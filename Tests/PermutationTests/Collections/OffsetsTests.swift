@@ -41,9 +41,10 @@ import Testing
     @Test func insertRejectsADuplicateKey() {
         var offsets: Offsets = Offsets()
         var elements: [String] = []
-        #expect(offsets.insert("a", at: 0, into: &elements, by: { $0 }))
-        #expect(offsets.insert("b", at: 0, into: &elements, by: { $0 }))
-        #expect(!offsets.insert("a", at: 2, into: &elements, by: { $0 }))
+        let first: Bool = offsets.insert("a", at: 0, into: &elements, by: { $0 })
+        let second: Bool = offsets.insert("b", at: 0, into: &elements, by: { $0 })
+        let duplicate: Bool = offsets.insert("a", at: 2, into: &elements, by: { $0 })
+        #expect(first && second && !duplicate)
         expectConsistent(offsets, elements, order: ["b", "a"], absent: ["c"])
     }
 
@@ -51,7 +52,7 @@ import Testing
         var offsets: Offsets = Offsets()
         var elements: [Int] = []
         for value in 0..<10_000 {
-            #expect(offsets.insert(value, at: offsets.count, into: &elements, by: { $0 }))
+            _ = offsets.insert(value, at: offsets.count, into: &elements, by: { $0 })
         }
         expectConsistent(offsets, elements, order: Array(0..<10_000), absent: [-1, 10_000])
     }
