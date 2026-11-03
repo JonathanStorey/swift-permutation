@@ -12,15 +12,9 @@ concurrency:
 
 jobs:
   test:
-    runs-on: macos-26
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Select the newest Xcode
-        run: |
-          ls -d /Applications/Xcode*.app
-          newest=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
-          sudo xcode-select -s "$newest"
-          xcodebuild -version
       - name: Show toolchain
         run: swift --version
       - name: Build
