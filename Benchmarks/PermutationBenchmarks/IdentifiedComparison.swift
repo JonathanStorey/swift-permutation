@@ -74,6 +74,20 @@ struct IdentifiedComparison {
                 let ids: [UUID] = stride(from: 0, to: array.count, by: step).map { array[$0].id }
                 for id in ids { array.remove(at: array.firstIndex { $0.id == id }!) }
             }),
+            IdentifiedComparison("100 appends", reindexes: false, identified: { set in
+                for record in Record.extras { set.append(record) }
+            }, array: { array in
+                for record in Record.extras { array.append(record) }
+            }),
+            IdentifiedComparison("100 lookups of missing ids", reindexes: false, identified: { set in
+                var found: Int = 0
+                for id in Record.missingIDs where set.contains(id: id) { found += 1 }
+                blackHole(found)
+            }, array: { array in
+                var found: Int = 0
+                for id in Record.missingIDs where array.contains(where: { $0.id == id }) { found += 1 }
+                blackHole(found)
+            }),
             IdentifiedComparison("100 lookups by id", reindexes: false, identified: { set in
                 let step: Int = max(1, set.count / 100)
                 var total: Int = 0

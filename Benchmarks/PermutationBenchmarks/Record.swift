@@ -20,3 +20,12 @@ struct Record: Identifiable {
         payload = SIMD8(repeating: Int64(rank))
     }
 }
+
+extension Record {
+
+    /// Records made once, outside any timed region, for benchmarks that add new records.
+    static let extras: [Record] = (0..<100).map { Record(rank: -1 - $0) }
+
+    /// Ids that no benchmark collection contains.
+    static let missingIDs: [UUID] = (0..<100).map { _ in UUID() }
+}
