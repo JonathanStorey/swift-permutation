@@ -19,11 +19,26 @@ public struct IdentifiedSet<Element: Identifiable> {
         offsets = Offsets()
     }
 
-    /// Creates a set from a sequence, keeping the first element with each id and dropping later ones.
-    @inlinable public init(_ elements: some Sequence<Element>) {
-        self.elements = Array(elements)
+    /// Creates a set from a sequence, settling each repeated id with the uniquing rule, which by default keeps the first element.
+    ///
+    /// An element that repeats an id never takes a new position: the element the rule returns stays where that id first appeared. With `.keepFirst`, a whole array without repeated ids is adopted without copying it.
+    @inlinable public init(_ elements: some Sequence<Element>, uniquingIDsWith uniquing: Uniquing = .keepFirst) {
+        self.elements = []
         offsets = Offsets()
-        offsets.index(&self.elements, by: Self.id)
+        guard let merge = uniquing.merge else {
+            self.elements = Array(elements)
+            offsets.index(&self.elements, by: Self.id)
+            return
+        }
+        for element in elements {
+            if let offset: Int = offsets.offset(of: element.id, in: self.elements, by: Self.id) {
+                let merged: Element = merge(self.elements[offset], element)
+                precondition(merged.id == element.id, "A uniquing rule must return an element with the same id.")
+                self.elements[offset] = merged
+            } else {
+                _ = offsets.insert(element, at: offsets.endIndex, into: &self.elements, by: Self.id)
+            }
+        }
     }
 
     /// Reads an element's id, as a plain function so that every lookup calls it directly instead of through a key path.
