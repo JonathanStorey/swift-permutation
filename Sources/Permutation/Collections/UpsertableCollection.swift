@@ -11,8 +11,8 @@
 /// - `update` replaces what is present and adds what is new. A batch applies its elements in order, so when one repeats, the later element wins.
 /// - `remove` deletes by position.
 ///
-/// Positions use the collection's own `Index`, which may be any type, such as a sort key. The defaults count positions as offsets from `startIndex`, which random access makes O(1) to convert.
-public protocol UpsertableCollection: PermutableCollection, RandomAccessCollection {
+/// Positions use the collection's own `Index`, which may be any type, such as a sort key. The defaults count positions as offsets from `startIndex`, which is O(1) to convert in a random-access collection and O(n) otherwise, so a type without random access may want to override the batch operations.
+public protocol UpsertableCollection: PermutableCollection {
 
     /// Inserts the element at the position unless it is already present, returning whether it was added.
     @discardableResult mutating func insert(_ element: Element, at index: Index) -> Bool
