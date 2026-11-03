@@ -73,6 +73,42 @@ import Testing
         expectConsistent(set)
     }
 
+    @Test func appendContentsOfAddsTheWholeBatch() {
+        var set: IdentifiedSet<Player> = [ann]
+        let added: Bool = set.append(contentsOf: [bob, cy])
+        #expect(added)
+        #expect(Array(set) == [ann, bob, cy])
+        expectConsistent(set)
+    }
+
+    @Test func appendContentsOfAddsNothingWhenAnIDIsPresent() {
+        var set: IdentifiedSet<Player> = [ann, bob]
+        let added: Bool = set.append(contentsOf: [cy, Player(id: 2, name: "Rob")])
+        #expect(!added)
+        #expect(Array(set) == [ann, bob])
+        expectConsistent(set)
+    }
+
+    @Test func appendContentsOfAddsNothingWhenTheBatchRepeatsAnID() {
+        var set: IdentifiedSet<Player> = [ann]
+        let added: Bool = set.append(contentsOf: [bob, cy, Player(id: 3, name: "Again")])
+        #expect(!added)
+        #expect(Array(set) == [ann])
+        expectConsistent(set)
+    }
+
+    @Test func insertContentsOfPlacesTheBlockAtThePosition() {
+        var set: IdentifiedSet<Player> = [ann, bob]
+        let dee: Player = Player(id: 4, name: "Dee")
+        let added: Bool = set.insert(contentsOf: [cy, dee], at: 1)
+        #expect(added)
+        #expect(Array(set) == [ann, cy, dee, bob])
+        expectConsistent(set)
+        let addedNothing: Bool = set.insert(contentsOf: [Player](), at: 0)
+        #expect(addedNothing)
+        #expect(Array(set) == [ann, cy, dee, bob])
+    }
+
     // MARK: Replacing
 
     @Test func replaceKeepsThePosition() {
@@ -131,6 +167,25 @@ import Testing
         expectConsistent(set)
     }
 
+    @Test func batchUpdateReplacesInPlaceAndAppendsTheRest() {
+        var set: IdentifiedSet<Player> = [ann, bob]
+        let rob: Player = Player(id: 2, name: "Rob")
+        let dee: Player = Player(id: 4, name: "Dee")
+        let deeLater: Player = Player(id: 4, name: "Dee Later")
+        set.update(orAppend: [rob, dee, cy, deeLater])
+        #expect(Array(set) == [ann, rob, deeLater, cy])
+        expectConsistent(set)
+    }
+
+    @Test func batchUpdateInsertsNewElementsAsABlock() {
+        var set: IdentifiedSet<Player> = [ann, bob]
+        let annie: Player = Player(id: 1, name: "Annie")
+        let dee: Player = Player(id: 4, name: "Dee")
+        set.update(orInsert: [dee, annie, cy], at: 1)
+        #expect(Array(set) == [annie, dee, cy, bob])
+        expectConsistent(set)
+    }
+
     // MARK: Removing
 
     @Test func removeFillsTheGapAndKeepsLookupsConsistent() {
@@ -153,6 +208,41 @@ import Testing
         set.reverse()
         set.removeAll { $0.id.isMultiple(of: 2) }
         #expect(set.map(\.id) == [9, 7, 5, 3, 1])
+        expectConsistent(set)
+    }
+
+    @Test func removeAtOffsetsRemovesThosePositions() {
+        var set: IdentifiedSet<Player> = [ann, bob, cy, Player(id: 4, name: "Dee")]
+        set.remove(atOffsets: [3, 1])
+        #expect(Array(set) == [ann, cy])
+        expectConsistent(set)
+        set.remove(atOffsets: [Int]())
+        #expect(Array(set) == [ann, cy])
+    }
+
+    @Test func filterKeepsAnIdentifiedSet() {
+        let set: IdentifiedSet<Player> = [ann, bob, cy]
+        let kept: IdentifiedSet<Player> = set.filter { $0.id != 2 }
+        #expect(Array(kept) == [ann, cy])
+        #expect(kept.contains(id: 3) && !kept.contains(id: 2))
+        expectConsistent(kept)
+        #expect(Array(set) == [ann, bob, cy])
+    }
+
+    @Test func idsFollowTheOrder() {
+        var set: IdentifiedSet<Player> = [ann, bob, cy]
+        set.reverse()
+        #expect(Array(set.ids) == [3, 2, 1])
+    }
+
+    @Test func reserveCapacityKeepsContentsAndIndex() {
+        var set: IdentifiedSet<Player> = [ann, bob]
+        set.reserveCapacity(1_000)
+        #expect(set.offsets.table.count >= 1_334)
+        let table: Int = set.offsets.table.count
+        for id in 10..<900 { set.append(Player(id: id, name: "P\(id)")) }
+        #expect(set.offsets.table.count == table)
+        #expect(set.count == 892)
         expectConsistent(set)
     }
 
