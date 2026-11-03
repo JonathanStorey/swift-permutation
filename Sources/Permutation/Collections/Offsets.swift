@@ -114,6 +114,39 @@ extension Offsets {
         }
     }
 
+    /// Indexes elements already in storage, showing them in stored order and dropping any whose key repeats an earlier one, so a whole array is adopted without copying it.
+    @inlinable mutating func index<Element, Key: Hashable>(_ elements: inout [Element], by keyOf: (Element) -> Key) {
+        precondition(elements.count < Int(Int32.max), "Offsets holds at most Int32.max elements.")
+        var capacity: Int = 8
+        while elements.count * 4 > capacity * 3 { capacity *= 2 }
+        table = Array(repeating: -1, count: capacity)
+        var duplicates: [Int] = []
+        for offset in elements.indices {
+            let key: Key = keyOf(elements[offset])
+            switch probe(for: key, hash: key.hashValue, in: elements, by: keyOf) {
+            case .found:
+                duplicates.append(offset)
+            case .empty(let bucket):
+                table[bucket] = Int32(truncatingIfNeeded: offset)
+            }
+        }
+        if !duplicates.isEmpty {
+            var kept: [Element] = []
+            kept.reserveCapacity(elements.count - duplicates.count)
+            var next: Int = 0
+            for offset in elements.indices {
+                if next < duplicates.count && duplicates[next] == offset {
+                    next += 1
+                } else {
+                    kept.append(elements[offset])
+                }
+            }
+            elements = kept
+            rebuild(for: elements, by: keyOf)
+        }
+        sources = (0..<Int32(truncatingIfNeeded: elements.count)).map { $0 }
+    }
+
     /// Removes and returns the element at the position, moving the last stored element into its storage offset.
     @inlinable mutating func remove<Element, Key: Hashable>(at position: Int, from elements: inout [Element], by keyOf: (Element) -> Key) -> Element {
         let offset: Int32 = sources[position]

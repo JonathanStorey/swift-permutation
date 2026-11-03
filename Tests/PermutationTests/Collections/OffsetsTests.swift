@@ -119,6 +119,24 @@ import Testing
         }
     }
 
+    @Test func indexAdoptsStoredElementsAndDropsRepeatedKeys() {
+        var offsets: Offsets = Offsets()
+        var elements: [Clumped] = [4, 1, 7, 1, 3, 4, 9, 0, 9].map(Clumped.init(value:))
+        offsets.index(&elements, by: { $0 })
+        let order: [Clumped] = [4, 1, 7, 3, 9, 0].map(Clumped.init(value:))
+        #expect(elements == order)
+        expectConsistent(offsets, elements, order: order, absent: [Clumped(value: 2), Clumped(value: 5)])
+    }
+
+    @Test func indexOfDistinctElementsKeepsTheirStorage() {
+        var offsets: Offsets = Offsets()
+        var elements: [Clumped] = (0..<50).map(Clumped.init(value:))
+        offsets.index(&elements, by: { $0 })
+        expectConsistent(offsets, elements, order: (0..<50).map(Clumped.init(value:)), absent: [Clumped(value: 50)])
+        #expect(offsets.insert(Clumped(value: 50), at: 0, into: &elements, by: { $0 }))
+        #expect(!offsets.insert(Clumped(value: 7), at: 0, into: &elements, by: { $0 }))
+    }
+
     @Test func replaceReindexesAChangedKey() {
         var offsets: Offsets = Offsets()
         var elements: [Clumped] = []

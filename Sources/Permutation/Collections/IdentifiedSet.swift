@@ -21,8 +21,14 @@ public struct IdentifiedSet<Element: Identifiable> {
 
     /// Creates a set from a sequence, keeping the first element with each id and dropping later ones.
     @inlinable public init(_ elements: some Sequence<Element>) {
-        self.init()
-        offsets.append(contentsOf: elements, into: &self.elements, by: \.id)
+        self.elements = Array(elements)
+        offsets = Offsets()
+        offsets.index(&self.elements, by: Self.id)
+    }
+
+    /// Reads an element's id, as a plain function so that every lookup calls it directly instead of through a key path.
+    @inlinable static func id(_ element: Element) -> Element.ID {
+        element.id
     }
 }
 
@@ -64,7 +70,7 @@ public extension IdentifiedSet {
     /// Setting a value replaces the element in place or appends it when the id is new, and setting nil removes it. The new value must keep the id it is stored under.
     subscript(id id: Element.ID) -> Element? {
         @inlinable get {
-            offsets.offset(of: id, in: elements, by: \.id).map { elements[$0] }
+            offsets.offset(of: id, in: elements, by: Self.id).map { elements[$0] }
         }
         set {
             guard let newValue else {
@@ -78,12 +84,12 @@ public extension IdentifiedSet {
 
     /// Returns whether an element has the id, in O(1).
     @inlinable func contains(id: Element.ID) -> Bool {
-        offsets.offset(of: id, in: elements, by: \.id) != nil
+        offsets.offset(of: id, in: elements, by: Self.id) != nil
     }
 
     /// The position of the element with the id, or nil when there is none, in O(n).
     @inlinable func firstIndex(id: Element.ID) -> Int? {
-        offsets.offset(of: id, in: elements, by: \.id).flatMap { offsets.position(ofOffset: $0) }
+        offsets.offset(of: id, in: elements, by: Self.id).flatMap { offsets.position(ofOffset: $0) }
     }
 }
 
@@ -98,7 +104,7 @@ public extension IdentifiedSet {
 
     /// Inserts the element at the position unless its id is already present, returning whether it was added.
     @inlinable @discardableResult mutating func insert(_ element: Element, at index: Int) -> Bool {
-        offsets.insert(element, at: index, into: &elements, by: \.id)
+        offsets.insert(element, at: index, into: &elements, by: Self.id)
     }
 }
 
@@ -108,7 +114,7 @@ public extension IdentifiedSet {
 
     /// Replaces the element with the same id in place, returning the old element, or returns nil and changes nothing when the id is absent.
     @inlinable @discardableResult mutating func replace(_ element: Element) -> Element? {
-        guard let offset: Int = offsets.offset(of: element.id, in: elements, by: \.id) else { return nil }
+        guard let offset: Int = offsets.offset(of: element.id, in: elements, by: Self.id) else { return nil }
         let old: Element = elements[offset]
         elements[offset] = element
         return old
@@ -116,7 +122,7 @@ public extension IdentifiedSet {
 
     /// Replaces the element at the position, returning the old element, and may change the id as long as no other element has the new one.
     @inlinable @discardableResult mutating func replace(at index: Int, with element: Element) -> Element {
-        offsets.replace(offset: offsets[index], with: element, in: &elements, by: \.id)
+        offsets.replace(offset: offsets[index], with: element, in: &elements, by: Self.id)
     }
 }
 
@@ -148,12 +154,12 @@ public extension IdentifiedSet {
 
     /// Removes the element at the position and returns it, moving the last stored element into its storage offset.
     @inlinable @discardableResult mutating func remove(at index: Int) -> Element {
-        offsets.remove(at: index, from: &elements, by: \.id)
+        offsets.remove(at: index, from: &elements, by: Self.id)
     }
 
     /// Removes every element that matches, in one pass that also stores the rest in their shown order.
     @inlinable mutating func removeAll(where shouldBeRemoved: (Element) throws -> Bool) rethrows {
-        try offsets.removeAll(from: &elements, by: \.id, where: shouldBeRemoved)
+        try offsets.removeAll(from: &elements, by: Self.id, where: shouldBeRemoved)
     }
 
     /// Removes every element.
