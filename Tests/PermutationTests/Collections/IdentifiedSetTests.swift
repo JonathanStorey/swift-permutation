@@ -280,6 +280,38 @@ import Testing
         #expect(Array(set) == original)
     }
 
+    @Test func moveIDsLandsBeforeTheDestination() {
+        let dee: Player = Player(id: 4, name: "Dee")
+        let eve: Player = Player(id: 5, name: "Eve")
+        var set: IdentifiedSet<Player> = [ann, bob, cy, dee, eve]
+        let permutation: Permutation = set.move(ids: [5, 2], before: 1)
+        #expect(Array(set) == [bob, eve, ann, cy, dee])
+        expectConsistent(set)
+        var deck: Deck = Deck(cards: [ann, bob, cy, dee, eve].map(\.name))
+        deck.apply(permutation)
+        #expect(deck.cards == set.map(\.name))
+    }
+
+    @Test func moveIDsToTheEndAndIgnoresUnknownIDs() {
+        let dee: Player = Player(id: 4, name: "Dee")
+        var set: IdentifiedSet<Player> = [ann, bob, cy, dee]
+        set.move(ids: [1, 99, 3], before: nil)
+        #expect(Array(set) == [bob, dee, ann, cy])
+        set.move(ids: [2], before: 99)
+        #expect(Array(set) == [dee, ann, cy, bob])
+        expectConsistent(set)
+    }
+
+    @Test func moveIDsWithTheDestinationAmongThemUsesItsPosition() {
+        let dee: Player = Player(id: 4, name: "Dee")
+        var set: IdentifiedSet<Player> = [ann, bob, cy, dee]
+        set.move(ids: [2, 4], before: 2)
+        #expect(Array(set) == [ann, bob, dee, cy])
+        set.move(ids: [Int](), before: 1)
+        #expect(Array(set) == [ann, bob, dee, cy])
+        expectConsistent(set)
+    }
+
     // MARK: Randomized
 
     @Test func randomEditsMatchAPlainArray() {

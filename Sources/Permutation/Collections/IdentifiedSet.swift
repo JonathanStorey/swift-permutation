@@ -249,6 +249,27 @@ public extension IdentifiedSet {
     }
 }
 
+// MARK: - Moving by id
+
+extension IdentifiedSet {
+
+    /// Moves the elements with the ids, keeping their current relative order, to just before the element with the destination id, or to the end when it is nil or absent, and returns the permutation applied. Ids with no element are ignored, and a destination among the moved ids stands for its current position.
+    @inlinable @discardableResult mutating func move(ids: some Sequence<Element.ID>, before destination: Element.ID?) -> Permutation {
+        var isMoved: [Bool] = [Bool](repeating: false, count: elements.count)
+        for id in ids {
+            if let offset: Int = offsets.offset(of: id, in: elements, by: Self.id) { isMoved[offset] = true }
+        }
+        let destinationOffset: Int? = destination.flatMap { offsets.offset(of: $0, in: elements, by: Self.id) }
+        var moved: [Int] = []
+        var target: Int = endIndex
+        for (position, offset) in offsets.enumerated() {
+            if isMoved[offset] { moved.append(position) }
+            if offset == destinationOffset { target = position }
+        }
+        return move(fromOffsets: moved, toOffset: target)
+    }
+}
+
 // MARK: - Views
 
 public extension IdentifiedSet {
