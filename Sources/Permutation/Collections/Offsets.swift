@@ -9,7 +9,7 @@
 /// `Offsets` never stores an element or a key. Every call that reads or changes membership takes the owner's elements and a key function, which must be the same on every call.
 @usableFromInline struct Offsets {
 
-    /// Storage offsets placed by the hash of their element's key with linear probing, where -1 marks an empty bucket. Its count is zero or a power of two.
+    /// Entries placed by the hash of their element's key with linear probing, where -1 marks an empty bucket. Each entry holds a storage offset in the bits that `mask` keeps and the top bits of its key's hash above them. Its count is zero or a power of two.
     @usableFromInline var table: [Int32]
 
     /// The storage offset at each position.
@@ -75,7 +75,7 @@ extension Offsets {
     /// The storage offset of the element with the key, or nil when there is none.
     @inlinable func offset<Element, Key: Hashable>(of key: Key, in elements: [Element], by keyOf: (Element) -> Key) -> Int? {
         guard case .found(let bucket) = probe(for: key, hash: key.hashValue, in: elements, by: keyOf) else { return nil }
-        return Int(table[bucket])
+        return Int(table[bucket]) & mask
     }
 
     /// The position showing the storage offset, in O(n).
@@ -92,7 +92,8 @@ extension Offsets {
     @inlinable mutating func insert<Element, Key: Hashable>(_ element: Element, at position: Int, into elements: inout [Element], by keyOf: (Element) -> Key) -> Bool {
         precondition(position >= startIndex && position <= endIndex, "Index out of range.")
         let key: Key = keyOf(element)
-        let probed: Probe = probe(for: key, hash: key.hashValue, in: elements, by: keyOf)
+        let hash: Int = key.hashValue
+        let probed: Probe = probe(for: key, hash: hash, in: elements, by: keyOf)
         guard case .empty(let bucket) = probed else { return false }
         precondition(elements.count < Int(Int32.max), "Offsets holds at most Int32.max elements.")
         elements.append(element)
@@ -100,7 +101,7 @@ extension Offsets {
         if elements.count * 4 > table.count * 3 {
             rebuild(for: elements, by: keyOf)
         } else {
-            table[bucket] = Int32(truncatingIfNeeded: offset)
+            table[bucket] = entry(offset, hash: hash)
         }
         sources.insert(Int32(truncatingIfNeeded: offset), at: position)
         return true
@@ -123,11 +124,12 @@ extension Offsets {
         var duplicates: [Int] = []
         for offset in elements.indices {
             let key: Key = keyOf(elements[offset])
-            switch probe(for: key, hash: key.hashValue, in: elements, by: keyOf) {
+            let hash: Int = key.hashValue
+            switch probe(for: key, hash: hash, in: elements, by: keyOf) {
             case .found:
                 duplicates.append(offset)
             case .empty(let bucket):
-                table[bucket] = Int32(truncatingIfNeeded: offset)
+                table[bucket] = entry(offset, hash: hash)
             }
         }
         if !duplicates.isEmpty {
@@ -154,7 +156,8 @@ extension Offsets {
         empty(bucket(holding: Int(offset), hash: keyOf(removed).hashValue), in: elements, by: keyOf)
         let last: Int32 = Int32(truncatingIfNeeded: elements.count - 1)
         if offset != last {
-            table[bucket(holding: Int(last), hash: keyOf(elements[Int(last)]).hashValue)] = offset
+            let lastHash: Int = keyOf(elements[Int(last)]).hashValue
+            table[bucket(holding: Int(last), hash: lastHash)] = entry(Int(offset), hash: lastHash)
             for earlier in 0..<position where sources[earlier] == last {
                 sources[earlier] = offset
                 break
@@ -229,21 +232,29 @@ extension Offsets {
     /// The bitmask that wraps a hash or bucket into the table.
     @inlinable var mask: Int { table.count - 1 }
 
+    /// The bucket entry for a storage offset: the offset in the low bits that the mask keeps, under as many of the hash's top bits as fit below the sign bit, so a probe can skip most other keys without reading their elements.
+    @inlinable func entry(_ offset: Int, hash: Int) -> Int32 {
+        let shift: Int = table.count.trailingZeroBitCount
+        let tag: Int = Int(bitPattern: UInt(bitPattern: hash) >> (33 + shift))
+        return Int32(truncatingIfNeeded: (tag << shift) | offset)
+    }
+
     /// Probes from the key's hash until it finds the key or an empty bucket. An empty table reports an empty bucket at 0.
     @inlinable func probe<Element, Key: Hashable>(for key: Key, hash: Int, in elements: [Element], by keyOf: (Element) -> Key) -> Probe {
         guard !table.isEmpty else { return .empty(0) }
+        let tag: Int = Int(entry(0, hash: hash))
         var bucket: Int = hash & mask
         while true {
-            let offset: Int32 = table[bucket]
-            if offset < 0 { return .empty(bucket) }
-            if keyOf(elements[Int(offset)]) == key { return .found(bucket) }
+            let stored: Int = Int(table[bucket])
+            if stored < 0 { return .empty(bucket) }
+            if stored & ~mask == tag && keyOf(elements[stored & mask]) == key { return .found(bucket) }
             bucket = (bucket + 1) & mask
         }
     }
 
     /// The bucket holding the storage offset, found by probing from its element's hash.
     @inlinable func bucket(holding offset: Int, hash: Int) -> Int {
-        let target: Int32 = Int32(truncatingIfNeeded: offset)
+        let target: Int32 = entry(offset, hash: hash)
         var bucket: Int = hash & mask
         while table[bucket] != target { bucket = (bucket + 1) & mask }
         return bucket
@@ -253,7 +264,7 @@ extension Offsets {
     @inlinable mutating func place(_ offset: Int, hash: Int) {
         var bucket: Int = hash & mask
         while table[bucket] >= 0 { bucket = (bucket + 1) & mask }
-        table[bucket] = Int32(truncatingIfNeeded: offset)
+        table[bucket] = entry(offset, hash: hash)
     }
 
     /// Empties the bucket and shifts later entries of the same probe run back, so no lookup stops early at the gap.
@@ -261,7 +272,7 @@ extension Offsets {
         var hole: Int = bucket
         var next: Int = (hole + 1) & mask
         while table[next] >= 0 {
-            let ideal: Int = keyOf(elements[Int(table[next])]).hashValue & mask
+            let ideal: Int = keyOf(elements[Int(table[next]) & mask]).hashValue & mask
             if (next - ideal) & mask >= (next - hole) & mask {
                 table[hole] = table[next]
                 hole = next
