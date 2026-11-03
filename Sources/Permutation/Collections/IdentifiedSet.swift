@@ -1,32 +1,28 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Collections/IdentifiedSet.swift
-// dependencies: [Collections/PermutableCollection.swift, Permutation/Permutation.swift]
+// dependencies: [Collections/Offsets.swift, Collections/PermutableCollection.swift, Permutation/Permutation.swift]
 
 /// An ordered collection of identifiable elements in which no two elements share an id, reordered only through permutations.
 ///
-/// Elements stay where they were stored and never move when the collection is reordered. The order lives in `sources`, which maps each position to a storage offset, so every reorder rotates integers and never hashes an id or copies an element.
+/// Elements stay where they were stored and never move when the collection is reordered. The order and the id index live in `offsets`, so every reorder rotates integers and never hashes an id or copies an element.
 public struct IdentifiedSet<Element: Identifiable> {
 
     /// The elements in storage order, which reordering never changes.
     @usableFromInline var elements: [Element]
 
-    /// The storage offset of each element, keyed by its id.
-    @usableFromInline var offsets: [Element.ID: Int]
-
-    /// The storage offset shown at each position.
-    @usableFromInline var sources: [Int]
+    /// The storage offset shown at each position, with a hash index from each id to its storage offset.
+    @usableFromInline var offsets: Offsets
 
     /// Creates an empty set.
-    public init() {
+    @inlinable public init() {
         elements = []
-        offsets = [:]
-        sources = []
+        offsets = Offsets()
     }
 
     /// Creates a set from a sequence, keeping the first element with each id and dropping later ones.
-    public init(_ elements: some Sequence<Element>) {
+    @inlinable public init(_ elements: some Sequence<Element>) {
         self.init()
-        for element in elements { append(element) }
+        offsets.append(contentsOf: elements, into: &self.elements, by: \.id)
     }
 }
 
@@ -36,11 +32,11 @@ extension IdentifiedSet: RandomAccessCollection {
 
     @inlinable public var startIndex: Int { 0 }
 
-    @inlinable public var endIndex: Int { sources.count }
+    @inlinable public var endIndex: Int { offsets.count }
 
     /// The element at the position.
     @inlinable public subscript(position: Int) -> Element {
-        elements[sources[position]]
+        elements[offsets[position]]
     }
 }
 
@@ -48,29 +44,14 @@ extension IdentifiedSet: RandomAccessCollection {
 
 extension IdentifiedSet: PermutableCollection {
 
-    /// Applies the permutation by rotating each cycle of `sources` through one carried storage offset, leaving the elements and their ids untouched.
+    /// Applies the permutation to the order alone, leaving the elements and the id index untouched.
     @inlinable public mutating func apply(_ permutation: Permutation) {
-        guard !permutation.cycle.isEmpty else { return }
-        precondition(permutation.minimumCount <= count, "Every offset in the cycle must be within the collection.")
-        var start: Int = -1
-        var carried: Int = 0
-        for offset in permutation.cycle {
-            if offset > start {
-                if start >= 0 { sources[start] = carried }
-                start = offset
-                carried = sources[offset]
-            } else {
-                let next: Int = sources[offset]
-                sources[offset] = carried
-                carried = next
-            }
-        }
-        sources[start] = carried
+        offsets.apply(permutation)
     }
 
-    /// Exchanges the elements at the two positions by swapping their storage offsets in `sources`.
+    /// Exchanges the elements at the two positions by swapping their storage offsets.
     @inlinable public mutating func swapAt(_ i: Int, _ j: Int) {
-        sources.swapAt(i, j)
+        offsets.swapAt(i, j)
     }
 }
 
@@ -83,7 +64,7 @@ public extension IdentifiedSet {
     /// Setting a value replaces the element in place or appends it when the id is new, and setting nil removes it. The new value must keep the id it is stored under.
     subscript(id id: Element.ID) -> Element? {
         @inlinable get {
-            offsets[id].map { elements[$0] }
+            offsets.offset(of: id, in: elements, by: \.id).map { elements[$0] }
         }
         set {
             guard let newValue else {
@@ -97,12 +78,12 @@ public extension IdentifiedSet {
 
     /// Returns whether an element has the id, in O(1).
     @inlinable func contains(id: Element.ID) -> Bool {
-        offsets[id] != nil
+        offsets.offset(of: id, in: elements, by: \.id) != nil
     }
 
     /// The position of the element with the id, or nil when there is none, in O(n).
-    func firstIndex(id: Element.ID) -> Int? {
-        offsets[id].flatMap { sources.firstIndex(of: $0) }
+    @inlinable func firstIndex(id: Element.ID) -> Int? {
+        offsets.offset(of: id, in: elements, by: \.id).flatMap { offsets.position(ofOffset: $0) }
     }
 }
 
@@ -111,18 +92,13 @@ public extension IdentifiedSet {
 public extension IdentifiedSet {
 
     /// Appends the element unless its id is already present, returning whether it was added.
-    @discardableResult mutating func append(_ element: Element) -> Bool {
+    @inlinable @discardableResult mutating func append(_ element: Element) -> Bool {
         insert(element, at: endIndex)
     }
 
     /// Inserts the element at the position unless its id is already present, returning whether it was added.
-    @discardableResult mutating func insert(_ element: Element, at index: Int) -> Bool {
-        precondition(index >= startIndex && index <= endIndex, "Index out of range.")
-        guard offsets[element.id] == nil else { return false }
-        offsets[element.id] = elements.count
-        sources.insert(elements.count, at: index)
-        elements.append(element)
-        return true
+    @inlinable @discardableResult mutating func insert(_ element: Element, at index: Int) -> Bool {
+        offsets.insert(element, at: index, into: &elements, by: \.id)
     }
 }
 
@@ -131,24 +107,16 @@ public extension IdentifiedSet {
 public extension IdentifiedSet {
 
     /// Replaces the element with the same id in place, returning the old element, or returns nil and changes nothing when the id is absent.
-    @discardableResult mutating func replace(_ element: Element) -> Element? {
-        guard let offset: Int = offsets[element.id] else { return nil }
+    @inlinable @discardableResult mutating func replace(_ element: Element) -> Element? {
+        guard let offset: Int = offsets.offset(of: element.id, in: elements, by: \.id) else { return nil }
         let old: Element = elements[offset]
         elements[offset] = element
         return old
     }
 
     /// Replaces the element at the position, returning the old element, and may change the id as long as no other element has the new one.
-    @discardableResult mutating func replace(at index: Int, with element: Element) -> Element {
-        let offset: Int = sources[index]
-        let old: Element = elements[offset]
-        if old.id != element.id {
-            precondition(offsets[element.id] == nil, "Another element already has this id.")
-            offsets[old.id] = nil
-            offsets[element.id] = offset
-        }
-        elements[offset] = element
-        return old
+    @inlinable @discardableResult mutating func replace(at index: Int, with element: Element) -> Element {
+        offsets.replace(offset: offsets[index], with: element, in: &elements, by: \.id)
     }
 }
 
@@ -157,12 +125,12 @@ public extension IdentifiedSet {
 public extension IdentifiedSet {
 
     /// Replaces the element with the same id in place, or appends it when the id is new, returning the old element when there was one.
-    @discardableResult mutating func update(orAppend element: Element) -> Element? {
+    @inlinable @discardableResult mutating func update(orAppend element: Element) -> Element? {
         update(orInsert: element, at: endIndex)
     }
 
     /// Replaces the element with the same id in place, or inserts it at the position when the id is new, returning the old element when there was one.
-    @discardableResult mutating func update(orInsert element: Element, at index: Int) -> Element? {
+    @inlinable @discardableResult mutating func update(orInsert element: Element, at index: Int) -> Element? {
         if let old: Element = replace(element) { return old }
         insert(element, at: index)
         return nil
@@ -174,29 +142,24 @@ public extension IdentifiedSet {
 public extension IdentifiedSet {
 
     /// Removes the element with the id, returning it, or returns nil when there is none.
-    @discardableResult mutating func remove(id: Element.ID) -> Element? {
+    @inlinable @discardableResult mutating func remove(id: Element.ID) -> Element? {
         firstIndex(id: id).map { remove(at: $0) }
     }
 
-    /// Removes the element at the position and returns it, moving the last stored element into the gap.
-    @discardableResult mutating func remove(at index: Int) -> Element {
-        let offset: Int = sources.remove(at: index)
-        let removed: Element = elements[offset]
-        offsets[removed.id] = nil
-        let last: Int = elements.count - 1
-        if offset != last {
-            let moved: Element = elements[last]
-            elements[offset] = moved
-            offsets[moved.id] = offset
-            sources[sources.firstIndex(of: last)!] = offset
-        }
-        elements.removeLast()
-        return removed
+    /// Removes the element at the position and returns it, moving the last stored element into its storage offset.
+    @inlinable @discardableResult mutating func remove(at index: Int) -> Element {
+        offsets.remove(at: index, from: &elements, by: \.id)
+    }
+
+    /// Removes every element that matches, in one pass that also stores the rest in their shown order.
+    @inlinable mutating func removeAll(where shouldBeRemoved: (Element) throws -> Bool) rethrows {
+        try offsets.removeAll(from: &elements, by: \.id, where: shouldBeRemoved)
     }
 
     /// Removes every element.
-    mutating func removeAll() {
-        self = IdentifiedSet()
+    @inlinable mutating func removeAll() {
+        elements = []
+        offsets.removeAll()
     }
 }
 
@@ -218,7 +181,7 @@ extension IdentifiedSet: Hashable where Element: Hashable {
     }
 }
 
-extension IdentifiedSet: Sendable where Element: Sendable, Element.ID: Sendable {}
+extension IdentifiedSet: Sendable where Element: Sendable {}
 
 extension IdentifiedSet: CustomStringConvertible {
 

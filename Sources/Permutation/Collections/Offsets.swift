@@ -22,6 +22,8 @@
     }
 }
 
+extension Offsets: Sendable {}
+
 // MARK: - Collection
 
 extension Offsets: RandomAccessCollection {
