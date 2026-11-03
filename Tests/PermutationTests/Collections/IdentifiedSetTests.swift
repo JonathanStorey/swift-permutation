@@ -75,21 +75,24 @@ import Testing
 
     @Test func appendContentsOfAddsTheWholeBatch() {
         var set: IdentifiedSet<Player> = [ann]
-        #expect(set.append(contentsOf: [bob, cy]))
+        let added: Bool = set.append(contentsOf: [bob, cy])
+        #expect(added)
         #expect(Array(set) == [ann, bob, cy])
         expectConsistent(set)
     }
 
     @Test func appendContentsOfAddsNothingWhenAnIDIsPresent() {
         var set: IdentifiedSet<Player> = [ann, bob]
-        #expect(!set.append(contentsOf: [cy, Player(id: 2, name: "Rob")]))
+        let added: Bool = set.append(contentsOf: [cy, Player(id: 2, name: "Rob")])
+        #expect(!added)
         #expect(Array(set) == [ann, bob])
         expectConsistent(set)
     }
 
     @Test func appendContentsOfAddsNothingWhenTheBatchRepeatsAnID() {
         var set: IdentifiedSet<Player> = [ann]
-        #expect(!set.append(contentsOf: [bob, cy, Player(id: 3, name: "Again")]))
+        let added: Bool = set.append(contentsOf: [bob, cy, Player(id: 3, name: "Again")])
+        #expect(!added)
         #expect(Array(set) == [ann])
         expectConsistent(set)
     }
@@ -97,10 +100,12 @@ import Testing
     @Test func insertContentsOfPlacesTheBlockAtThePosition() {
         var set: IdentifiedSet<Player> = [ann, bob]
         let dee: Player = Player(id: 4, name: "Dee")
-        #expect(set.insert(contentsOf: [cy, dee], at: 1))
+        let added: Bool = set.insert(contentsOf: [cy, dee], at: 1)
+        #expect(added)
         #expect(Array(set) == [ann, cy, dee, bob])
         expectConsistent(set)
-        #expect(set.insert(contentsOf: [Player](), at: 0))
+        let addedNothing: Bool = set.insert(contentsOf: [Player](), at: 0)
+        #expect(addedNothing)
         #expect(Array(set) == [ann, cy, dee, bob])
     }
 
