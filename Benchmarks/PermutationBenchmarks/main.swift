@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: main.swift
-// dependencies: [Collections/PermutableCollection.swift]
+// dependencies: [Collections/IdentifiedSet.swift, Collections/PermutableCollection.swift, IdentifiedComparison.swift, Record.swift]
 
 import Permutation
 
@@ -68,5 +68,30 @@ for size in sizes {
         let mutable: Double? = comparison.mutable.map { body in microseconds(median(iterations: iterations, make: { base.map { $0 } }, body)) }
         let rangeReplaceable: Double? = comparison.rangeReplaceable.map { body in microseconds(median(iterations: iterations, make: { base.map { $0 } }, body)) }
         print("| `\(comparison.operation)` | \(size) | \(rounded(permutable)) µs | \(cell(mutable, against: permutable)) | \(cell(rangeReplaceable, against: permutable)) |")
+    }
+}
+
+print("")
+print("Median time per operation on `Record` values (UUID id, 64-byte payload), with each array time compared to the IdentifiedSet time. \"Array + id index\" rebuilds a `[UUID: Int]` position index after each reorder, which is what an array needs to keep lookups by id O(1).")
+print("")
+print("| Operation | Count | IdentifiedSet | Array | Array + id index |")
+print("|---|---:|---:|---:|---:|")
+for size in sizes {
+    var generator: SeededGenerator = SeededGenerator(state: 42)
+    let records: [Record] = (0..<size).map(Record.init(rank:)).shuffled(using: &generator)
+    let iterations: Int = max(11, 2_000_000 / size)
+    for comparison in IdentifiedComparison.all {
+        var expected: IdentifiedSet<Record> = IdentifiedSet(records)
+        comparison.identified(&expected)
+        var actual: [Record] = records
+        comparison.array(&actual)
+        precondition(actual.map(\.id) == expected.map(\.id), "\(comparison.operation) on an array gave a different order.")
+        let identified: Double = microseconds(median(iterations: iterations, make: { IdentifiedSet(records) }, comparison.identified))
+        let array: Double = microseconds(median(iterations: iterations, make: { records.map { $0 } }, comparison.array))
+        let indexed: Double? = comparison.reindexes ? microseconds(median(iterations: iterations, make: { records.map { $0 } }) { array in
+            comparison.array(&array)
+            blackHole(IdentifiedComparison.index(array))
+        }) : nil
+        print("| `\(comparison.operation)` | \(size) | \(rounded(identified)) µs | \(cell(array, against: identified)) | \(cell(indexed, against: identified)) |")
     }
 }
