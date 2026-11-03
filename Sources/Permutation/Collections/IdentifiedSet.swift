@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Collections/IdentifiedSet.swift
-// dependencies: [Collections/Offsets.swift, Collections/PermutableCollection.swift, Permutation/Permutation.swift]
+// dependencies: [Collections/Offsets.swift, Collections/PermutableCollection.swift, Collections/UpsertableCollection.swift, Permutation/Permutation.swift]
 
 /// An ordered collection of identifiable elements in which no two elements share an id, reordered only through permutations.
 ///
@@ -304,6 +304,8 @@ extension IdentifiedSet: Hashable where Element: Hashable {
         for element in self { hasher.combine(element) }
     }
 }
+
+extension IdentifiedSet: UpsertableCollection {}
 
 extension IdentifiedSet: Sendable where Element: Sendable {}
 
