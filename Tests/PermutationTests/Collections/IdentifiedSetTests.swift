@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Collections/IdentifiedSetTests.swift
-// dependencies: [Collections/IdentifiedSet+Codable.swift, Collections/IdentifiedSet.swift, Collections/PermutableCollection.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation.swift, Support/Deck.swift, Support/Player.swift, Support/SeededGenerator.swift]
+// dependencies: [Collections/IdentifiedSet+Codable.swift, Collections/IdentifiedSet.swift, Collections/Offsets.swift, Collections/PermutableCollection.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation.swift, Support/Deck.swift, Support/Player.swift, Support/SeededGenerator.swift]
 
 import Foundation
 import Testing
@@ -16,7 +16,8 @@ import Testing
     func expectConsistent(_ set: IdentifiedSet<Player>) {
         #expect(set.elements.count == set.count)
         #expect(set.offsets.count == set.count)
-        #expect(Set(set.sources) == Set(set.elements.indices))
+        #expect(set.offsets.sorted() == Array(set.elements.indices))
+        #expect(set.offsets.table.count { $0 >= 0 } == set.count)
         for (position, player) in set.enumerated() {
             #expect(set[id: player.id] == player)
             #expect(set.firstIndex(id: player.id) == position)
@@ -120,6 +121,14 @@ import Testing
         expectConsistent(set)
     }
 
+    @Test func removeAllWhereKeepsTheRestInOrder() {
+        var set: IdentifiedSet<Player> = IdentifiedSet((0..<10).map { Player(id: $0, name: String($0)) })
+        set.reverse()
+        set.removeAll { $0.id.isMultiple(of: 2) }
+        #expect(set.map(\.id) == [9, 7, 5, 3, 1])
+        expectConsistent(set)
+    }
+
     // MARK: Reordering
 
     @Test func applyMatchesTheSwapBasedDefault() {
@@ -139,11 +148,11 @@ import Testing
     @Test func reordersLeaveStorageInPlace() {
         var set: IdentifiedSet<Player> = IdentifiedSet([ann, bob, cy])
         let storage: [Player] = set.elements
-        let offsets: [Int: Int] = set.offsets
+        let table: [Int32] = set.offsets.table
         set.sort { $0.name > $1.name }
         #expect(Array(set) == [cy, bob, ann])
         #expect(set.elements == storage)
-        #expect(set.offsets == offsets)
+        #expect(set.offsets.table == table)
     }
 
     @Test func reorderingAndUndoingRestoresTheOrder() {

@@ -60,6 +60,20 @@ struct IdentifiedComparison {
             }, array: { array in
                 array.sort { $0.rank < $1.rank }
             }),
+            IdentifiedComparison("rebuild from an array", identified: { set in
+                set = IdentifiedSet(Array(set))
+            }, array: { array in
+                array = Array(array)
+            }),
+            IdentifiedComparison("100 removals by id", identified: { set in
+                let step: Int = max(1, set.count / 100)
+                let ids: [UUID] = stride(from: 0, to: set.count, by: step).map { set[$0].id }
+                for id in ids { set.remove(id: id) }
+            }, array: { array in
+                let step: Int = max(1, array.count / 100)
+                let ids: [UUID] = stride(from: 0, to: array.count, by: step).map { array[$0].id }
+                for id in ids { array.remove(at: array.firstIndex { $0.id == id }!) }
+            }),
             IdentifiedComparison("100 lookups by id", reindexes: false, identified: { set in
                 let step: Int = max(1, set.count / 100)
                 var total: Int = 0
