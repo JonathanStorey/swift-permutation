@@ -97,7 +97,7 @@ extension Offsets {
         precondition(elements.count < Int(Int32.max), "Offsets holds at most Int32.max elements.")
         let offset: Int = elements.count
         elements.append(element)
-        if elements.count * 4 > table.count * 3 {
+        if elements.count * 5 > table.count * 3 {
             grow(toHold: elements.count)
             place(Offsets.bucket(hash: hash, offset: offset))
         } else {
@@ -260,10 +260,10 @@ extension Offsets {
         table[hole] = Offsets.vacant
     }
 
-    /// Grows the table to the smallest power of two that keeps the count at most three-quarters full, re-placing buckets from their stored hash bits.
+    /// Grows the table to the smallest power of two that keeps the count at most three-fifths full, re-placing buckets from their stored hash bits.
     @inlinable mutating func grow(toHold count: Int) {
         var capacity: Int = 8
-        while count * 4 > capacity * 3 { capacity *= 2 }
+        while count * 5 > capacity * 3 { capacity *= 2 }
         guard capacity > table.count else { return }
         let old: [UInt64] = table
         table = Array(repeating: Offsets.vacant, count: capacity)
