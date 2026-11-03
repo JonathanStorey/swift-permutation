@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Collections/IdentifiedSetTests.swift
-// dependencies: [Collections/IdentifiedSet+Codable.swift, Collections/IdentifiedSet.swift, Collections/Offsets.swift, Collections/PermutableCollection.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation.swift, Support/Deck.swift, Support/Player.swift, Support/SeededGenerator.swift]
+// dependencies: [Collections/IdentifiedSet+Codable.swift, Collections/IdentifiedSet+Uniquing.swift, Collections/IdentifiedSet.swift, Collections/Offsets.swift, Collections/PermutableCollection.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation.swift, Support/Deck.swift, Support/Player.swift, Support/SeededGenerator.swift]
 
 import Foundation
 import Testing
@@ -44,6 +44,33 @@ import Testing
     @Test func initKeepsTheFirstElementWithEachID() {
         let set: IdentifiedSet<Player> = IdentifiedSet([ann, bob, Player(id: 1, name: "Later")])
         #expect(Array(set) == [ann, bob])
+    }
+
+    @Test func initCanKeepTheLastElementAtTheFirstPosition() {
+        let later: Player = Player(id: 1, name: "Later")
+        let set: IdentifiedSet<Player> = IdentifiedSet([ann, bob, later, cy], uniquingIDsWith: .keepLast)
+        #expect(Array(set) == [later, bob, cy])
+        expectConsistent(set)
+    }
+
+    @Test func initCombinesElementsThatShareAnID() {
+        let players: [Player] = [ann, bob, Player(id: 1, name: "Annie"), Player(id: 2, name: "Rob"), Player(id: 1, name: "Anna")]
+        let set: IdentifiedSet<Player> = IdentifiedSet(players, uniquingIDsWith: .combine { kept, later in
+            Player(id: kept.id, name: kept.name + "+" + later.name)
+        })
+        #expect(set.map(\.name) == ["Ann+Annie+Anna", "Bob+Rob"])
+        expectConsistent(set)
+    }
+
+    @Test func initKeepingFirstExplicitlyMatchesTheDefault() {
+        let players: [Player] = [cy, ann, Player(id: 3, name: "Later"), bob]
+        #expect(IdentifiedSet(players, uniquingIDsWith: .keepFirst) == IdentifiedSet(players))
+    }
+
+    @Test func arrayLiteralBuildsASet() {
+        let set: IdentifiedSet<Player> = [cy, ann, bob]
+        #expect(Array(set) == [cy, ann, bob])
+        expectConsistent(set)
     }
 
     // MARK: Replacing
