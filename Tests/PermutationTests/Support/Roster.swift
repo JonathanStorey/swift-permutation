@@ -15,6 +15,8 @@ struct Roster: UpsertableCollection {
 
     subscript(position: Int) -> Player { players[position] }
 
+    func index(after i: Int) -> Int { i + 1 }
+
     mutating func swapAt(_ i: Int, _ j: Int) {
         players.swapAt(i, j)
     }

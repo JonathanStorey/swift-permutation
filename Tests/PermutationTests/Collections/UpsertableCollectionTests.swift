@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Collections/UpsertableCollectionTests.swift
-// dependencies: [Collections/IdentifiedSet.swift, Collections/UpsertableCollection.swift, Support/Player.swift, Support/Roster.swift, Support/SeededGenerator.swift]
+// dependencies: [Collections/IdentifiedSet.swift, Collections/UpsertableCollection.swift, Support/Ledger.swift, Support/Player.swift, Support/Roster.swift, Support/SeededGenerator.swift]
 
 import Testing
 @testable import Permutation
@@ -64,6 +64,23 @@ import Testing
         #expect(roster.players == [ann, cy])
         roster.removeAll { $0.id == 1 }
         #expect(roster.players == [cy])
+    }
+
+    @Test func defaultsWorkThroughANonIntegerIndex() {
+        var ledger: Ledger = Ledger(players: [ann, bob])
+        let rolledBack: Bool = ledger.insert(contentsOf: [cy, Player(id: 1, name: "Again")], at: ledger.index(after: ledger.startIndex))
+        #expect(!rolledBack && ledger.players == [ann, bob])
+        let added: Bool = ledger.insert(contentsOf: [cy, dee], at: ledger.index(after: ledger.startIndex))
+        #expect(added && ledger.players == [ann, cy, dee, bob])
+        let rob: Player = Player(id: 2, name: "Rob")
+        let eve: Player = Player(id: 5, name: "Eve")
+        ledger.update(orInsert: [rob, eve], at: ledger.startIndex)
+        #expect(ledger.players == [eve, ann, cy, dee, rob])
+        ledger.remove(atOffsets: [0, 4])
+        ledger.removeAll { $0.id == 3 }
+        #expect(ledger.players == [ann, dee])
+        ledger.reverse()
+        #expect(ledger.players == [dee, ann])
     }
 
     /// IdentifiedSet overrides most defaults with faster versions, so random edits must leave it matching the default-only Roster.

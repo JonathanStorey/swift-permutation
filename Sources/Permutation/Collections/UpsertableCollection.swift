@@ -10,16 +10,18 @@
 /// - `replace` changes only what is already present, in place.
 /// - `update` replaces what is present and adds what is new. A batch applies its elements in order, so when one repeats, the later element wins.
 /// - `remove` deletes by position.
-public protocol UpsertableCollection: PermutableCollection, RandomAccessCollection where Index == Int {
+///
+/// Positions use the collection's own `Index`, which may be any type, such as a sort key. The defaults count positions as offsets from `startIndex`, which is O(1) to convert in a random-access collection and O(n) otherwise, so a type without random access may want to override the batch operations.
+public protocol UpsertableCollection: PermutableCollection {
 
     /// Inserts the element at the position unless it is already present, returning whether it was added.
-    @discardableResult mutating func insert(_ element: Element, at index: Int) -> Bool
+    @discardableResult mutating func insert(_ element: Element, at index: Index) -> Bool
 
     /// Replaces the element already present that matches this one, in place, returning the old element, or returns nil and changes nothing when none matches.
     @discardableResult mutating func replace(_ element: Element) -> Element?
 
     /// Removes the element at the position and returns it.
-    @discardableResult mutating func remove(at index: Int) -> Element
+    @discardableResult mutating func remove(at index: Index) -> Element
 
     /// Appends the element unless it is already present, returning whether it was added.
     @discardableResult mutating func append(_ element: Element) -> Bool
@@ -28,21 +30,21 @@ public protocol UpsertableCollection: PermutableCollection, RandomAccessCollecti
     @discardableResult mutating func append(contentsOf newElements: some Sequence<Element>) -> Bool
 
     /// Inserts every element as one block at the position, or none of them when any is already present or repeats within the batch, returning whether they were added.
-    @discardableResult mutating func insert(contentsOf newElements: some Sequence<Element>, at index: Int) -> Bool
+    @discardableResult mutating func insert(contentsOf newElements: some Sequence<Element>, at index: Index) -> Bool
 
     /// Replaces the matching element in place, or appends the element when none matches, returning the old element when there was one.
     @discardableResult mutating func update(orAppend element: Element) -> Element?
 
     /// Replaces the matching element in place, or inserts the element at the position when none matches, returning the old element when there was one.
-    @discardableResult mutating func update(orInsert element: Element, at index: Int) -> Element?
+    @discardableResult mutating func update(orInsert element: Element, at index: Index) -> Element?
 
     /// Replaces each matching element in place and appends the rest in order. When an element repeats within the batch, the later one wins.
     mutating func update(orAppend newElements: some Sequence<Element>)
 
     /// Replaces each matching element in place and inserts the rest in order as one block at the position. When an element repeats within the batch, the later one wins.
-    mutating func update(orInsert newElements: some Sequence<Element>, at index: Int)
+    mutating func update(orInsert newElements: some Sequence<Element>, at index: Index)
 
-    /// Removes the elements at the positions.
+    /// Removes the elements at the offsets from `startIndex`, such as the ones SwiftUI's `onDelete` passes.
     mutating func remove(atOffsets positions: some Sequence<Int>)
 
     /// Removes every element that matches.
@@ -59,13 +61,14 @@ public extension UpsertableCollection {
         insert(contentsOf: newElements, at: endIndex)
     }
 
-    /// Inserts one element at a time and, on the first refusal, removes the ones it added, so the collection is left as it was.
-    @inlinable @discardableResult mutating func insert(contentsOf newElements: some Sequence<Element>, at index: Int) -> Bool {
+    /// Inserts one element at a time and, on the first refusal, removes the ones it added, so the collection is left as it was. It tracks offsets rather than indices, since an insertion may invalidate them.
+    @inlinable @discardableResult mutating func insert(contentsOf newElements: some Sequence<Element>, at index: Index) -> Bool {
         precondition(index >= startIndex && index <= endIndex, "Index out of range.")
-        var next: Int = index
+        let start: Int = distance(from: startIndex, to: index)
+        var next: Int = start
         for element in newElements {
-            guard insert(element, at: next) else {
-                for added in (index..<next).reversed() { remove(at: added) }
+            guard insert(element, at: self.index(startIndex, offsetBy: next)) else {
+                for added in (start..<next).reversed() { remove(at: self.index(startIndex, offsetBy: added)) }
                 return false
             }
             next += 1
@@ -77,7 +80,7 @@ public extension UpsertableCollection {
         update(orInsert: element, at: endIndex)
     }
 
-    @inlinable @discardableResult mutating func update(orInsert element: Element, at index: Int) -> Element? {
+    @inlinable @discardableResult mutating func update(orInsert element: Element, at index: Index) -> Element? {
         if let old: Element = replace(element) { return old }
         insert(element, at: index)
         return nil
@@ -88,20 +91,23 @@ public extension UpsertableCollection {
     }
 
     /// Applies the batch one element at a time, so a repeat of an element added earlier in the batch replaces it in place.
-    @inlinable mutating func update(orInsert newElements: some Sequence<Element>, at index: Int) {
+    @inlinable mutating func update(orInsert newElements: some Sequence<Element>, at index: Index) {
         precondition(index >= startIndex && index <= endIndex, "Index out of range.")
-        var next: Int = index
+        var next: Int = distance(from: startIndex, to: index)
         for element in newElements where replace(element) == nil {
-            insert(element, at: next)
+            insert(element, at: self.index(startIndex, offsetBy: next))
             next += 1
         }
     }
 
     @inlinable mutating func remove(atOffsets positions: some Sequence<Int>) {
-        for position in Set(positions).sorted(by: >) { remove(at: position) }
+        for offset in Set(positions).sorted(by: >) { remove(at: index(startIndex, offsetBy: offset)) }
     }
 
     @inlinable mutating func removeAll(where shouldBeRemoved: (Element) throws -> Bool) rethrows {
-        for position in indices.reversed() where try shouldBeRemoved(self[position]) { remove(at: position) }
+        for offset in (0..<count).reversed() {
+            let position: Index = index(startIndex, offsetBy: offset)
+            if try shouldBeRemoved(self[position]) { remove(at: position) }
+        }
     }
 }
