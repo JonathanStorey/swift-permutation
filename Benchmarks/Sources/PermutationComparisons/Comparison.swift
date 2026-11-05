@@ -47,8 +47,8 @@ struct Comparison {
                 }
                 array.insert(contentsOf: moved, at: destination - (destination + 9) / 10)
             }),
-            Comparison("partition(by:)", mutableMatches: false, permutable: { cards in
-                cards.partition { element in element.isMultiple(of: 2) }
+            Comparison("stablePartition(by:)", mutableMatches: false, permutable: { cards in
+                cards.stablePartition { element in element.isMultiple(of: 2) }
             }, mutable: { array in
                 _ = array.partition { element in element.isMultiple(of: 2) }
             }, rangeReplaceable: { array in

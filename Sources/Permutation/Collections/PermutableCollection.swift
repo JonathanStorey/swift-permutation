@@ -2,13 +2,17 @@
 // path: Collections/PermutableCollection.swift
 // dependencies: [Permutation/Permutation+ForEach.swift, Permutation/Permutation+Move.swift, Permutation/Permutation+Reverse.swift, Permutation/Permutation+Rotate.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation+Sources.swift, Permutation/Permutation.swift]
 
-/// A collection that reorders its elements only by swapping them, so every reorder passes through `swapAt(_:_:)`.
+/// A collection whose every reorder passes through `apply(_:)`, so overriding that one method lets a conforming type reorder in its own cheapest way, or observe every reorder.
+///
+/// A conforming type implements `swapAt(_:_:)`, the smallest reorder any collection can offer. The default `apply(_:)` is built from it, so the swaps must keep every index valid. A type that can move a whole cycle at once, such as one that reorders an index rather than its elements, overrides `apply(_:)` as well.
+///
+/// A type that is also a `MutableCollection` keeps the standard library's in-place `sort` and `reverse`, and its unstable `partition` sits beside `stablePartition`, and gets the permutation they applied only by asking for one, as in `let permutation: Permutation = tiles.sort()`.
 public protocol PermutableCollection: Collection {
 
-    /// Moves the element at each offset in each cycle to the next offset in that cycle, wrapping from the last offset to the first.
+    /// Moves the element at each offset in each cycle to the next offset in that cycle, wrapping from the last offset to the first. Every other reorder calls this method.
     mutating func apply(_ permutation: Permutation)
 
-    /// Exchanges the elements at the two indices.
+    /// Exchanges the elements at the two indices, keeping every index valid.
     mutating func swapAt(_ i: Index, _ j: Index)
 }
 
@@ -55,7 +59,7 @@ public extension PermutableCollection {
     }
 
     /// Moves the elements that satisfy the predicate after those that do not, keeping the relative order within each group, and returns the index of the first moved element.
-    @inlinable @discardableResult mutating func partition(by belongsInSecondPartition: (Element) throws -> Bool) rethrows -> Index {
+    @inlinable @discardableResult mutating func stablePartition(by belongsInSecondPartition: (Element) throws -> Bool) rethrows -> Index {
         var first: [Int] = []
         var second: [Int] = []
         for (offset, element) in enumerated() {

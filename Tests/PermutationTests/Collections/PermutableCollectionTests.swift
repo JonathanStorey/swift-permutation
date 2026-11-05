@@ -72,16 +72,16 @@ import Testing
         #expect(deck.move(from: 1, to: 1).cycle.isEmpty)
     }
 
-    @Test func partitionIsStableAndReturnsFirstMovedIndex() {
+    @Test func stablePartitionKeepsOrderAndReturnsFirstMovedIndex() {
         var deck: Deck = Deck(cards: (0..<7).map(String.init))
-        let pivot: Int = deck.partition { Int($0)! % 2 == 1 }
+        let pivot: Int = deck.stablePartition { Int($0)! % 2 == 1 }
         #expect(deck.cards == ["0", "2", "4", "6", "1", "3", "5"])
         #expect(pivot == 4)
     }
 
-    @Test func partitionWithNoMatchesReturnsEndIndex() {
+    @Test func stablePartitionWithNoMatchesReturnsEndIndex() {
         var deck: Deck = Deck(cards: ["a", "b", "c"])
-        let pivot: Int = deck.partition { $0 == "z" }
+        let pivot: Int = deck.stablePartition { $0 == "z" }
         #expect(deck.cards == ["a", "b", "c"])
         #expect(pivot == deck.endIndex)
     }
