@@ -131,6 +131,16 @@ extension Benchmark {
             }
         }
 
+        add(title: "IdentifiedSet<Record> remove(ids:) half", input: [Record].self) { input in
+            let ids: [Record.ID] = input.filter { $0.rank.isMultiple(of: 2) }.map(\.id).shuffled()
+            return { timer in
+                var set: IdentifiedSet<Record> = IdentifiedSet(input)
+                set.reserveCapacity(input.count)
+                timer.measure { set.remove(ids: ids) }
+                blackHole(set)
+            }
+        }
+
         // MARK: Reordering
 
         add(title: "IdentifiedSet<Record> reverse()", input: [Record].self) { input in

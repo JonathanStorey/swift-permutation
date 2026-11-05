@@ -149,23 +149,41 @@ extension Offsets {
 
     /// Removes and returns the element at the position, moving the last stored element into its storage offset.
     @inlinable mutating func remove<Element, Key: Hashable>(at position: Int, from elements: inout [Element], by keyOf: (Element) -> Key) -> Element {
+        let last: Int32 = Int32(truncatingIfNeeded: elements.count - 1)
+        let lastPosition: Int = sources[position] == last ? position : sources.firstIndex(of: last)!
+        return remove(at: position, lastAt: lastPosition, from: &elements, by: keyOf)
+    }
+
+    /// Removes and returns the element at the storage offset, finding its position and the position of the last storage offset in a single scan.
+    @inlinable mutating func remove<Element, Key: Hashable>(offset: Int, from elements: inout [Element], by keyOf: (Element) -> Key) -> Element {
+        let target: Int32 = Int32(truncatingIfNeeded: offset)
+        let last: Int32 = Int32(truncatingIfNeeded: elements.count - 1)
+        var position: Int = -1
+        var lastPosition: Int = -1
+        sources.withUnsafeBufferPointer { buffer in
+            for index in buffer.indices {
+                let source: Int32 = buffer[index]
+                if source == target { position = index }
+                if source == last { lastPosition = index }
+                if position >= 0 && lastPosition >= 0 { break }
+            }
+        }
+        precondition(position >= 0, "The storage offset must be shown.")
+        return remove(at: position, lastAt: lastPosition, from: &elements, by: keyOf)
+    }
+
+    /// Removes the element at the position, given the position showing the last storage offset, by moving the last stored element into the freed offset and closing the gap in the order with one block move.
+    @inlinable mutating func remove<Element, Key: Hashable>(at position: Int, lastAt lastPosition: Int, from elements: inout [Element], by keyOf: (Element) -> Key) -> Element {
         let offset: Int32 = sources[position]
         let removed: Element = elements[Int(offset)]
         empty(bucket(holding: Int(offset), hash: keyOf(removed).hashValue), in: elements, by: keyOf)
         let last: Int32 = Int32(truncatingIfNeeded: elements.count - 1)
         if offset != last {
             table[bucket(holding: Int(last), hash: keyOf(elements[Int(last)]).hashValue)] = offset
-            for earlier in 0..<position where sources[earlier] == last {
-                sources[earlier] = offset
-                break
-            }
+            sources[lastPosition] = offset
             elements.swapAt(Int(offset), Int(last))
         }
-        for later in position..<(sources.count - 1) {
-            let source: Int32 = sources[later + 1]
-            sources[later] = source == last ? offset : source
-        }
-        sources.removeLast()
+        sources.remove(at: position)
         elements.removeLast()
         return removed
     }

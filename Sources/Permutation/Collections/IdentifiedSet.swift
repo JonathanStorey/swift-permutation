@@ -222,7 +222,16 @@ public extension IdentifiedSet {
 
     /// Removes the element with the id, returning it, or returns nil when there is none.
     @inlinable @discardableResult mutating func remove(id: Element.ID) -> Element? {
-        firstIndex(id: id).map { remove(at: $0) }
+        guard let offset: Int = offsets.offset(of: id, in: elements, by: Self.id) else { return nil }
+        return offsets.remove(offset: offset, from: &elements, by: Self.id)
+    }
+
+    /// Removes the elements with the ids, in one pass that also stores the rest in their shown order. Ids with no element are ignored.
+    @inlinable mutating func remove(ids: some Sequence<Element.ID>) {
+        var doomed: Set<Element.ID> = []
+        for id in ids where contains(id: id) { doomed.insert(id) }
+        guard !doomed.isEmpty else { return }
+        removeAll { doomed.contains($0.id) }
     }
 
     /// Removes the element at the position and returns it, moving the last stored element into its storage offset.
@@ -237,9 +246,7 @@ public extension IdentifiedSet {
 
     /// Removes the elements at the positions, such as the offsets SwiftUI's `onDelete` passes, in one pass that also stores the rest in their shown order.
     @inlinable mutating func remove(atOffsets positions: some Sequence<Int>) {
-        let doomed: Set<Element.ID> = Set(positions.map { self[$0].id })
-        guard !doomed.isEmpty else { return }
-        removeAll { doomed.contains($0.id) }
+        remove(ids: positions.map { self[$0].id })
     }
 
     /// Removes every element.
