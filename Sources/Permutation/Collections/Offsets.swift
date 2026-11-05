@@ -154,21 +154,12 @@ extension Offsets {
         return remove(at: position, lastAt: lastPosition, from: &elements, by: keyOf)
     }
 
-    /// Removes and returns the element at the storage offset, finding its position and the position of the last storage offset in a single scan.
+    /// Removes and returns the element at the storage offset, finding its position and the position of the last storage offset with two vectorized searches.
     @inlinable mutating func remove<Element, Key: Hashable>(offset: Int, from elements: inout [Element], by keyOf: (Element) -> Key) -> Element {
         let target: Int32 = Int32(truncatingIfNeeded: offset)
         let last: Int32 = Int32(truncatingIfNeeded: elements.count - 1)
-        var position: Int = -1
-        var lastPosition: Int = -1
-        sources.withUnsafeBufferPointer { buffer in
-            for index in buffer.indices {
-                let source: Int32 = buffer[index]
-                if source == target { position = index }
-                if source == last { lastPosition = index }
-                if position >= 0 && lastPosition >= 0 { break }
-            }
-        }
-        precondition(position >= 0, "The storage offset must be shown.")
+        let position: Int = sources.firstIndex(of: target)!
+        let lastPosition: Int = target == last ? position : sources.firstIndex(of: last)!
         return remove(at: position, lastAt: lastPosition, from: &elements, by: keyOf)
     }
 
@@ -196,6 +187,21 @@ extension Offsets {
             let element: Element = elements[Int(offset)]
             if try !shouldBeRemoved(element) { kept.append(element) }
         }
+        keep(kept, in: &elements, by: keyOf)
+    }
+
+    /// Removes the elements whose storage offsets are marked, then stores the rest in their shown order and rebuilds the table once. The marks hold one flag per stored element.
+    @inlinable mutating func removeAll<Element, Key: Hashable>(marked doomed: [Bool], from elements: inout [Element], by keyOf: (Element) -> Key) {
+        var kept: [Element] = []
+        kept.reserveCapacity(count)
+        for offset in sources where !doomed[Int(offset)] {
+            kept.append(elements[Int(offset)])
+        }
+        keep(kept, in: &elements, by: keyOf)
+    }
+
+    /// Stores the kept elements in shown order and rebuilds the table, unless nothing was removed.
+    @inlinable mutating func keep<Element, Key: Hashable>(_ kept: [Element], in elements: inout [Element], by keyOf: (Element) -> Key) {
         guard kept.count < count else { return }
         elements = kept
         sources = (0..<Int32(truncatingIfNeeded: kept.count)).map { $0 }

@@ -228,10 +228,15 @@ public extension IdentifiedSet {
 
     /// Removes the elements with the ids, in one pass that also stores the rest in their shown order. Ids with no element are ignored.
     @inlinable mutating func remove(ids: some Sequence<Element.ID>) {
-        var doomed: Set<Element.ID> = []
-        for id in ids where contains(id: id) { doomed.insert(id) }
-        guard !doomed.isEmpty else { return }
-        removeAll { doomed.contains($0.id) }
+        var doomed: [Bool] = Array(repeating: false, count: elements.count)
+        var found: Bool = false
+        for id in ids {
+            guard let offset: Int = offsets.offset(of: id, in: elements, by: Self.id) else { continue }
+            doomed[offset] = true
+            found = true
+        }
+        guard found else { return }
+        offsets.removeAll(marked: doomed, from: &elements, by: Self.id)
     }
 
     /// Removes the element at the position and returns it, moving the last stored element into its storage offset.
@@ -246,7 +251,14 @@ public extension IdentifiedSet {
 
     /// Removes the elements at the positions, such as the offsets SwiftUI's `onDelete` passes, in one pass that also stores the rest in their shown order.
     @inlinable mutating func remove(atOffsets positions: some Sequence<Int>) {
-        remove(ids: positions.map { self[$0].id })
+        var doomed: [Bool] = Array(repeating: false, count: elements.count)
+        var found: Bool = false
+        for position in positions {
+            doomed[offsets[position]] = true
+            found = true
+        }
+        guard found else { return }
+        offsets.removeAll(marked: doomed, from: &elements, by: Self.id)
     }
 
     /// Removes every element.
