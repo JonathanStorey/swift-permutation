@@ -22,4 +22,17 @@ jobs:
       - name: Test
         run: swift test
       - name: Benchmark
-        run: swift run -c release PermutationBenchmarks
+        working-directory: Benchmarks
+        run: |
+          swift build -c release
+          swift run -c release PermutationBenchmarks run results.json --cycles 3 --max-size 256k
+          mkdir -p charts
+          swift run -c release PermutationBenchmarks render results.json charts/identified-set-membership.png --filter 'init|append|contains|subscript|iteration|replace|update|remove'
+          swift run -c release PermutationBenchmarks render results.json charts/identified-set-reordering.png --filter 'reverse|shuffle|sort|rotate|apply'
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmarks
+          path: |
+            Benchmarks/results.json
+            Benchmarks/charts
