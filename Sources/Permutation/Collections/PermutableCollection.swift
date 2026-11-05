@@ -6,7 +6,7 @@
 ///
 /// A conforming type implements `swapAt(_:_:)`, the smallest reorder any collection can offer. The default `apply(_:)` is built from it, so the swaps must keep every index valid. A type that can move a whole cycle at once, such as one that reorders an index rather than its elements, overrides `apply(_:)` as well.
 ///
-/// A type that is also a `MutableCollection` keeps the standard library's in-place `partition`, `sort` and `reverse`, and gets the permutation they applied only by asking for one, as in `let permutation: Permutation = tiles.sort()`.
+/// A type that is also a `MutableCollection` keeps the standard library's in-place `sort` and `reverse`, and its unstable `partition` sits beside `stablePartition`, and gets the permutation they applied only by asking for one, as in `let permutation: Permutation = tiles.sort()`.
 public protocol PermutableCollection: Collection {
 
     /// Moves the element at each offset in each cycle to the next offset in that cycle, wrapping from the last offset to the first. Every other reorder calls this method.
@@ -59,7 +59,7 @@ public extension PermutableCollection {
     }
 
     /// Moves the elements that satisfy the predicate after those that do not, keeping the relative order within each group, and returns the index of the first moved element.
-    @inlinable @discardableResult mutating func partition(by belongsInSecondPartition: (Element) throws -> Bool) rethrows -> Index {
+    @inlinable @discardableResult mutating func stablePartition(by belongsInSecondPartition: (Element) throws -> Bool) rethrows -> Index {
         var first: [Int] = []
         var second: [Int] = []
         for (offset, element) in enumerated() {

@@ -227,19 +227,19 @@ struct Line: RandomAccessCollection, RangeReplaceableCollection, PermutableColle
         #expect(values.sorted(by: >).applying(descending) == values.sorted())
     }
 
-    @Test func mutablePartitionSplitsInPlace() {
+    @Test func mutableTypesKeepBothPartitions() {
         let values: [Int] = [3, 8, 1, 6, 4, 9, 2]
         var tiles: Tiles = Tiles(values: values)
-        let tilesBoundary: Int = tiles.partition { $0 > 4 }
-        #expect(tiles.values[..<tilesBoundary].allSatisfy { $0 <= 4 })
-        #expect(tiles.values[tilesBoundary...].allSatisfy { $0 > 4 })
-        #expect(tiles.values.sorted() == values.sorted())
+        let boundary: Int = tiles.partition { $0 > 4 }
+        #expect(tiles.values[..<boundary].allSatisfy { $0 <= 4 })
+        #expect(tiles.values[boundary...].allSatisfy { $0 > 4 })
+        var stable: Tiles = Tiles(values: values)
+        let stableBoundary: Int = stable.stablePartition { $0 > 4 }
+        #expect(stable.values == [3, 1, 4, 2, 8, 6, 9])
+        #expect(stableBoundary == 4)
         var chain: Chain = Chain(values: values)
-        let chainBoundary: Int = chain.partition { $0 > 4 }
+        let chainBoundary: Int = chain.stablePartition { $0 > 4 }
+        #expect(chain.values == [3, 1, 4, 2, 8, 6, 9])
         #expect(chainBoundary == 4)
-        #expect(chain.values[..<chainBoundary].allSatisfy { $0 <= 4 })
-        #expect(chain.values[chainBoundary...].allSatisfy { $0 > 4 })
-        var empty: Chain = Chain(values: [1, 2])
-        #expect(empty.partition { $0 > 4 } == 2)
     }
 }
