@@ -143,7 +143,7 @@ public extension MutableCollection where Self: RandomAccessCollection & RangeRep
 
 // MARK: - PermutableCollection conforming to the standard protocols too
 //
-// A PermutableCollection that is also a MutableCollection or a RangeReplaceableCollection would otherwise see two equally specific versions of `apply`, `applying`, `partition`, `sort` and `reverse`, which fails to compile. These extensions settle each one:
+// A PermutableCollection that is also a MutableCollection or a RangeReplaceableCollection would otherwise see two equally specific versions of `apply`, `applying`, `partition`, `sort` and `reverse`, which fails to compile. Even `partition` alone stopped such a type from conforming to MutableCollection. These extensions settle each one:
 //
 // - `apply` and `applying` take the cheapest path the standard protocols allow, as above.
 // - A MutableCollection keeps the standard library's in-place `partition`, `sort` and `reverse`, which build no permutation. A call still gets the permutation it applied by asking for one, as in `let permutation: Permutation = tiles.sort()`.
@@ -157,6 +157,11 @@ public extension PermutableCollection where Self: MutableCollection {
 
     /// Moves the elements that satisfy the predicate after those that do not, in place and without keeping the order within each group, as `MutableCollection` does, and returns the index of the first moved element.
     @inlinable mutating func partition(by belongsInSecondPartition: (Element) throws -> Bool) rethrows -> Index {
+        try partitionInPlace(by: belongsInSecondPartition)
+    }
+
+    /// Partitions in one forward pass, swapping each element that stays first back to the boundary.
+    @inlinable internal mutating func partitionInPlace(by belongsInSecondPartition: (Element) throws -> Bool) rethrows -> Index {
         guard var boundary: Index = try firstIndex(where: belongsInSecondPartition) else { return endIndex }
         var current: Index = index(after: boundary)
         while current != endIndex {
@@ -175,6 +180,11 @@ public extension PermutableCollection where Self: MutableCollection & Bidirectio
     /// Reverses the elements in place as `MutableCollection` does, building no permutation. Ask for a `Permutation` result to get the one applied.
     @inlinable mutating func reverse() {
         standardReverse(&self)
+    }
+
+    /// Moves the elements that satisfy the predicate after those that do not, in place and without keeping the order within each group, as `MutableCollection` does, and returns the index of the first moved element.
+    @inlinable mutating func partition(by belongsInSecondPartition: (Element) throws -> Bool) rethrows -> Index {
+        try partitionInPlace(by: belongsInSecondPartition)
     }
 }
 
