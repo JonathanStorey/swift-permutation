@@ -103,6 +103,22 @@ import Testing
         }
     }
 
+    @Test func removeByOffsetMatchesRemoveAtItsPosition() {
+        for removedOffset in 0..<6 {
+            for shift in 0..<6 {
+                var offsets: Offsets = Offsets()
+                var elements: [Int] = []
+                offsets.append(contentsOf: 0..<6, into: &elements, by: { $0 })
+                offsets.rotate(toStartAt: shift)
+                var model: [Int] = Array(offsets.map { elements[$0] })
+                let removed: Int = offsets.remove(offset: removedOffset, from: &elements, by: { $0 })
+                #expect(removed == removedOffset)
+                model.removeAll { $0 == removed }
+                expectConsistent(offsets, elements, order: model, absent: [removed])
+            }
+        }
+    }
+
     @Test func applyMatchesTheSwapBasedDefault() {
         var generator: SeededGenerator = SeededGenerator(state: 5)
         for count in 0..<40 {

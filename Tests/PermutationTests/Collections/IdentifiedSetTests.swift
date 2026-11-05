@@ -211,6 +211,17 @@ import Testing
         expectConsistent(set)
     }
 
+    @Test func removeIDsKeepsTheRestInOrderAndIgnoresMissingIDs() {
+        var set: IdentifiedSet<Player> = IdentifiedSet((0..<10).map { Player(id: $0, name: String($0)) })
+        set.reverse()
+        set.remove(ids: [8, 2, 42, 5, 2])
+        #expect(set.map(\.id) == [9, 7, 6, 4, 3, 1, 0])
+        expectConsistent(set)
+        set.remove(ids: [42, 99])
+        #expect(set.map(\.id) == [9, 7, 6, 4, 3, 1, 0])
+        expectConsistent(set)
+    }
+
     @Test func removeAtOffsetsRemovesThosePositions() {
         var set: IdentifiedSet<Player> = [ann, bob, cy, Player(id: 4, name: "Dee")]
         set.remove(atOffsets: [3, 1])
