@@ -92,3 +92,154 @@ struct Strip: MutableCollection {
         #expect("abc".applying(Permutation(cycle: [])) == "abc")
     }
 }
+
+/// A permutable collection that is also mutable with random access, so the standard library's in-place reorders and the permutation-returning ones meet.
+struct Tiles: MutableCollection, RandomAccessCollection, PermutableCollection {
+
+    var values: [Int]
+
+    var startIndex: Int { values.startIndex }
+
+    var endIndex: Int { values.endIndex }
+
+    subscript(position: Int) -> Int {
+        get { values[position] }
+        set { values[position] = newValue }
+    }
+}
+
+/// A permutable collection that is mutable but only walks forward.
+struct Chain: MutableCollection, PermutableCollection {
+
+    var values: [Int]
+
+    var startIndex: Int { values.startIndex }
+
+    var endIndex: Int { values.endIndex }
+
+    subscript(position: Int) -> Int {
+        get { values[position] }
+        set { values[position] = newValue }
+    }
+
+    func index(after i: Int) -> Int { i + 1 }
+}
+
+/// A permutable collection that is mutable, random access and range replaceable, like a wrapped array.
+struct Rack: MutableCollection, RandomAccessCollection, RangeReplaceableCollection, PermutableCollection {
+
+    var values: [Int]
+
+    init() { values = [] }
+
+    init(values: [Int]) { self.values = values }
+
+    var startIndex: Int { values.startIndex }
+
+    var endIndex: Int { values.endIndex }
+
+    subscript(position: Int) -> Int {
+        get { values[position] }
+        set { values[position] = newValue }
+    }
+
+    mutating func replaceSubrange(_ subrange: Range<Int>, with newElements: some Collection<Int>) {
+        values.replaceSubrange(subrange, with: newElements)
+    }
+}
+
+/// A permutable collection that is range replaceable but not mutable, so it reorders only through its own swaps.
+struct Line: RandomAccessCollection, RangeReplaceableCollection, PermutableCollection {
+
+    private(set) var values: [Int]
+
+    init() { values = [] }
+
+    init(values: [Int]) { self.values = values }
+
+    var startIndex: Int { values.startIndex }
+
+    var endIndex: Int { values.endIndex }
+
+    subscript(position: Int) -> Int { values[position] }
+
+    mutating func replaceSubrange(_ subrange: Range<Int>, with newElements: some Collection<Int>) {
+        values.replaceSubrange(subrange, with: newElements)
+    }
+
+    mutating func swapAt(_ i: Int, _ j: Int) {
+        values.swapAt(i, j)
+    }
+}
+
+@Suite struct PermutableAndStandardTests {
+
+    /// Random permutations of up to twelve values, with the order an array gives for each.
+    func cases() -> [(values: [Int], permutation: Permutation, expected: [Int])] {
+        var generator: SeededGenerator = SeededGenerator(state: 11)
+        return (0..<60).map { _ in
+            let count: Int = Int.random(in: 0...12, using: &generator)
+            let values: [Int] = Array(0..<count)
+            let permutation: Permutation = Permutation(shuffles: Int.random(in: 0...count, using: &generator), using: &generator)
+            return (values, permutation, values.applying(permutation))
+        }
+    }
+
+    @Test func everyCombinationAppliesLikeAnArray() {
+        for (values, permutation, expected) in cases() {
+            var tiles: Tiles = Tiles(values: values)
+            tiles.apply(permutation)
+            #expect(tiles.values == expected)
+            #expect(Tiles(values: values).applying(permutation).values == expected)
+            var chain: Chain = Chain(values: values)
+            chain.apply(permutation)
+            #expect(chain.values == expected)
+            var rack: Rack = Rack(values: values)
+            rack.apply(permutation)
+            #expect(rack.values == expected)
+            #expect(Rack(values: values).applying(permutation).values == expected)
+            var line: Line = Line(values: values)
+            line.apply(permutation)
+            #expect(line.values == expected)
+            #expect(Line(values: values).applying(permutation).values == expected)
+        }
+    }
+
+    @Test func mutableReordersRunInPlaceUnlessAPermutationIsRequested() {
+        let values: [Int] = [3, 1, 4, 1, 5, 9, 2, 6]
+        var tiles: Tiles = Tiles(values: values)
+        tiles.sort()
+        #expect(tiles.values == values.sorted())
+        tiles.sort(by: >)
+        #expect(tiles.values == values.sorted(by: >))
+        tiles.reverse()
+        #expect(tiles.values == values.sorted())
+
+        var requested: Tiles = Tiles(values: values)
+        let sorting: Permutation = requested.sort()
+        #expect(requested.values == values.sorted())
+        #expect(values.applying(sorting) == values.sorted())
+        let reversing: Permutation = requested.reverse()
+        #expect(requested.values == values.sorted(by: >))
+        #expect(reversing == Permutation(reversing: values.count))
+        let descending: Permutation = requested.sort(by: <)
+        #expect(requested.values == values.sorted())
+        #expect(values.sorted(by: >).applying(descending) == values.sorted())
+    }
+
+    @Test func mutablePartitionSplitsInPlace() {
+        let values: [Int] = [3, 8, 1, 6, 4, 9, 2]
+        var tiles: Tiles = Tiles(values: values)
+        let tilesBoundary: Int = tiles.partition { $0 > 4 }
+        #expect(tiles.values[..<tilesBoundary].allSatisfy { $0 <= 4 })
+        #expect(tiles.values[tilesBoundary...].allSatisfy { $0 > 4 })
+        #expect(tiles.values.sorted() == values.sorted())
+        var chain: Chain = Chain(values: values)
+        let chainBoundary: Int = chain.partition { $0 > 4 }
+        #expect(chainBoundary == 4)
+        #expect(chain.values[..<chainBoundary].allSatisfy { $0 <= 4 })
+        #expect(chain.values[chainBoundary...].allSatisfy { $0 > 4 })
+        var empty: Chain = Chain(values: [1, 2])
+        #expect(empty.partition { $0 > 4 } == 2)
+    }
+}
