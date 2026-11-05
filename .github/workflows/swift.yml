@@ -36,7 +36,3 @@ jobs:
           path: |
             Benchmarks/results.json
             Benchmarks/charts
-      - name: Print charts (temporary)
-        working-directory: Benchmarks
-        run: |
-          for f in charts/*.png; do echo "=====BEGIN $f"; base64 -i "$f"; echo "=====END $f"; done
