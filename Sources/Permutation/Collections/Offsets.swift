@@ -80,7 +80,47 @@ extension Offsets {
 
     /// The position showing the storage offset, in O(n).
     @inlinable func position(ofOffset offset: Int) -> Int? {
-        sources.firstIndex(of: Int32(truncatingIfNeeded: offset))
+        let target: Int32 = Int32(truncatingIfNeeded: offset)
+        let found: Int = positions(of: target, and: target).first
+        return found < 0 ? nil : found
+    }
+
+    /// The positions showing two storage offsets, or -1 for one that is not shown, found in one pass that compares sixteen offsets at a time.
+    @inlinable func positions(of first: Int32, and second: Int32) -> Positions {
+        var found: Positions = Positions(first: -1, second: -1)
+        sources.withUnsafeBufferPointer { buffer in
+            guard let base: UnsafePointer<Int32> = buffer.baseAddress else { return }
+            let count: Int = buffer.count
+            let firsts: SIMD16<Int32> = SIMD16(repeating: first)
+            let seconds: SIMD16<Int32> = SIMD16(repeating: second)
+            var start: Int = 0
+            while start + 16 <= count {
+                let lanes: SIMD16<Int32> = UnsafeRawPointer(base + start).loadUnaligned(as: SIMD16<Int32>.self)
+                if any((lanes .== firsts) .| (lanes .== seconds)) {
+                    for lane in 0..<16 {
+                        if lanes[lane] == first && found.first < 0 { found.first = start + lane }
+                        if lanes[lane] == second && found.second < 0 { found.second = start + lane }
+                    }
+                    if found.first >= 0 && found.second >= 0 { return }
+                }
+                start += 16
+            }
+            for position in start..<count {
+                if buffer[position] == first && found.first < 0 { found.first = position }
+                if buffer[position] == second && found.second < 0 { found.second = position }
+            }
+        }
+        return found
+    }
+
+    /// Two positions found together by one search.
+    @usableFromInline struct Positions {
+        @usableFromInline var first: Int
+        @usableFromInline var second: Int
+        @inlinable init(first: Int, second: Int) {
+            self.first = first
+            self.second = second
+        }
     }
 }
 
@@ -150,17 +190,17 @@ extension Offsets {
     /// Removes and returns the element at the position, moving the last stored element into its storage offset.
     @inlinable mutating func remove<Element, Key: Hashable>(at position: Int, from elements: inout [Element], by keyOf: (Element) -> Key) -> Element {
         let last: Int32 = Int32(truncatingIfNeeded: elements.count - 1)
-        let lastPosition: Int = sources[position] == last ? position : sources.firstIndex(of: last)!
+        let lastPosition: Int = sources[position] == last ? position : positions(of: last, and: last).first
         return remove(at: position, lastAt: lastPosition, from: &elements, by: keyOf)
     }
 
-    /// Removes and returns the element at the storage offset, finding its position and the position of the last storage offset with two vectorized searches.
+    /// Removes and returns the element at the storage offset, finding its position and the position of the last storage offset in one vectorized search.
     @inlinable mutating func remove<Element, Key: Hashable>(offset: Int, from elements: inout [Element], by keyOf: (Element) -> Key) -> Element {
         let target: Int32 = Int32(truncatingIfNeeded: offset)
         let last: Int32 = Int32(truncatingIfNeeded: elements.count - 1)
-        let position: Int = sources.firstIndex(of: target)!
-        let lastPosition: Int = target == last ? position : sources.firstIndex(of: last)!
-        return remove(at: position, lastAt: lastPosition, from: &elements, by: keyOf)
+        let found: Positions = positions(of: target, and: last)
+        precondition(found.first >= 0 && found.second >= 0, "The storage offset must be shown.")
+        return remove(at: found.first, lastAt: found.second, from: &elements, by: keyOf)
     }
 
     /// Removes the element at the position, given the position showing the last storage offset, by moving the last stored element into the freed offset and closing the gap in the order with one block move.
