@@ -19,11 +19,6 @@ let package = Package(
         .target(
             name: "Permutation"
         ),
-        .executableTarget(
-            name: "PermutationBenchmarks",
-            dependencies: ["Permutation"],
-            path: "Benchmarks/PermutationBenchmarks"
-        ),
         .testTarget(
             name: "PermutationTests",
             dependencies: ["Permutation"]
