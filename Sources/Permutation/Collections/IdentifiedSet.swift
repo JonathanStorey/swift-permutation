@@ -59,6 +59,43 @@ extension IdentifiedSet: RandomAccessCollection {
     @inlinable public subscript(position: Int) -> Element {
         elements[offsets[position]]
     }
+
+    /// Iterates the elements in order, reading storage straight through while nothing has reordered it.
+    @inlinable public func makeIterator() -> Iterator {
+        Iterator(elements: elements, sources: offsets.sources, isInStorageOrder: offsets.isInStorageOrder)
+    }
+
+    /// Hands over the storage itself while it is in the order shown, so copying the set into an array or scanning it runs at array speed.
+    @inlinable public func withContiguousStorageIfAvailable<Result>(_ body: (UnsafeBufferPointer<Element>) throws -> Result) rethrows -> Result? {
+        guard offsets.isInStorageOrder else { return nil }
+        return try elements.withUnsafeBufferPointer(body)
+    }
+
+    /// An iterator over the elements in order.
+    public struct Iterator: IteratorProtocol {
+
+        @usableFromInline let elements: [Element]
+
+        @usableFromInline let sources: [Int32]
+
+        @usableFromInline let isInStorageOrder: Bool
+
+        @usableFromInline var position: Int
+
+        @inlinable init(elements: [Element], sources: [Int32], isInStorageOrder: Bool) {
+            self.elements = elements
+            self.sources = sources
+            self.isInStorageOrder = isInStorageOrder
+            position = 0
+        }
+
+        @inlinable public mutating func next() -> Element? {
+            let current: Int = position
+            guard current < sources.count else { return nil }
+            position = current + 1
+            return isInStorageOrder ? elements[current] : elements[Int(sources[current])]
+        }
+    }
 }
 
 // MARK: - PermutableCollection
@@ -145,10 +182,7 @@ public extension IdentifiedSet {
         let start: Int = endIndex
         offsets.reserveCapacity(count + batch.count, for: elements, by: Self.id)
         for element in batch { offsets.insert(element, at: offsets.endIndex, into: &elements, by: Self.id) }
-        guard index < start else { return }
-        let block: ArraySlice<Int32> = offsets.sources[start...]
-        offsets.sources.removeSubrange(start...)
-        offsets.sources.insert(contentsOf: block, at: index)
+        offsets.moveTail(from: start, to: index)
     }
 
     /// Reserves room for the count of elements, so adding up to it neither copies storage nor rebuilds the id index.
@@ -331,6 +365,8 @@ extension IdentifiedSet: Hashable where Element: Hashable {
 extension IdentifiedSet: UpsertableCollection {}
 
 extension IdentifiedSet: Sendable where Element: Sendable {}
+
+extension IdentifiedSet.Iterator: Sendable where Element: Sendable {}
 
 extension IdentifiedSet: CustomStringConvertible {
 

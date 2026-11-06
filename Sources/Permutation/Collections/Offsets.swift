@@ -7,18 +7,27 @@
 /// As a collection, `Offsets` is the storage offset of the element at each position, so reordering it reorders its owner without moving an element. Behind it sits an open-addressing hash table of storage offsets, which a reorder never touches.
 ///
 /// `Offsets` never stores an element or a key. Every call that reads or changes membership takes the owner's elements and a key function, which must be the same on every call.
+///
+/// Up to `linearLimit` elements, the table stays empty and lookups scan the elements, which beats hashing at that size. Past it the table always exists.
 @usableFromInline struct Offsets {
 
-    /// Storage offsets placed by the hash of their element's key with linear probing, where -1 marks an empty bucket. Its count is zero or a power of two.
+    /// Storage offsets placed by the hash of their element's key with linear probing, where -1 marks an empty bucket. Its count is zero or a power of two, and it is zero only while there are at most `linearLimit` elements.
     @usableFromInline var table: [Int32]
 
     /// The storage offset at each position.
     @usableFromInline var sources: [Int32]
 
+    /// Whether every position shows its own storage offset, so the owner can read its elements straight through. Anything that might break that clears it, and only rebuilding the order in storage order sets it again.
+    @usableFromInline var isInStorageOrder: Bool
+
+    /// The most elements kept without a hash table.
+    @inlinable static var linearLimit: Int { 16 }
+
     /// Creates empty offsets.
     @inlinable init() {
         table = []
         sources = []
+        isInStorageOrder = true
     }
 }
 
@@ -45,6 +54,7 @@ extension Offsets: PermutableCollection {
     /// Applies the permutation by rotating each cycle of `sources` through one carried offset, leaving the table untouched. The bounds check runs only at each cycle's largest offset, since in Foata form no other offset can be out of range when those are in range.
     @inlinable mutating func apply(_ permutation: Permutation) {
         guard !permutation.cycle.isEmpty else { return }
+        isInStorageOrder = false
         let count: Int = sources.count
         var start: Int = -1
         var carried: Int32 = 0
@@ -65,7 +75,18 @@ extension Offsets: PermutableCollection {
 
     /// Exchanges the storage offsets at the two positions.
     @inlinable mutating func swapAt(_ i: Int, _ j: Int) {
+        guard i != j else { return }
+        isInStorageOrder = false
         sources.swapAt(i, j)
+    }
+
+    /// Moves the block of positions from `start` to the end so it begins at `index`, as a batch insert does after appending.
+    @inlinable mutating func moveTail(from start: Int, to index: Int) {
+        guard index < start else { return }
+        isInStorageOrder = false
+        let block: ArraySlice<Int32> = sources[start...]
+        sources.removeSubrange(start...)
+        sources.insert(contentsOf: block, at: index)
     }
 }
 
@@ -75,6 +96,7 @@ extension Offsets {
 
     /// The storage offset of the element with the key, or nil when there is none.
     @inlinable func offset<Element, Key: Hashable>(of key: Key, in elements: [Element], by keyOf: (Element) -> Key) -> Int? {
+        guard !table.isEmpty else { return elements.firstIndex { keyOf($0) == key } }
         guard case .found(let bucket) = probe(for: key, hash: key.hashValue, in: elements, by: keyOf) else { return nil }
         return Int(table[bucket])
     }
@@ -133,6 +155,14 @@ extension Offsets {
     @inlinable mutating func insert<Element, Key: Hashable>(_ element: Element, at position: Int, into elements: inout [Element], by keyOf: (Element) -> Key) -> Bool {
         precondition(position >= startIndex && position <= endIndex, "Index out of range.")
         let key: Key = keyOf(element)
+        if table.isEmpty && elements.count < Self.linearLimit {
+            guard !elements.contains(where: { keyOf($0) == key }) else { return false }
+            elements.append(element)
+            if position < sources.count { isInStorageOrder = false }
+            sources.insert(Int32(truncatingIfNeeded: elements.count - 1), at: position)
+            return true
+        }
+        if table.isEmpty { rebuild(for: elements, by: keyOf) }
         let probed: Probe = probe(for: key, hash: key.hashValue, in: elements, by: keyOf)
         guard case .empty(let bucket) = probed else { return false }
         precondition(elements.count < Int(Int32.max), "Offsets holds at most Int32.max elements.")
@@ -143,6 +173,7 @@ extension Offsets {
         } else {
             table[bucket] = Int32(truncatingIfNeeded: offset)
         }
+        if position < sources.count { isInStorageOrder = false }
         sources.insert(Int32(truncatingIfNeeded: offset), at: position)
         return true
     }
@@ -158,6 +189,20 @@ extension Offsets {
     /// Indexes elements already in storage, showing them in stored order and dropping any whose key repeats an earlier one, so a whole array is adopted without copying it.
     @inlinable mutating func index<Element, Key: Hashable>(_ elements: inout [Element], by keyOf: (Element) -> Key) {
         precondition(elements.count < Int(Int32.max), "Offsets holds at most Int32.max elements.")
+        isInStorageOrder = true
+        if elements.count <= Self.linearLimit {
+            table = []
+            var end: Int = 0
+            for offset in elements.indices {
+                let key: Key = keyOf(elements[offset])
+                guard !elements[..<end].contains(where: { keyOf($0) == key }) else { continue }
+                if end != offset { elements[end] = elements[offset] }
+                end += 1
+            }
+            if end < elements.count { elements.removeSubrange(end...) }
+            sources = (0..<Int32(truncatingIfNeeded: elements.count)).map { $0 }
+            return
+        }
         var capacity: Int = 8
         while elements.count * 4 > capacity * 3 { capacity *= 2 }
         table = Array(repeating: -1, count: capacity)
@@ -208,10 +253,12 @@ extension Offsets {
     @inlinable mutating func remove<Element, Key: Hashable>(at position: Int, lastAt lastPosition: Int, from elements: inout [Element], by keyOf: (Element) -> Key) -> Element {
         let offset: Int32 = sources[position]
         let removed: Element = elements[Int(offset)]
-        empty(bucket(holding: Int(offset), hash: keyOf(removed).hashValue), in: elements, by: keyOf)
+        let hashed: Bool = !table.isEmpty
+        if hashed { empty(bucket(holding: Int(offset), hash: keyOf(removed).hashValue), in: elements, by: keyOf) }
         let last: Int32 = Int32(truncatingIfNeeded: elements.count - 1)
         if offset != last {
-            table[bucket(holding: Int(last), hash: keyOf(elements[Int(last)]).hashValue)] = offset
+            isInStorageOrder = false
+            if hashed { table[bucket(holding: Int(last), hash: keyOf(elements[Int(last)]).hashValue)] = offset }
             sources[lastPosition] = offset
             elements.swapAt(Int(offset), Int(last))
         }
@@ -246,7 +293,12 @@ extension Offsets {
         guard kept.count < count else { return }
         elements = kept
         sources = (0..<Int32(truncatingIfNeeded: kept.count)).map { $0 }
-        rebuild(for: elements, by: keyOf)
+        isInStorageOrder = true
+        if kept.count <= Self.linearLimit {
+            table = []
+        } else {
+            rebuild(for: elements, by: keyOf)
+        }
     }
 
     /// Replaces the element at the storage offset and returns the old one, re-indexing it when its key changes, which requires that no other element has the new key.
@@ -255,6 +307,11 @@ extension Offsets {
         let oldKey: Key = keyOf(old)
         let newKey: Key = keyOf(element)
         guard oldKey != newKey else {
+            elements[offset] = element
+            return old
+        }
+        guard !table.isEmpty else {
+            precondition(!elements.contains(where: { keyOf($0) == newKey }), "Another element already has this key.")
             elements[offset] = element
             return old
         }
@@ -270,6 +327,7 @@ extension Offsets {
 
     /// Sizes the table to hold the count without growing.
     @inlinable mutating func reserveCapacity<Element, Key: Hashable>(_ minimumCount: Int, for elements: [Element], by keyOf: (Element) -> Key) {
+        guard minimumCount > Self.linearLimit || !table.isEmpty else { return }
         guard minimumCount * 4 > table.count * 3 else { return }
         rebuild(for: elements, by: keyOf, capacity: minimumCount)
     }
@@ -278,6 +336,7 @@ extension Offsets {
     @inlinable mutating func removeAll() {
         table = []
         sources = []
+        isInStorageOrder = true
     }
 }
 
@@ -294,7 +353,7 @@ extension Offsets {
     /// The bitmask that wraps a hash or bucket into the table.
     @inlinable var mask: Int { table.count - 1 }
 
-    /// Probes from the key's hash until it finds the key or an empty bucket. An empty table reports an empty bucket at 0.
+    /// Probes from the key's hash until it finds the key or an empty bucket. An empty table reports an empty bucket at 0, so callers that may run without a table scan the elements instead.
     @inlinable func probe<Element, Key: Hashable>(for key: Key, hash: Int, in elements: [Element], by keyOf: (Element) -> Key) -> Probe {
         guard !table.isEmpty else { return .empty(0) }
         var bucket: Int = hash & mask
