@@ -192,13 +192,14 @@ extension Offsets {
         isInStorageOrder = true
         if elements.count <= Self.linearLimit {
             table = []
-            var kept: [Element] = []
-            kept.reserveCapacity(elements.count)
-            for element in elements {
-                let key: Key = keyOf(element)
-                if !kept.contains(where: { keyOf($0) == key }) { kept.append(element) }
+            var end: Int = 0
+            for offset in elements.indices {
+                let key: Key = keyOf(elements[offset])
+                guard !elements[..<end].contains(where: { keyOf($0) == key }) else { continue }
+                if end != offset { elements[end] = elements[offset] }
+                end += 1
             }
-            if kept.count < elements.count { elements = kept }
+            if end < elements.count { elements.removeSubrange(end...) }
             sources = (0..<Int32(truncatingIfNeeded: elements.count)).map { $0 }
             return
         }
