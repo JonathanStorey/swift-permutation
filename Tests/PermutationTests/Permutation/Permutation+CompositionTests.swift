@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Permutation/Permutation+CompositionTests.swift
-// dependencies: [Collections/PermutableCollection.swift, Permutation/Permutation+Composition.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation.swift]
+// dependencies: [Collections/PermutableCollection.swift, Permutation/Permutation+Composition.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation+Sources.swift, Permutation/Permutation.swift, Support/SeededGenerator.swift]
 
 import Testing
 @testable import Permutation
@@ -39,5 +39,22 @@ import Testing
         replay.apply(swap.followed(by: reverse))
         #expect(replay.cards == deck.cards)
         #expect(swap.followed(by: reverse).minimumCount == 5)
+    }
+
+    @Test func denseProductMatchesTheCycleProduct() {
+        var generator: SeededGenerator = SeededGenerator(state: 31)
+        for _ in 0..<200 {
+            let first: Permutation = Permutation(shuffles: Int.random(in: 0...12, using: &generator), using: &generator)
+            let second: Permutation = Permutation(shuffles: Int.random(in: 0...12, using: &generator), using: &generator)
+            #expect(first.followed(by: second) == first.followedSparse(by: second))
+        }
+    }
+
+    @Test func distantOffsetsTakeTheSparsePath() {
+        let far: Permutation = Permutation(cycle: [100_000, 0])
+        let near: Permutation = Permutation(cycle: [2, 1])
+        #expect(!Permutation.prefersDense(count: far.minimumCount, support: far.cycle.count + near.cycle.count))
+        #expect(far.followed(by: near) == Permutation(cycles: [[0, 100_000], [1, 2]]))
+        #expect(far.followed(by: far).cycle.isEmpty)
     }
 }

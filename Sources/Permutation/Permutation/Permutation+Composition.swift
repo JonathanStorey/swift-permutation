@@ -1,11 +1,23 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Permutation/Permutation+Composition.swift
-// dependencies: [Permutation/Permutation.swift]
+// dependencies: [Permutation/Permutation+Sources.swift, Permutation/Permutation.swift]
 
 extension Permutation {
 
-    /// Returns the permutation that applies this permutation and then the next, multiplying them in cycle form over only the offsets either one moves.
+    /// Returns the permutation that applies this permutation and then the next. The element that lands at `i` came to `next`'s source of `i` from this permutation's source of that, so the product's sources are one gather, `first[second[i]]`, turned back into Foata form in one pass. Offsets scattered far apart fall back to multiplying cycles over only the offsets either one moves.
     public func followed(by next: Permutation) -> Permutation {
+        let count: Int = Swift.max(minimumCount, next.minimumCount)
+        guard Permutation.prefersDense(count: count, support: cycle.count + next.cycle.count) else { return followedSparse(by: next) }
+        let first: [Int] = sources(count: count)
+        var product: [Int] = next.sources(count: count)
+        for offset in product.indices {
+            product[offset] = first[product[offset]]
+        }
+        return Permutation(sources: product)
+    }
+
+    /// Returns the permutation that applies this permutation and then the next, multiplying them in cycle form over only the offsets either one moves.
+    func followedSparse(by next: Permutation) -> Permutation {
         let first: [Int: Int] = successors
         let second: [Int: Int] = next.successors
         var isVisited: Set<Int> = []

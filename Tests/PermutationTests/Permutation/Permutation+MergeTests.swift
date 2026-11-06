@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Permutation/Permutation+MergeTests.swift
-// dependencies: [Collections/PermutableCollection.swift, Permutation/Permutation+Composition.swift, Permutation/Permutation+Merge.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation.swift]
+// dependencies: [Collections/PermutableCollection.swift, Permutation/Permutation+Composition.swift, Permutation/Permutation+Merge.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation+Sources.swift, Permutation/Permutation.swift, Support/SeededGenerator.swift]
 
 import Testing
 @testable import Permutation
@@ -63,5 +63,19 @@ import Testing
         let ours: Permutation = Permutation(cycle: [2, 0, 1])
         let theirs: Permutation = Permutation(cycle: [2, 1])
         #expect(ours.merging(with: theirs) == nil)
+    }
+
+    @Test func denseMergeMatchesTheCycleMerge() {
+        var generator: SeededGenerator = SeededGenerator(state: 37)
+        for _ in 0..<300 {
+            let count: Int = Int.random(in: 0...10, using: &generator)
+            let whole: [[Int]] = Permutation(shuffles: count, using: &generator).cycles
+            let ours: Permutation = Permutation(cycles: whole.filter { _ in Bool.random(using: &generator) })
+            let theirs: Permutation = Bool.random(using: &generator)
+                ? Permutation(cycles: whole.filter { _ in Bool.random(using: &generator) })
+                : Permutation(shuffles: count, using: &generator)
+            #expect(ours.merging(with: theirs) == ours.mergingSparse(with: theirs))
+            #expect(theirs.merging(with: ours) == theirs.mergingSparse(with: ours))
+        }
     }
 }

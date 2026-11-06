@@ -47,16 +47,18 @@ extension MutableCollection {
         self[positions[start]] = carried
     }
 
-    /// Rotates each cycle in place through one carried element, finding each index in O(1) and allocating nothing.
+    /// Rotates each cycle in place through one carried element, finding each index in O(1) and allocating nothing. Only each cycle's largest offset is checked against the count, which covers the rest in Foata form.
     @inlinable mutating func rotateCyclesOffsettingIndices(of permutation: Permutation) where Self: RandomAccessCollection {
-        precondition(permutation.minimumCount <= count, "Every offset in the cycle must be within the collection.")
+        let count: Int = self.count
         let line: [Int] = permutation.cycle
         guard let first: Int = line.first else { return }
         let base: Index = startIndex
+        precondition(first < count, "Every offset in the cycle must be within the collection.")
         var start: Int = first
         var carried: Element = self[index(base, offsetBy: first)]
         for offset in line.dropFirst() {
             if offset > start {
+                precondition(offset < count, "Every offset in the cycle must be within the collection.")
                 self[index(base, offsetBy: start)] = carried
                 start = offset
                 carried = self[index(base, offsetBy: offset)]
@@ -205,11 +207,14 @@ public extension PermutableCollection where Self: RangeReplaceableCollection {
 
 public extension PermutableCollection where Self: RandomAccessCollection & RangeReplaceableCollection {
 
-    /// Applies the permutation through the collection's own swaps, offsetting each index in O(1).
+    /// Applies the permutation through the collection's own swaps, offsetting each index in O(1) and checking only each swap's larger offset against the count.
     @inlinable mutating func apply(_ permutation: Permutation) {
         guard !permutation.cycle.isEmpty else { return }
-        precondition(permutation.minimumCount <= count, "Every offset in the cycle must be within the collection.")
-        permutation.forEachSwap { swapAt(index(startIndex, offsetBy: $0), index(startIndex, offsetBy: $1)) }
+        let count: Int = self.count
+        permutation.forEachSwap { root, offset in
+            precondition(root < count, "Every offset in the cycle must be within the collection.")
+            swapAt(index(startIndex, offsetBy: root), index(startIndex, offsetBy: offset))
+        }
     }
 }
 
