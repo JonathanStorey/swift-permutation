@@ -22,8 +22,13 @@ import Testing
         #expect(offsets.map { elements[$0] } == order)
         #expect(offsets.sorted() == Array(elements.indices))
         #expect(offsets.table.isEmpty || offsets.table.count & (offsets.table.count - 1) == 0)
-        #expect(offsets.table.count { $0 >= 0 } == elements.count)
-        #expect(elements.count * 4 <= offsets.table.count * 3 || elements.isEmpty)
+        if offsets.table.isEmpty {
+            #expect(elements.count <= Offsets.linearLimit)
+        } else {
+            #expect(offsets.table.count { $0 >= 0 } == elements.count)
+            #expect(elements.count * 4 <= offsets.table.count * 3)
+        }
+        if offsets.isInStorageOrder { #expect(Array(offsets) == Array(elements.indices)) }
         for (offset, element) in elements.enumerated() {
             #expect(offsets.offset(of: element, in: elements, by: { $0 }) == offset)
         }
@@ -133,6 +138,32 @@ import Testing
             #expect(offsets.map { elements[$0] } == deck.cards)
             #expect(offsets.table == table)
         }
+    }
+
+    @Test func crossingTheLinearLimitBuildsAndDropsTheTable() {
+        var offsets: Offsets = Offsets()
+        var elements: [Clumped] = []
+        for value in 0..<Offsets.linearLimit { _ = offsets.insert(Clumped(value: value), at: value, into: &elements, by: { $0 }) }
+        #expect(offsets.table.isEmpty)
+        #expect(offsets.isInStorageOrder)
+        _ = offsets.insert(Clumped(value: 99), at: 0, into: &elements, by: { $0 })
+        #expect(!offsets.table.isEmpty)
+        #expect(!offsets.isInStorageOrder)
+        var order: [Clumped] = [Clumped(value: 99)] + (0..<Offsets.linearLimit).map(Clumped.init(value:))
+        expectConsistent(offsets, elements, order: order, absent: [Clumped(value: 100)])
+        var doomed: [Bool] = [Bool](repeating: false, count: elements.count)
+        for offset in elements.indices where elements[offset].value % 2 == 1 { doomed[offset] = true }
+        offsets.removeAll(marked: doomed, from: &elements, by: { $0 })
+        order.removeAll { $0.value % 2 == 1 }
+        #expect(offsets.table.isEmpty)
+        #expect(offsets.isInStorageOrder)
+        expectConsistent(offsets, elements, order: order, absent: [Clumped(value: 1)])
+        let replaced: Clumped = offsets.replace(offset: 0, with: Clumped(value: 41), in: &elements, by: { $0 })
+        order[0] = Clumped(value: 41)
+        #expect(replaced == Clumped(value: 99))
+        _ = offsets.remove(offset: 1, from: &elements, by: { $0 })
+        order.removeAll { $0 == Clumped(value: 0) }
+        expectConsistent(offsets, elements, order: order, absent: [Clumped(value: 0), Clumped(value: 99)])
     }
 
     @Test func indexAdoptsStoredElementsAndDropsRepeatedKeys() {

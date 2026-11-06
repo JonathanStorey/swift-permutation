@@ -17,7 +17,9 @@ import Testing
         #expect(set.elements.count == set.count)
         #expect(set.offsets.count == set.count)
         #expect(set.offsets.sorted() == Array(set.elements.indices))
-        #expect(set.offsets.table.count { $0 >= 0 } == set.count)
+        #expect(set.offsets.table.isEmpty ? set.count <= Offsets.linearLimit : set.offsets.table.count { $0 >= 0 } == set.count)
+        if set.offsets.isInStorageOrder { #expect(Array(set.offsets) == Array(set.elements.indices)) }
+        #expect(Array(set) == set.indices.map { set[$0] })
         for (position, player) in set.enumerated() {
             #expect(set[id: player.id] == player)
             #expect(set.firstIndex(id: player.id) == position)

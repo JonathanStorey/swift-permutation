@@ -13,7 +13,9 @@ import Testing
         #expect(set.elements.count == set.count)
         #expect(set.offsets.count == set.count)
         #expect(set.offsets.sorted() == Array(set.elements.indices))
-        #expect(set.offsets.table.count { $0 >= 0 } == set.count)
+        #expect(set.offsets.table.isEmpty ? set.count <= Offsets.linearLimit : set.offsets.table.count { $0 >= 0 } == set.count)
+        if set.offsets.isInStorageOrder { #expect(Array(set.offsets) == Array(set.elements.indices)) }
+        #expect(Array(set) == set.indices.map { set[$0] })
         for (position, element) in set.enumerated() {
             #expect(set.contains(element))
             #expect(set.firstIndex(of: element) == position)
@@ -96,6 +98,22 @@ import Testing
         expectConsistent(set)
     }
 
+    @Test func storageOrderFastPathTracksReorders() {
+        var set: PermutableSet<Int> = PermutableSet(0..<40)
+        #expect(set.offsets.isInStorageOrder)
+        #expect(set.withContiguousStorageIfAvailable { Array($0) } == Array(0..<40))
+        set.append(40)
+        #expect(set.offsets.isInStorageOrder)
+        set.swapAt(0, 1)
+        #expect(!set.offsets.isInStorageOrder)
+        #expect(set.withContiguousStorageIfAvailable { _ in true } == nil)
+        #expect(Array(set) == [1, 0] + Array(2...40))
+        set.removeAll { $0 == 5 }
+        #expect(set.offsets.isInStorageOrder)
+        #expect(Array(set) == [1, 0] + Array(2...4) + Array(6...40))
+        expectConsistent(set)
+    }
+
     // MARK: Set operations
 
     @Test func unionAppendsNewElementsInTheArgumentsOrder() {
@@ -138,6 +156,14 @@ import Testing
             #expect(set.isSuperset(of: right) == leftSet.isSuperset(of: rightSet))
             #expect(set.isStrictSuperset(of: right) == leftSet.isStrictSuperset(of: rightSet))
             #expect(set.isDisjoint(with: right) == leftSet.isDisjoint(with: rightSet))
+            let other: PermutableSet<Int> = PermutableSet(right)
+            #expect(Array(set.intersection(other)) == Array(set.intersection(right)))
+            #expect(Array(set.subtracting(other)) == Array(set.subtracting(right)))
+            #expect(set.isSubset(of: other) == leftSet.isSubset(of: rightSet))
+            #expect(set.isStrictSubset(of: other) == leftSet.isStrictSubset(of: rightSet))
+            #expect(set.isSuperset(of: other) == leftSet.isSuperset(of: rightSet))
+            #expect(set.isStrictSuperset(of: other) == leftSet.isStrictSuperset(of: rightSet))
+            #expect(set.isDisjoint(with: other) == leftSet.isDisjoint(with: rightSet))
             #expect(Array(set.intersection(right)) == Array(set).filter(rightSet.contains))
             #expect(Array(set.subtracting(right)) == Array(set).filter { !rightSet.contains($0) })
         }

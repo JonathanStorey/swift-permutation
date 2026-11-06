@@ -70,6 +70,17 @@ extension Benchmark {
                 }
             }
         }
+        add(title: "PermutableSet<Int> iteration after shuffle", input: [Int].self) { input in
+            var set: PermutableSet<Int> = PermutableSet(input)
+            set.shuffle()
+            return { timer in
+                timer.measure {
+                    var total: Int = 0
+                    for value in set { total &+= value }
+                    blackHole(total)
+                }
+            }
+        }
         add(title: "OrderedSet<Int> iteration", input: [Int].self) { input in
             let set: OrderedSet<Int> = OrderedSet(input)
             return { timer in
