@@ -35,12 +35,14 @@ import Testing
 
     @Test func appendAndInsertRefuseDuplicates() {
         var set: PermutableSet<Int> = [1, 2]
-        #expect(!set.append(1))
-        #expect(set.insert(5, at: 1))
-        #expect(!set.insert(5, at: 0))
+        let appendedRepeat: Bool = set.append(1)
+        let inserted: Bool = set.insert(5, at: 1)
+        let insertedRepeat: Bool = set.insert(5, at: 0)
+        #expect(!appendedRepeat && inserted && !insertedRepeat)
         #expect(Array(set) == [1, 5, 2])
-        #expect(!set.append(contentsOf: [7, 7]))
-        #expect(set.insert(contentsOf: [8, 9], at: 0))
+        let appendedBatch: Bool = set.append(contentsOf: [7, 7])
+        let insertedBatch: Bool = set.insert(contentsOf: [8, 9], at: 0)
+        #expect(!appendedBatch && insertedBatch)
         #expect(Array(set) == [8, 9, 1, 5, 2])
         expectConsistent(set)
     }
@@ -59,16 +61,20 @@ import Testing
 
     @Test func removeReturnsTheElementAndKeepsTheOrder() {
         var set: PermutableSet<Int> = [4, 2, 9, 7]
-        #expect(set.remove(2) == 2)
-        #expect(set.remove(2) == nil)
+        let removed: Int? = set.remove(2)
+        let removedAgain: Int? = set.remove(2)
+        #expect(removed == 2)
+        #expect(removedAgain == nil)
         #expect(Array(set) == [4, 9, 7])
         expectConsistent(set)
     }
 
     @Test func updateReplacesOrInserts() {
         var set: PermutableSet<Int> = [1, 2]
-        #expect(set.update(orAppend: 2) == 2)
-        #expect(set.update(orInsert: 0, at: 0) == nil)
+        let replaced: Int? = set.update(orAppend: 2)
+        let insertedNew: Int? = set.update(orInsert: 0, at: 0)
+        #expect(replaced == 2)
+        #expect(insertedNew == nil)
         set.update(orAppend: [3, 1, 4, 3])
         #expect(Array(set) == [0, 1, 2, 3, 4])
         expectConsistent(set)
