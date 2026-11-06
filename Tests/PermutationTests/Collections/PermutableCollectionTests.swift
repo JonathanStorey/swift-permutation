@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Collections/PermutableCollectionTests.swift
-// dependencies: [Collections/PermutableCollection.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation.swift]
+// dependencies: [Collections/PermutableCollection.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation.swift, Support/Deck.swift, Support/SeededGenerator.swift]
 
 import Testing
 @testable import Permutation
@@ -40,6 +40,24 @@ import Testing
         var deck: Deck = Deck(cards: ["a", "b", "c", "d", "e"])
         deck.move(fromOffsets: 2...4, toOffset: 0)
         #expect(deck.cards == ["c", "d", "e", "a", "b"])
+    }
+
+    @Test func moveFromOffsetsMatchesAGatherAroundTheDestination() {
+        var generator: SeededGenerator = SeededGenerator(state: 23)
+        for _ in 0..<200 {
+            let count: Int = Int.random(in: 0...10, using: &generator)
+            let cards: [String] = (0..<count).map(String.init)
+            let source: [Int] = count == 0 ? [] : (0..<Int.random(in: 0...count, using: &generator)).map { _ in Int.random(in: 0..<count, using: &generator) }
+            let destination: Int = Int.random(in: 0...count, using: &generator)
+            let moved: Set<Int> = Set(source)
+            let expected: [String] = (0..<destination).filter { !moved.contains($0) }.map { cards[$0] }
+                + moved.sorted().map { cards[$0] }
+                + (destination..<count).filter { !moved.contains($0) }.map { cards[$0] }
+            var deck: Deck = Deck(cards: cards)
+            let permutation: Permutation = deck.move(fromOffsets: source, toOffset: destination)
+            #expect(deck.cards == expected)
+            #expect(cards.applying(permutation) == expected)
+        }
     }
 
     @Test func moveFromOffsetsToOwnPositionReturnsEmptyPermutation() {
