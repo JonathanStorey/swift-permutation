@@ -36,7 +36,7 @@ extension Benchmark {
 
         // MARK: Applying
 
-        add(title: "[Int] apply(_:) random permutation", input: [Int].self) { input in
+        add(title: "Array<Int> apply(_:) random permutation", input: [Int].self) { input in
             let permutation: Permutation = Permutation(shuffles: input.count)
             return { timer in
                 var array: [Int] = input

@@ -29,7 +29,7 @@ jobs:
           mkdir -p charts
           swift run -c release PermutationBenchmarks render results.json charts/identified-set-membership.png --filter 'init|append|contains|subscript|iteration|replace|update|remove'
           swift run -c release PermutationBenchmarks render results.json charts/identified-set-reordering.png --filter 'IdentifiedSet.*(reverse|shuffle|sort|rotate|apply)'
-          swift run -c release PermutationBenchmarks render results.json charts/permutation.png --filter '^Permutation|\[Int\]|move\(fromOffsets'
+          swift run -c release PermutationBenchmarks render results.json charts/permutation.png --filter '^Permutation|^Array|move\(fromOffsets'
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
         with:
