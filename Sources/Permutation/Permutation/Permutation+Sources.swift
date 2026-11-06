@@ -5,24 +5,25 @@
 extension Permutation {
 
     /// Creates a permutation where `sources[i]` is the offset whose element moves into `i`, writing each cycle from the back in one walk without validating the mapping.
-    @inlinable init(sources: [Int]) {
+    @inlinable init(sources: consuming [Int]) {
         self.init(sources: sources, shiftedBy: 0)
     }
 
-    /// Creates a permutation from sources that describe a window starting at `shift`, adding `shift` to every offset as it is written. Adding a constant keeps every cycle's largest offset first and the cycles in order, so the line stays in Foata form.
-    @inlinable init(sources: [Int], shiftedBy shift: Int) {
-        var isVisited: [Bool] = [Bool](repeating: false, count: sources.count)
+    /// Creates a permutation from sources that describe a window starting at `shift`, adding `shift` to every offset as it is written. Adding a constant keeps every cycle's largest offset first and the cycles in order, so the line stays in Foata form. The walk marks each visited entry in `sources` itself, so a caller handing over its last use of the array pays for no second array.
+    @inlinable init(sources: consuming [Int], shiftedBy shift: Int) {
         var line: [Int] = [Int](repeating: 0, count: sources.count)
         var end: Int = sources.count
-        for start in sources.indices.reversed() where !isVisited[start] {
-            isVisited[start] = true
+        for start in sources.indices.reversed() {
             var offset: Int = sources[start]
+            guard offset >= 0 else { continue }
+            sources[start] = -1
             guard offset != start else { continue }
             while offset != start {
-                isVisited[offset] = true
                 end -= 1
                 line[end] = offset + shift
-                offset = sources[offset]
+                let next: Int = sources[offset]
+                sources[offset] = -1
+                offset = next
             }
             end -= 1
             line[end] = start + shift
