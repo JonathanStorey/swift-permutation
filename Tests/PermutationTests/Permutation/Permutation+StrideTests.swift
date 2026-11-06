@@ -48,12 +48,17 @@ import Testing
         #expect(permutation.advanced(by: 2).cycle == [1_000_004, 1_000_000, 1_000_002, 1_000_005, 1_000_001, 1_000_003])
     }
 
-    @Test func densePowerMatchesSplittingCycles() {
+    @Test func advancedMatchesRepeatedComposition() {
         var generator: SeededGenerator = SeededGenerator(state: 43)
         for _ in 0..<300 {
             let permutation: Permutation = Permutation(shuffles: Int.random(in: 0...14, using: &generator), using: &generator)
             let distance: Int = Int.random(in: -20...20, using: &generator)
-            #expect(permutation.advanced(by: distance) == permutation.advancedSparse(by: distance))
+            let base: Permutation = distance < 0 ? permutation.inverted : permutation
+            var repeated: Permutation = Permutation(cycle: [])
+            for _ in 0..<abs(distance) {
+                repeated = repeated.followed(by: base)
+            }
+            #expect(permutation.advanced(by: distance) == repeated)
         }
     }
 }

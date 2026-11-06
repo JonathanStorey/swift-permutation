@@ -33,6 +33,14 @@ public extension PermutableCollection {
         return copy
     }
 
+    /// Exchanges the elements at the two indices and returns the permutation applied, a single swap of their offsets.
+    @inlinable @discardableResult mutating func swap(_ i: Index, _ j: Index) -> Permutation {
+        let first: Int = distance(from: startIndex, to: i)
+        let second: Int = distance(from: startIndex, to: j)
+        swapAt(i, j)
+        return first == second ? Permutation(cycle: []) : Permutation(cycle: [Swift.max(first, second), Swift.min(first, second)])
+    }
+
     /// Moves the element at the source index so it ends up at the destination index, shifting the elements between them, and returns the permutation applied.
     @inlinable @discardableResult mutating func move(from source: Index, to destination: Index) -> Permutation {
         apply(returning: Permutation(moving: distance(from: startIndex, to: source), to: distance(from: startIndex, to: destination), count: count))
