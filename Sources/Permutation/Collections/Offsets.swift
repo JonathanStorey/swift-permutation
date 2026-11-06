@@ -42,14 +42,15 @@ extension Offsets: RandomAccessCollection {
 
 extension Offsets: PermutableCollection {
 
-    /// Applies the permutation by rotating each cycle of `sources` through one carried offset, leaving the table untouched.
+    /// Applies the permutation by rotating each cycle of `sources` through one carried offset, leaving the table untouched. The bounds check runs only at each cycle's largest offset, since in Foata form no other offset can be out of range when those are in range.
     @inlinable mutating func apply(_ permutation: Permutation) {
         guard !permutation.cycle.isEmpty else { return }
-        precondition(permutation.minimumCount <= count, "Every offset in the cycle must be within the collection.")
+        let count: Int = sources.count
         var start: Int = -1
         var carried: Int32 = 0
         for offset in permutation.cycle {
             if offset > start {
+                precondition(offset < count, "Every offset in the cycle must be within the collection.")
                 if start >= 0 { sources[start] = carried }
                 start = offset
                 carried = sources[offset]

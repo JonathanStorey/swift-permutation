@@ -53,28 +53,30 @@ public extension PermutableCollection {
         return move(marked: isMoved, count: movedCount, toOffset: destination)
     }
 
-    /// Moves the elements whose offsets are marked to just before the destination offset, keeping their relative order, by filling one array of source offsets through three cursors: unmoved offsets before the destination, then the moved ones, then the rest.
+    /// Moves the elements whose offsets are marked to just before the destination offset, keeping their relative order. Every offset outside the window from the first moved offset or the destination, whichever is lower, to the last moved offset or the destination, whichever is higher, stays in place, so the permutation is built over that window alone, filling one array of source offsets through three cursors: unmoved offsets before the destination, then the moved ones, then the rest.
     @inlinable internal mutating func move(marked isMoved: [Bool], count movedCount: Int, toOffset destination: Int) -> Permutation {
         guard movedCount > 0 else { return Permutation(cycle: []) }
+        let lower: Int = Swift.min(isMoved.firstIndex(of: true)!, destination)
+        let upper: Int = Swift.max(isMoved.lastIndex(of: true)! + 1, destination)
         var movedBefore: Int = 0
-        for offset in 0..<destination where isMoved[offset] { movedBefore += 1 }
+        for offset in lower..<destination where isMoved[offset] { movedBefore += 1 }
         var before: Int = 0
-        var moved: Int = destination - movedBefore
+        var moved: Int = destination - lower - movedBefore
         var after: Int = moved + movedCount
-        var sources: [Int] = [Int](repeating: 0, count: isMoved.count)
-        for offset in isMoved.indices {
+        var sources: [Int] = [Int](repeating: 0, count: upper - lower)
+        for offset in lower..<upper {
             if isMoved[offset] {
-                sources[moved] = offset
+                sources[moved] = offset - lower
                 moved += 1
             } else if offset < destination {
-                sources[before] = offset
+                sources[before] = offset - lower
                 before += 1
             } else {
-                sources[after] = offset
+                sources[after] = offset - lower
                 after += 1
             }
         }
-        return apply(sources: sources)
+        return apply(returning: Permutation(sources: sources, shiftedBy: lower))
     }
 
     /// Moves the elements that satisfy the predicate after those that do not, keeping the relative order within each group, and returns the index of the first moved element.
@@ -143,10 +145,13 @@ public extension PermutableCollection where Element: Comparable {
 
 public extension PermutableCollection where Self: RandomAccessCollection {
 
-    /// Applies the permutation with the minimal number of `swapAt(_:_:)` calls, offsetting each index directly in O(1).
+    /// Applies the permutation with the minimal number of `swapAt(_:_:)` calls, offsetting each index directly in O(1) and checking only each swap's larger offset against the count.
     @inlinable mutating func apply(_ permutation: Permutation) {
         guard !permutation.cycle.isEmpty else { return }
-        precondition(permutation.minimumCount <= count, "Every offset in the cycle must be within the collection.")
-        permutation.forEachSwap { swapAt(index(startIndex, offsetBy: $0), index(startIndex, offsetBy: $1)) }
+        let count: Int = self.count
+        permutation.forEachSwap { root, offset in
+            precondition(root < count, "Every offset in the cycle must be within the collection.")
+            swapAt(index(startIndex, offsetBy: root), index(startIndex, offsetBy: offset))
+        }
     }
 }
