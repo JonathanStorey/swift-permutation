@@ -24,3 +24,25 @@ jobs:
       - name: Run the fun facts
         working-directory: Examples
         run: swift run -c release FunFacts
+      - name: Run
+        working-directory: Benchmarks
+        run: |
+          swift build -c release
+          swift run -c release PermutationBenchmarks run results.json --cycles 3 --max-size 256k
+      - name: Render charts
+        working-directory: Benchmarks
+        run: |
+          mkdir -p charts
+          swift run -c release PermutationBenchmarks render results.json charts/identified-set-membership.png --filter '^IdentifiedSet.*(init|append|contains|subscript|iteration|replace|update|remove)'
+          swift run -c release PermutationBenchmarks render results.json charts/identified-set-reordering.png --filter '^IdentifiedSet.*(reverse|shuffle|sort|rotate|apply)'
+          swift run -c release PermutationBenchmarks render results.json charts/permutation.png --filter '^Permutation|^Array|move\(fromOffsets'
+          swift run -c release PermutationBenchmarks render results.json charts/ordered-set-membership.png --filter '^(PermutableSet|OrderedSet).*(init|append|contains|iteration|remove)'
+          swift run -c release PermutationBenchmarks render results.json charts/ordered-set-reordering.png --filter '^(PermutableSet|OrderedSet).*(sort|shuffle|reverse)'
+          swift run -c release PermutationBenchmarks render results.json charts/ordered-set-algebra.png --filter '^(PermutableSet|OrderedSet).*(union|intersection|subtracting)'
+          swift run -c release PermutationBenchmarks render results.json charts/identified-array-membership.png --filter '^Identified(Set|Array).*(init from|append one|successful contains|subscript|iteration|1%|removeAll)'
+          swift run -c release PermutationBenchmarks render results.json charts/identified-array-reordering.png --filter '^Identified(Set|Array).*(reverse|shuffle|sort)'
+      - name: Print results (temporary)
+        working-directory: Benchmarks
+        run: |
+          echo "=====BEGIN results.json.gz"; gzip -c results.json | base64; echo "=====END results.json.gz"
+          for f in charts/*.png; do echo "=====BEGIN $f"; base64 -i "$f"; echo "=====END $f"; done
