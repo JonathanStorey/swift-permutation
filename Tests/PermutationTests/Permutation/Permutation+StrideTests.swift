@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Permutation/Permutation+StrideTests.swift
-// dependencies: [Collections/PermutableCollection.swift, Permutation/Permutation+Composition.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation+Stride.swift, Permutation/Permutation.swift]
+// dependencies: [Collections/PermutableCollection.swift, Permutation/Permutation+Composition.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation+Sources.swift, Permutation/Permutation+Stride.swift, Permutation/Permutation.swift, Support/SeededGenerator.swift]
 
 import Testing
 @testable import Permutation
@@ -46,5 +46,14 @@ import Testing
     @Test func advancedBySplitsCycleByGreatestCommonDivisor() {
         let permutation: Permutation = Permutation(cycle: [1_000_005, 1_000_000, 1_000_001, 1_000_002, 1_000_003, 1_000_004])
         #expect(permutation.advanced(by: 2).cycle == [1_000_004, 1_000_000, 1_000_002, 1_000_005, 1_000_001, 1_000_003])
+    }
+
+    @Test func densePowerMatchesSplittingCycles() {
+        var generator: SeededGenerator = SeededGenerator(state: 43)
+        for _ in 0..<300 {
+            let permutation: Permutation = Permutation(shuffles: Int.random(in: 0...14, using: &generator), using: &generator)
+            let distance: Int = Int.random(in: -20...20, using: &generator)
+            #expect(permutation.advanced(by: distance) == permutation.advancedSparse(by: distance))
+        }
     }
 }

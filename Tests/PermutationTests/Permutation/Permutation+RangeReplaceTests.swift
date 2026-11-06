@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Permutation/Permutation+RangeReplaceTests.swift
-// dependencies: [Permutation/Permutation+RangeReplace.swift, Permutation/Permutation.swift]
+// dependencies: [Permutation/Permutation+RangeReplace.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation.swift, Support/SeededGenerator.swift]
 
 import Testing
 @testable import Permutation
@@ -68,5 +68,20 @@ import Testing
         var permutation: Permutation = Permutation(cycle: [2, 0, 4, 1, 3])
         permutation.replaceSubrange(2..<2, withCount: 0)
         #expect(permutation.cycle == [2, 0, 4, 1, 3])
+    }
+
+    @Test func onePassMatchesRebuildingFromCycles() {
+        var generator: SeededGenerator = SeededGenerator(state: 47)
+        for _ in 0..<500 {
+            let permutation: Permutation = Permutation(shuffles: Int.random(in: 0...12, using: &generator), using: &generator)
+            let lower: Int = Int.random(in: 0...14, using: &generator)
+            let range: Range<Int> = lower..<(lower + Int.random(in: 0...4, using: &generator))
+            let newCount: Int = Int.random(in: 0...3, using: &generator)
+            var onePass: Permutation = permutation
+            onePass.replaceSubrange(range, withCount: newCount)
+            var rebuilt: Permutation = permutation
+            rebuilt.rebuildReplacingSubrange(range, shift: newCount - range.count)
+            #expect(onePass == rebuilt)
+        }
     }
 }

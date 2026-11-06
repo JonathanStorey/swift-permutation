@@ -24,6 +24,12 @@ import Testing
         }
     }
 
+    @Test func faroShufflesInterleaveTheHalves() {
+        #expect(Array(0..<6).applying(Permutation(shuffles: 6, .outFaro)) == [0, 3, 1, 4, 2, 5])
+        #expect(Array(0..<6).applying(Permutation(shuffles: 6, .inFaro)) == [3, 0, 4, 1, 5, 2])
+        #expect(Array(0..<5).applying(Permutation(shuffles: 5, .outFaro)) == [0, 3, 1, 4, 2])
+    }
+
     @Test func inFaroOnFiftyTwoCardsHasOrderFiftyTwo() {
         let faro: Permutation = Permutation(shuffles: 52, .inFaro)
         #expect(faro.advanced(by: 52).cycle.isEmpty)
