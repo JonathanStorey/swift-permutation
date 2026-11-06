@@ -41,7 +41,7 @@ extension MutableCollection {
                 start = offset
                 carried = self[positions[offset]]
             } else {
-                swap(&carried, &self[positions[offset]])
+                Swift.swap(&carried, &self[positions[offset]])
             }
         }
         self[positions[start]] = carried
@@ -64,7 +64,7 @@ extension MutableCollection {
                 carried = self[index(base, offsetBy: offset)]
             } else {
                 let position: Index = index(base, offsetBy: offset)
-                swap(&carried, &self[position])
+                Swift.swap(&carried, &self[position])
             }
         }
         self[index(base, offsetBy: start)] = carried
