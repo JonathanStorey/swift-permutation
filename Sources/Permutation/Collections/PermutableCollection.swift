@@ -81,17 +81,22 @@ public extension PermutableCollection {
 
     /// Moves the elements that satisfy the predicate after those that do not, keeping the relative order within each group, and returns the index of the first moved element.
     @inlinable @discardableResult mutating func stablePartition(by belongsInSecondPartition: (Element) throws -> Bool) rethrows -> Index {
-        var first: [Int] = []
-        var second: [Int] = []
+        let total: Int = count
+        var sources: [Int] = [Int](repeating: 0, count: total)
+        var low: Int = 0
+        var high: Int = total
         for (offset, element) in enumerated() {
             if try belongsInSecondPartition(element) {
-                second.append(offset)
+                high -= 1
+                sources[high] = offset
             } else {
-                first.append(offset)
+                sources[low] = offset
+                low += 1
             }
         }
-        apply(Permutation(sources: first + second))
-        return index(startIndex, offsetBy: first.count)
+        sources[low...].reverse()
+        apply(Permutation(sources: sources))
+        return index(startIndex, offsetBy: low)
     }
 
     /// Reverses the elements in place and returns the permutation applied.
