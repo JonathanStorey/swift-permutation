@@ -4,7 +4,7 @@
 
 Shuffle the numbers 1 to n and look for the longest run of them, not necessarily adjacent, that appears in increasing order. How long is it?
 
-Stanisław Ulam asked this in 1961 and ran early computer simulations. The answer is **about 2√n**. A shuffled deck of 52 cards hides an increasing run of about 11 to 12, and a million shuffled numbers hide one of a little over 1,800.
+Stanisław Ulam asked this in 1961 and ran early computer simulations. The answer is **about 2√n**. A shuffled deck of 52 cards hides an increasing run of about 11 to 12, and a million shuffled numbers hide one of about 1,980.
 
 ## Why it is deep
 
