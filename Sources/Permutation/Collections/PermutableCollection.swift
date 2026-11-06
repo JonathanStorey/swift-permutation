@@ -40,22 +40,41 @@ public extension PermutableCollection {
 
     /// Moves the elements at the given offsets to just before the element at the destination offset, keeping their relative order, and returns the permutation applied.
     @inlinable @discardableResult mutating func move(fromOffsets source: some Sequence<Int>, toOffset destination: Int) -> Permutation {
-        let moved: [Int] = Set(source).sorted()
-        precondition(moved.allSatisfy { (0..<count).contains($0) } && (0...count).contains(destination), "Every offset must be within the collection.")
+        precondition((0...count).contains(destination), "Every offset must be within the collection.")
         var isMoved: [Bool] = [Bool](repeating: false, count: count)
-        for offset in moved {
-            isMoved[offset] = true
-        }
-        var before: [Int] = []
-        var after: [Int] = []
-        for offset in 0..<count where !isMoved[offset] {
-            if offset < destination {
-                before.append(offset)
-            } else {
-                after.append(offset)
+        var movedCount: Int = 0
+        for offset in source {
+            precondition(isMoved.indices.contains(offset), "Every offset must be within the collection.")
+            if !isMoved[offset] {
+                isMoved[offset] = true
+                movedCount += 1
             }
         }
-        return apply(sources: before + moved + after)
+        return move(marked: isMoved, count: movedCount, toOffset: destination)
+    }
+
+    /// Moves the elements whose offsets are marked to just before the destination offset, keeping their relative order, by filling one array of source offsets through three cursors: unmoved offsets before the destination, then the moved ones, then the rest.
+    @inlinable internal mutating func move(marked isMoved: [Bool], count movedCount: Int, toOffset destination: Int) -> Permutation {
+        guard movedCount > 0 else { return Permutation(cycle: []) }
+        var movedBefore: Int = 0
+        for offset in 0..<destination where isMoved[offset] { movedBefore += 1 }
+        var before: Int = 0
+        var moved: Int = destination - movedBefore
+        var after: Int = moved + movedCount
+        var sources: [Int] = [Int](repeating: 0, count: isMoved.count)
+        for offset in isMoved.indices {
+            if isMoved[offset] {
+                sources[moved] = offset
+                moved += 1
+            } else if offset < destination {
+                sources[before] = offset
+                before += 1
+            } else {
+                sources[after] = offset
+                after += 1
+            }
+        }
+        return apply(sources: sources)
     }
 
     /// Moves the elements that satisfy the predicate after those that do not, keeping the relative order within each group, and returns the index of the first moved element.
