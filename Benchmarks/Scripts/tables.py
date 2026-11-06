@@ -38,6 +38,18 @@ PAIRS = [
         "shuffle()",
         "sort(by:)",
     ]),
+    ("PermutableDictionary vs swift-collections OrderedDictionary", "PermutableDictionary<Int, Int>", "OrderedDictionary<Int, Int>", [
+        "init from keys and values",
+        "subscript insert one at a time",
+        "subscript lookup",
+        "iteration",
+        "removeValue(forKey:) 1%",
+        "sort by key",
+        "shuffle",
+        "reverse",
+        "values shuffle",
+        "values sort",
+    ]),
 ]
 
 

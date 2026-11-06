@@ -28,6 +28,8 @@ jobs:
           swift run -c release PermutationBenchmarks render results.json charts/ordered-set-algebra.png --filter '^(PermutableSet|OrderedSet).*(union|intersection|subtracting)'
           swift run -c release PermutationBenchmarks render results.json charts/identified-array-membership.png --filter '^Identified(Set|Array).*(init from|append one|successful contains|subscript|iteration|1%|removeAll)'
           swift run -c release PermutationBenchmarks render results.json charts/identified-array-reordering.png --filter '^Identified(Set|Array).*(reverse|shuffle|sort)'
+          swift run -c release PermutationBenchmarks render results.json charts/ordered-dictionary-membership.png --filter '^(PermutableDictionary|OrderedDictionary).*(init|insert|lookup|iteration|removeValue)'
+          swift run -c release PermutationBenchmarks render results.json charts/ordered-dictionary-reordering.png --filter '^(PermutableDictionary|OrderedDictionary).*(sort|shuffle|reverse)'
       - name: Write the comparison tables
         working-directory: Benchmarks
         run: python3 Scripts/tables.py results.json > tables.md && cat tables.md

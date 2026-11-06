@@ -29,6 +29,14 @@
         sources = []
         isInStorageOrder = true
     }
+
+    /// Creates offsets that show the count of stored elements in storage order, without a hash table, for an owner that only reorders.
+    @inlinable init(count: Int) {
+        precondition(count < Int(Int32.max), "Offsets holds at most Int32.max elements.")
+        table = []
+        sources = (0..<Int32(truncatingIfNeeded: count)).map { $0 }
+        isInStorageOrder = true
+    }
 }
 
 extension Offsets: Sendable {}
@@ -134,6 +142,25 @@ extension Offsets {
             }
         }
         return found
+    }
+
+    /// The first index of the value in the array, or -1 when it is absent, comparing sixteen values at a time.
+    @inlinable static func firstIndex(of target: Int32, in array: [Int32]) -> Int {
+        array.withUnsafeBufferPointer { buffer in
+            guard let base: UnsafePointer<Int32> = buffer.baseAddress else { return -1 }
+            let count: Int = buffer.count
+            let targets: SIMD16<Int32> = SIMD16(repeating: target)
+            var start: Int = 0
+            while start + 16 <= count {
+                let lanes: SIMD16<Int32> = UnsafeRawPointer(base + start).loadUnaligned(as: SIMD16<Int32>.self)
+                if any(lanes .== targets) {
+                    for lane in 0..<16 where lanes[lane] == target { return start + lane }
+                }
+                start += 16
+            }
+            for index in start..<count where buffer[index] == target { return index }
+            return -1
+        }
     }
 
     /// Two positions found together by one search.

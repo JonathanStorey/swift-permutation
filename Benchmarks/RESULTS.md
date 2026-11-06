@@ -1,8 +1,9 @@
 # Benchmark results
 
-These tables compare the package's two ordered sets with the libraries people most often reach for:
+These tables compare the package's ordered collections with the libraries people most often reach for:
 
 - **`PermutableSet`** against [swift-collections](https://github.com/apple/swift-collections)' `OrderedSet`, both holding `Int`.
+- **`PermutableDictionary`** against swift-collections' `OrderedDictionary`, both mapping `Int` to `Int`.
 - **`IdentifiedSet`** against [Point-Free's](https://github.com/pointfreeco/swift-identified-collections) `IdentifiedArray`, both holding a typical app model: a UUID id, an `Int` sort key and 64 bytes of other fields (`Record`).
 
 Every cell is **time per element**: the fastest of three runs of the whole operation, divided by the number of elements. Lower is better. The note after each operation compares the two at the largest size both finished.
@@ -14,7 +15,8 @@ Measured on 2026-11-06 on a GitHub `macos-latest` runner (Apple silicon), Swift 
 - **Reordering is where the design pays off.** Reverse runs 8.6× faster than `OrderedSet` and 12.8× faster than `IdentifiedArray`, and sort runs 7.1× faster than `IdentifiedArray`, because only 4-byte offsets move and the hash index is never touched.
 - **Removing one element at a time scales.** At 16k elements, removing by value or id is about 50× faster than `OrderedSet` and about 90× faster than `IdentifiedArray`. At 256k, neither competitor finished inside the benchmark's time limit.
 - **Lookups and inserts are mostly faster.** These run 1.3–2.7× faster across sizes. The exception is `contains(id:)` at 256k, which is 1.1× slower than `IdentifiedArray`.
-- **Iteration is the one cost.** Each read goes through the order array, so a `for` loop over `Int`s is 5× slower than `OrderedSet` (0.5 ns against 0.1 ns per element) and 1.4× slower than `IdentifiedArray` over `Record`s. Converting to an `Array` or calling `withContiguousStorageIfAvailable` reads storage directly while the set is still in storage order.
+- **`PermutableDictionary` follows the same pattern.** Against `OrderedDictionary` it reverses 9.0× faster, looks up 2.7× faster, builds 1.6× faster, and removes 1% of its keys one at a time 51× faster at 16k. Shuffling `values` runs about even. Sorting `values` is 2.1× slower, because `OrderedDictionary` sorts a plain array of `Int`s in place while `PermutableDictionary` builds the permutation it returns, which is the price of getting the reorder back and of never moving a value. The gap closes as values get larger.
+- **Iteration is the one cost.** Each read goes through the order array, so a `for` loop over `Int`s is 5× slower than `OrderedSet` (0.5 ns against 0.1 ns per element), 6× slower than `OrderedDictionary`, and 1.4× slower than `IdentifiedArray` over `Record`s. Converting to an `Array` or calling `withContiguousStorageIfAvailable` reads storage directly while the set is still in storage order.
 
 ### PermutableSet vs swift-collections OrderedSet
 
@@ -68,6 +70,31 @@ Measured on 2026-11-06 on a GitHub `macos-latest` runner (Apple silicon), Swift 
 | sort(by:) (7.1× faster) | IdentifiedSet | 44 ns | 75 ns | 123 ns | 201 ns |
 | | IdentifiedArray | 466 ns | 964 ns | 1.2 µs | 1.4 µs |
 
+### PermutableDictionary vs swift-collections OrderedDictionary
+
+| Operation | Type | 16 | 1,024 | 16,384 | 262,144 |
+| --- | --- | ---: | ---: | ---: | ---: |
+| init from keys and values (1.6× faster) | PermutableDictionary | 9.14 ns | 12 ns | 16 ns | 17 ns |
+| | OrderedDictionary | 15 ns | 19 ns | 27 ns | 27 ns |
+| subscript insert one at a time (1.5× faster) | PermutableDictionary | 47 ns | 65 ns | 68 ns | 69 ns |
+| | OrderedDictionary | 42 ns | 82 ns | 87 ns | 102 ns |
+| subscript lookup (2.7× faster) | PermutableDictionary | 7.81 ns | 14 ns | 19 ns | 27 ns |
+| | OrderedDictionary | 31 ns | 38 ns | 46 ns | 74 ns |
+| iteration (6.2× slower) | PermutableDictionary | 2.56 ns | 1.06 ns | 0.96 ns | 1.03 ns |
+| | OrderedDictionary | 2.56 ns | 0.20 ns | 0.16 ns | 0.17 ns |
+| removeValue(forKey:) 1% (50.8× faster) | PermutableDictionary | 7.81 ns | 2.60 ns | 20 ns | 358 ns |
+| | OrderedDictionary | 7.81 ns | 45 ns | 1.0 µs | – |
+| sort by key (about even) | PermutableDictionary | 34 ns | 65 ns | 91 ns | 126 ns |
+| | OrderedDictionary | 36 ns | 72 ns | 96 ns | 121 ns |
+| shuffle (1.5× faster) | PermutableDictionary | 52 ns | 58 ns | 54 ns | 56 ns |
+| | OrderedDictionary | 70 ns | 81 ns | 85 ns | 81 ns |
+| reverse (9.0× faster) | PermutableDictionary | 5.19 ns | 2.85 ns | 2.62 ns | 2.47 ns |
+| | OrderedDictionary | 16 ns | 19 ns | 23 ns | 22 ns |
+| values shuffle (about even) | PermutableDictionary | 60 ns | 60 ns | 60 ns | 58 ns |
+| | OrderedDictionary | 47 ns | 56 ns | 53 ns | 54 ns |
+| values sort (2.1× slower) | PermutableDictionary | 36 ns | 65 ns | 93 ns | 127 ns |
+| | OrderedDictionary | 7.81 ns | 23 ns | 43 ns | 60 ns |
+
 In the removal rows, "1%" means 1% of the elements are removed one at a time in random order. Each removal in `OrderedSet` and `IdentifiedArray` shifts every later element. In `PermutableSet` and `IdentifiedSet`, the last stored element fills the hole and only a 4-byte offset shifts.
 
 ## Charts
@@ -87,6 +114,12 @@ Each chart plots time per element (log scale) against size, from 1 to 256k eleme
 ![Membership: IdentifiedSet and IdentifiedArray](Charts/identified-array-membership.png)
 
 ![Reordering: IdentifiedSet and IdentifiedArray](Charts/identified-array-reordering.png)
+
+### PermutableDictionary and OrderedDictionary
+
+![Membership: PermutableDictionary and OrderedDictionary](Charts/ordered-dictionary-membership.png)
+
+![Reordering: PermutableDictionary and OrderedDictionary](Charts/ordered-dictionary-reordering.png)
 
 ## Reproducing
 
