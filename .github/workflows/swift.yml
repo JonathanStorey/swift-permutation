@@ -21,22 +21,6 @@ jobs:
         run: swift build
       - name: Test
         run: swift test
-      - name: Benchmark
-        working-directory: Benchmarks
-        run: |
-          swift build -c release
-          swift run -c release PermutationBenchmarks run results.json --cycles 3 --max-size 256k
-          mkdir -p charts
-          swift run -c release PermutationBenchmarks render results.json charts/identified-set-membership.png --filter '^IdentifiedSet.*(init|append|contains|subscript|iteration|replace|update|remove)'
-          swift run -c release PermutationBenchmarks render results.json charts/identified-set-reordering.png --filter 'IdentifiedSet.*(reverse|shuffle|sort|rotate|apply)'
-          swift run -c release PermutationBenchmarks render results.json charts/permutation.png --filter '^Permutation|^Array|move\(fromOffsets'
-          swift run -c release PermutationBenchmarks render results.json charts/ordered-set-membership.png --filter '^(PermutableSet|OrderedSet).*(init|append|contains|iteration|remove)'
-          swift run -c release PermutationBenchmarks render results.json charts/ordered-set-reordering.png --filter '^(PermutableSet|OrderedSet).*(sort|shuffle|reverse)'
-          swift run -c release PermutationBenchmarks render results.json charts/ordered-set-algebra.png --filter '^(PermutableSet|OrderedSet).*(union|intersection|subtracting)'
-      - name: Upload benchmark results
-        uses: actions/upload-artifact@v4
-        with:
-          name: benchmarks
-          path: |
-            Benchmarks/results.json
-            Benchmarks/charts
+      - name: Run the fun facts
+        working-directory: Examples
+        run: swift run -c release FunFacts

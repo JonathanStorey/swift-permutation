@@ -12,6 +12,7 @@ let package = Package(
         .package(path: ".."),
         .package(url: "https://github.com/apple/swift-collections-benchmark", from: "0.0.4"),
         .package(url: "https://github.com/apple/swift-collections", from: "1.1.0"),
+        .package(url: "https://github.com/pointfreeco/swift-identified-collections", from: "1.1.0"),
     ],
     targets: [
         .executableTarget(
@@ -20,6 +21,7 @@ let package = Package(
                 .product(name: "Permutation", package: "swift-permutation"),
                 .product(name: "CollectionsBenchmark", package: "swift-collections-benchmark"),
                 .product(name: "OrderedCollections", package: "swift-collections"),
+                .product(name: "IdentifiedCollections", package: "swift-identified-collections"),
             ]
         ),
         .executableTarget(
