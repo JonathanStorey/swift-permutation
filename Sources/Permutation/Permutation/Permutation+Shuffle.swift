@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Permutation/Permutation+Shuffle.swift
-// dependencies: [Permutation/Permutation.swift]
+// dependencies: [Permutation/Permutation+Sources.swift, Permutation/Permutation.swift]
 
 extension Permutation {
 
@@ -16,7 +16,7 @@ extension Permutation {
         /// Every arrangement that leaves no offset in place equally likely.
         case derangement
 
-        /// One riffle in the Gilbert–Shannon–Reeds model, built as the inverse of sorting offsets stably by a random bit each.
+        /// One riffle in the Gilbert–Shannon–Reeds model, the inverse of sorting offsets stably by a random bit each, which is exactly the permutation whose sources are those sorted ranks.
         case riffle
 
         /// A perfect riffle that keeps the first and last offsets in place.
@@ -69,21 +69,13 @@ extension Permutation {
         self.init(tracing: count) { offset in offset < half ? 2 * offset + firstStep : 2 * (offset - half) + 1 - firstStep }
     }
 
-    /// Creates the permutation that sends each offset of `0..<count` to the given destination, tracing each orbit of the formula into a cycle.
+    /// Creates the permutation that sends each offset of `0..<count` to the given destination: the element landing at `destination(i)` comes from `i`, so inverting the formula into sources gives the Foata line in one pass with no sort.
     private init(tracing count: Int, destination: (Int) -> Int) {
-        var isVisited: [Bool] = [Bool](repeating: false, count: count)
-        var cycles: [[Int]] = []
-        for start in 0..<count where !isVisited[start] {
-            var cycle: [Int] = []
-            var offset: Int = start
-            repeat {
-                isVisited[offset] = true
-                cycle.append(offset)
-                offset = destination(offset)
-            } while offset != start
-            cycles.append(cycle)
+        var sources: [Int] = [Int](repeating: 0, count: count)
+        for offset in 0..<count {
+            sources[destination(offset)] = offset
         }
-        self.init(cycles: cycles)
+        self.init(sources: sources)
     }
 
     /// Returns a permutation of `0..<count` shuffled in the given style.
@@ -120,7 +112,7 @@ extension Permutation {
                     firstRank += 1
                 }
             }
-            return Permutation(tracing: count) { ranks[$0] }.inverted
+            return Permutation(sources: ranks)
         case .outFaro:
             return Permutation(faro: count, half: (count + 1) / 2, firstStep: 0)
         case .inFaro:

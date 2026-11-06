@@ -25,10 +25,36 @@ extension Permutation {
     }
 
     /// Splices each offset in the range out of its cycle by deleting it from the line, shifts every later offset by the change in count, and leaves the new offsets in place.
+    ///
+    /// Relabeling the surviving offsets keeps their order, so each cycle keeps its largest offset first and the cycles stay sorted: one pass over the line is enough, dropping any cycle left with one offset. Only a cycle that loses its largest offset needs re-rooting and re-sorting, which falls back to rebuilding from cycles.
     public mutating func replaceSubrange(_ range: Range<Int>, withCount newCount: Int) {
         precondition(range.lowerBound >= 0, "The range must not contain negative offsets.")
         precondition(newCount >= 0, "The new count must not be negative.")
         let shift: Int = newCount - range.count
+        var line: [Int] = []
+        line.reserveCapacity(cycle.count)
+        var blockStart: Int = 0
+        var root: Int = -1
+        for offset in cycle {
+            if offset > root {
+                guard !range.contains(offset) else {
+                    rebuildReplacingSubrange(range, shift: shift)
+                    return
+                }
+                if line.count - blockStart == 1 { line.removeLast() }
+                root = offset
+                blockStart = line.count
+                line.append(offset < range.lowerBound ? offset : offset + shift)
+            } else if !range.contains(offset) {
+                line.append(offset < range.lowerBound ? offset : offset + shift)
+            }
+        }
+        if line.count - blockStart == 1 { line.removeLast() }
+        self = Permutation(cycle: line)
+    }
+
+    /// Splices the range out cycle by cycle and rebuilds the line, for when a cycle loses its largest offset.
+    mutating func rebuildReplacingSubrange(_ range: Range<Int>, shift: Int) {
         let replaced: [[Int]] = cycles.map { cycle in
             cycle.compactMap { offset -> Int? in
                 if offset < range.lowerBound { return offset }
