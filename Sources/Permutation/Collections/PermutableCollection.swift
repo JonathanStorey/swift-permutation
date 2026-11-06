@@ -38,7 +38,7 @@ public extension PermutableCollection {
         let first: Int = distance(from: startIndex, to: i)
         let second: Int = distance(from: startIndex, to: j)
         swapAt(i, j)
-        return first == second ? Permutation(cycle: []) : Permutation(cycle: [max(first, second), min(first, second)])
+        return first == second ? Permutation(cycle: []) : Permutation(cycle: [Swift.max(first, second), Swift.min(first, second)])
     }
 
     /// Moves the element at the source index so it ends up at the destination index, shifting the elements between them, and returns the permutation applied.
