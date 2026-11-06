@@ -11,7 +11,7 @@ let ranking: Permutation = players.sort { $0.score > $1.score }  // reorders, re
 players.apply(ranking.inverted)                                   // undo in one call
 ```
 
-Every sort, shuffle, reverse, rotate and move in this package returns a `Permutation`. Behind `IdentifiedSet` and `PermutableSet`, the elements stay where they were stored and only a small array of offsets is rewritten. A reorder costs the same whether each element is an `Int` or a 4 KB struct, and an O(1) lookup by id survives every reorder untouched.
+Every sort, shuffle, reverse, rotate and move in this package returns a `Permutation`. Behind `Arrangement`, `IdentifiedSet`, `PermutableSet` and `PermutableDictionary`, the elements stay where they were stored and only a small array of offsets is rewritten. A reorder costs the same whether each element is an `Int` or a 4 KB struct, and an O(1) lookup by id survives every reorder untouched.
 
 ## Contents
 
@@ -20,7 +20,7 @@ Every sort, shuffle, reverse, rotate and move in this package returns a `Permuta
 - [A quick tour](#a-quick-tour)
 - [Performance](#performance)
 - [Development](#development)
-- [Five fun facts about permutations](#five-fun-facts-about-permutations)
+- [Six fun facts about permutations](#six-fun-facts-about-permutations)
 
 ## Requirements
 
@@ -74,6 +74,17 @@ A protocol with two requirements, `apply(_:)` and `swapAt(_:_:)`, that brings ev
 
 A type that is also a `MutableCollection` keeps the standard library's in-place `sort` and `reverse`, and gets the permutation only by asking for one: `let ranking: Permutation = tiles.sort()`.
 
+### `Arrangement`
+
+The simplest `PermutableCollection`: a fixed list of elements that can only be reordered. The elements need not be `Hashable` or even `Equatable`, and since they never move in memory, an arrangement always knows the single permutation that took it from its original order to the order shown.
+
+```swift
+var deck: Arrangement<Card> = Arrangement(newDeck)
+deck.shuffle(.outFaro)
+deck.permutation          // every reorder so far, folded into one
+deck.isInOriginalOrder    // true again after 8 out-faros
+```
+
 ### `IdentifiedSet`
 
 An ordered collection of `Identifiable` elements with O(1) lookup, insertion and removal by id. It conforms to `PermutableCollection` and `UpsertableCollection`.
@@ -103,9 +114,26 @@ let order: Permutation = tags.sort()
 
 `PermutableSet` does not conform to `SetAlgebra`, because `==` respects order, which breaks SetAlgebra's laws.
 
+### `PermutableDictionary`
+
+An ordered dictionary with O(1) lookup, insertion and removal by key, whose keys are an `Arrangement`. It separates two kinds of reorder that other ordered dictionaries blur:
+
+```swift
+var scores: PermutableDictionary<String, Int> = ["ann": 3, "bob": 9, "cy": 5]
+scores.keys.sort()               // moves whole entries: ["ann": 3, "bob": 9, "cy": 5]
+scores.sort { $0.value > $1.value }  // also moves entries: ["bob": 9, "cy": 5, "ann": 3]
+scores.values.sort()             // hands the values around, keys stay put: ["bob": 3, "cy": 5, "ann": 9]
+scores["dee", default: 0] += 1   // edits in place, appending when new
+
+var santas = PermutableDictionary(uniqueKeys: friends, values: friends)
+santas.values.shuffle(.derangement)  // a fair Secret Santa: nobody draws themselves
+```
+
+Reordering `keys` or the dictionary moves each key together with its value. Reordering `values` reassigns values among keys that stay where they are. Neither copies a key or a value, because both live in storage that reordering never touches.
+
 ## Performance
 
-[**Benchmarks/RESULTS.md**](Benchmarks/RESULTS.md) has tables comparing `PermutableSet` with swift-collections' `OrderedSet`, and `IdentifiedSet` with Point-Free's `IdentifiedArray`, along with the charts. In short, removal and reordering are where moving offsets instead of elements pays off most.
+[**Benchmarks/RESULTS.md**](Benchmarks/RESULTS.md) has tables comparing `PermutableSet` with swift-collections' `OrderedSet`, `PermutableDictionary` with its `OrderedDictionary`, and `IdentifiedSet` with Point-Free's `IdentifiedArray`, along with the charts. In short, removal and reordering are where moving offsets instead of elements pays off most.
 
 ## Development
 
@@ -130,7 +158,7 @@ cd Examples
 swift run -c release FunFacts
 ```
 
-## Five fun facts about permutations
+## Six fun facts about permutations
 
 Each one is a few lines of code in the [Examples](Examples) package, with a page explaining the mathematics.
 
@@ -139,6 +167,7 @@ Each one is a few lines of code in the [Examples](Examples) package, with a page
 3. **Eight perfect shuffles restore a deck.** Eight out-faro shuffles put 52 cards back in order, but the in-faro needs 52. Both numbers are the least common multiple of a cycle structure. → [Eight perfect shuffles](Examples/Docs/FaroShuffles.md)
 4. **Half of all 15 puzzles are impossible.** Every slide flips the parity of the arrangement, so Sam Loyd's famous 14–15 swap can never be solved. → [The 15 puzzle](Examples/Docs/FifteenPuzzle.md)
 5. **A shuffled deck hides an increasing run of about 2√n cards.** Ulam's problem links patience sorting to random matrix theory, and it also gives the fewest moves that sort a list, which `forEachMove` uses. → [Ulam's problem](Examples/Docs/UlamsProblem.md)
+6. **A fair Secret Santa forms one big chain only e/n of the time.** Follow the gifts from person to person, and with ten friends the chain closes before reaching everyone almost three times in four. → [Secret Santa](Examples/Docs/SecretSanta.md)
 
 ## License
 

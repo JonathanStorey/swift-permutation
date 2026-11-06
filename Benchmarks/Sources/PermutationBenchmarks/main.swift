@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: main.swift
-// dependencies: [IdentifiedArrayBenchmarks.swift, IdentifiedSetBenchmarks.swift, PermutableSetBenchmarks.swift, PermutationBenchmarks.swift, Record.swift]
+// dependencies: [IdentifiedArrayBenchmarks.swift, IdentifiedSetBenchmarks.swift, PermutableDictionaryBenchmarks.swift, PermutableSetBenchmarks.swift, PermutationBenchmarks.swift, Record.swift]
 
 import CollectionsBenchmark
 
@@ -15,4 +15,5 @@ benchmark.addIdentifiedSetBenchmarks()
 benchmark.addPermutationBenchmarks()
 benchmark.addPermutableSetBenchmarks()
 benchmark.addIdentifiedArrayBenchmarks()
+benchmark.addPermutableDictionaryBenchmarks()
 benchmark.main()

@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Examples/Sources/FunFacts/main.swift
-// dependencies: [Derangements.swift, FaroShuffles.swift, FifteenPuzzle.swift, HundredPrisoners.swift, UlamsProblem.swift]
+// dependencies: [Derangements.swift, FaroShuffles.swift, FifteenPuzzle.swift, HundredPrisoners.swift, SecretSanta.swift, UlamsProblem.swift]
 
 import Foundation
 
@@ -18,3 +18,5 @@ print()
 FifteenPuzzle.run()
 print()
 UlamsProblem.run()
+print()
+SecretSanta.run()
