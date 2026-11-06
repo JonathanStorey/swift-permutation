@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: PermutationBenchmarks.swift
-// dependencies: [Collections/Collection+Permutation.swift, Collections/IdentifiedSet.swift, Permutation/Permutation+Composition.swift, Permutation/Permutation+Merge.swift, Permutation/Permutation+Shuffle.swift, Record.swift]
+// dependencies: [Collections/Collection+Permutation.swift, Collections/IdentifiedSet.swift, Permutation/Permutation+Composition.swift, Permutation/Permutation+ForEach.swift, Permutation/Permutation+Merge.swift, Permutation/Permutation+RangeReplace.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation+Stride.swift, Record.swift]
 
 import CollectionsBenchmark
 import Permutation
@@ -31,6 +31,28 @@ extension Benchmark {
             let permutation: Permutation = Permutation(shuffles: input.count)
             return { timer in
                 timer.measure { blackHole(permutation.merging(with: permutation)) }
+            }
+        }
+
+        add(title: "Permutation advanced(by: 3)", input: [Int].self) { input in
+            let permutation: Permutation = Permutation(shuffles: input.count)
+            return { timer in
+                timer.measure { blackHole(permutation.advanced(by: 3)) }
+            }
+        }
+
+        add(title: "Permutation insert(at:) middle", input: [Int].self) { input in
+            let permutation: Permutation = Permutation(shuffles: input.count)
+            return { timer in
+                var copy: Permutation = permutation
+                timer.measure { copy.insert(at: input.count / 2) }
+                blackHole(copy)
+            }
+        }
+
+        add(title: "Permutation init(shuffles:) riffle", input: [Int].self) { input in
+            return { timer in
+                timer.measure { blackHole(Permutation(shuffles: input.count, .riffle)) }
             }
         }
 
