@@ -1,0 +1,59 @@
+// repository: https://github.com/JonathanStorey/swift-permutation
+// path: PermutationBenchmarks.swift
+// dependencies: [Collections/Collection+Permutation.swift, Collections/IdentifiedSet.swift, Permutation/Permutation+Composition.swift, Permutation/Permutation+Merge.swift, Permutation/Permutation+Shuffle.swift, Record.swift]
+
+import CollectionsBenchmark
+import Permutation
+
+extension Benchmark {
+
+    /// Adds the tasks that time permutations themselves and the paths that build or apply them. Each builds its permutations outside the timed region.
+    mutating func addPermutationBenchmarks() {
+
+        // MARK: Building and combining
+
+        add(title: "Permutation inverted", input: [Int].self) { input in
+            let permutation: Permutation = Permutation(shuffles: input.count)
+            return { timer in
+                timer.measure { blackHole(permutation.inverted) }
+            }
+        }
+
+        add(title: "Permutation followed(by:)", input: [Int].self) { input in
+            let first: Permutation = Permutation(shuffles: input.count)
+            let second: Permutation = Permutation(shuffles: input.count)
+            return { timer in
+                timer.measure { blackHole(first.followed(by: second)) }
+            }
+        }
+
+        add(title: "Permutation merging(with:) identical", input: [Int].self) { input in
+            let permutation: Permutation = Permutation(shuffles: input.count)
+            return { timer in
+                timer.measure { blackHole(permutation.merging(with: permutation)) }
+            }
+        }
+
+        // MARK: Applying
+
+        add(title: "[Int] apply(_:) random permutation", input: [Int].self) { input in
+            let permutation: Permutation = Permutation(shuffles: input.count)
+            return { timer in
+                var array: [Int] = input
+                array.reserveCapacity(input.count)
+                timer.measure { array.apply(permutation) }
+                blackHole(array)
+            }
+        }
+
+        add(title: "IdentifiedSet<Record> move(fromOffsets:) last to next to last", input: [Record].self) { input in
+            return { timer in
+                var set: IdentifiedSet<Record> = IdentifiedSet(input)
+                set.reserveCapacity(input.count)
+                let last: Int = Swift.max(input.count - 1, 0)
+                timer.measure { set.move(fromOffsets: [last], toOffset: Swift.max(last - 1, 0)) }
+                blackHole(set)
+            }
+        }
+    }
+}
