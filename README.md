@@ -10,7 +10,7 @@ Most reordering in Swift is performed within a collection that conforms to `Muta
 
 This package allows one to separate the act of reordering from mutation while simultaneously preserving the details of the sort. `Permutation` is the small value type that records the details of a reorder. Every sort, shuffle, reverse and move returns one, so the information is kept. You can invert it to undo, combine two of them into one, replay it as the fewest drag-and-drop moves, or apply it to a second collection so the two stay in step.
 
-Meanwhile, our base protocol `PermutableCollection` only requires that a collection can swap two of its elements. Unlike `MutableCollection`, it never needs to overwrite them, so sets, dictionaries and identified collections can reorder freely without risking their rules. By focusing on permutation, our collections (`Arrangement`, `IdentifiedSet`, `PermutableSet` and `PermutableDictionary`) consistently outperform the standard library and other competing packages on these reordering operations.
+Meanwhile, our base protocol `PermutableCollection` only requires that a collection can swap two of its elements. Unlike `MutableCollection`, it never needs to overwrite them, so sets, dictionaries and identified collections can reorder freely without risking their rules. By focusing on permutation, our collections (`Arrangement`, `IdentifiedSet`, `PermutableSet` and `PermutableDictionary`) outperform the standard library and other competing packages on most reordering operations.
 
 ```swift
 import Permutation
