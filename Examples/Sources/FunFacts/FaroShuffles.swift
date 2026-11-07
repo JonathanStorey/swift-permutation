@@ -19,7 +19,7 @@ enum FaroShuffles {
         // The order is the least common multiple of the cycle lengths, read off the Foata line without shuffling once.
         precondition(outFaro.order == 8 && inFaro.order == 52)
         // Eight applications compose back to the identity.
-        precondition(outFaro.advanced(by: 8).cycle.isEmpty)
+        precondition(outFaro.raised(to: 8).cycle.isEmpty)
         // Shuffling a real deck agrees: an arrangement knows when its cards are back where they started.
         var cards: Arrangement<String> = Arrangement(Self.cards)
         var shuffles: Int = 0

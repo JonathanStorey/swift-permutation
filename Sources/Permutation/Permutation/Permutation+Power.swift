@@ -1,19 +1,19 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
-// path: Permutation/Permutation+Stride.swift
+// path: Permutation/Permutation+Power.swift
 // dependencies: [Permutation/Permutation.swift]
 
 extension Permutation {
 
-    /// Replaces the permutation with the one that applies it `distance` times, and returns the new permutation.
-    @discardableResult public mutating func advance(by distance: Int) -> Permutation {
-        self = advanced(by: distance)
+    /// Replaces the permutation with the one that applies it `exponent` times, and returns the new permutation.
+    @discardableResult public mutating func raise(to exponent: Int) -> Permutation {
+        self = raised(to: exponent)
         return self
     }
 
-    /// Returns the permutation that applies this one `distance` times, so a negative distance applies the inverse.
+    /// Returns the permutation that applies this one `exponent` times, so a negative exponent applies the inverse and zero gives the identity.
     ///
-    /// Within a cycle of length `L`, the element at position `j` lands at position `j + distance` modulo `L`, so each cycle splits into `gcd(L, distance)` cycles that step `distance` positions at a time. Each is written straight onto the new line starting at its largest offset. A cycle that does not split keeps its largest offset and its place, so the line is already in Foata form unless some cycle split, and then only the cycles are reordered by their largest offsets, never the offsets themselves.
-    public func advanced(by distance: Int) -> Permutation {
+    /// Within a cycle of length `L`, the element at position `j` lands at position `j + exponent` modulo `L`, so each cycle splits into `gcd(L, exponent)` cycles that step `exponent` positions at a time. Each is written straight onto the new line starting at its largest offset. A cycle that does not split keeps its largest offset and its place, so the line is already in Foata form unless some cycle split, and then only the cycles are reordered by their largest offsets, never the offsets themselves.
+    public func raised(to exponent: Int) -> Permutation {
         var line: [Int] = []
         line.reserveCapacity(cycle.count)
         var roots: [Int] = []
@@ -25,7 +25,7 @@ extension Permutation {
             guard position == cycle.count || cycle[position] > root else { continue }
             let length: Int = position - blockStart
             if length > 1 {
-                let step: Int = (distance % length + length) % length
+                let step: Int = (exponent % length + length) % length
                 if step != 0 {
                     var divisor: Int = length
                     var remainder: Int = step
