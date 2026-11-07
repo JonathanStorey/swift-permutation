@@ -47,8 +47,8 @@ PAIRS = [
         "sort by key",
         "shuffle",
         "reverse",
-        "values shuffle",
-        "values sort",
+        "sort by value",
+        "shuffle values among keys",
     ]),
 ]
 

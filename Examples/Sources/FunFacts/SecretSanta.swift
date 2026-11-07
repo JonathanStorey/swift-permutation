@@ -11,10 +11,10 @@ enum SecretSanta {
 
     static let names: [String] = ["Ava", "Ben", "Cyd", "Dee", "Eli", "Fay", "Gus", "Hal", "Ivy", "Jo"]
 
-    /// Draws a fair Secret Santa: every giver starts paired with themselves, then the recipients are deranged among the givers, who stay put.
+    /// Draws a fair Secret Santa: every giver starts paired with themselves, then the recipients are reassigned by a derangement while the givers stay put.
     static func draw(using generator: inout SplitMix64) -> PermutableDictionary<String, String> {
         var recipients: PermutableDictionary<String, String> = PermutableDictionary(uniqueKeys: names, values: names)
-        recipients.values.shuffle(.derangement, using: &generator)
+        recipients.reassignValues(shuffling: .derangement, using: &generator)
         return recipients
     }
 

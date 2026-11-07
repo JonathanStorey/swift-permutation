@@ -43,7 +43,7 @@ extension Benchmark {
 
         add(title: "PermutableDictionary<Int, Int> subscript lookup", input: [Int].self) { input in
             var dictionary: PermutableDictionary<Int, Int> = PermutableDictionary(uniqueKeys: input, values: input)
-            dictionary.values.shuffle()
+            dictionary.reassignValues()
             let probes: [Int] = input.shuffled()
             return { timer in
                 timer.measure {
@@ -157,34 +157,38 @@ extension Benchmark {
             }
         }
 
-        // MARK: Reordering values
+        // MARK: Reordering by value
 
-        add(title: "PermutableDictionary<Int, Int> values shuffle", input: [Int].self) { input in
+        add(title: "PermutableDictionary<Int, Int> sort by value", input: [Int].self) { input in
+            let values: [Int] = input.shuffled()
             return { timer in
-                var dictionary: PermutableDictionary<Int, Int> = PermutableDictionary(uniqueKeys: input, values: input)
-                timer.measure { dictionary.values.shuffle() }
-                blackHole(dictionary)
-            }
-        }
-        add(title: "OrderedDictionary<Int, Int> values shuffle", input: [Int].self) { input in
-            return { timer in
-                var dictionary: OrderedDictionary<Int, Int> = OrderedDictionary(uniqueKeys: input, values: input)
-                timer.measure { dictionary.values.shuffle() }
-                blackHole(dictionary)
-            }
-        }
-
-        add(title: "PermutableDictionary<Int, Int> values sort", input: [Int].self) { input in
-            return { timer in
-                var dictionary: PermutableDictionary<Int, Int> = PermutableDictionary(uniqueKeys: input, values: input)
+                var dictionary: PermutableDictionary<Int, Int> = PermutableDictionary(uniqueKeys: input, values: values)
                 timer.measure { dictionary.values.sort() }
                 blackHole(dictionary)
             }
         }
-        add(title: "OrderedDictionary<Int, Int> values sort", input: [Int].self) { input in
+        add(title: "OrderedDictionary<Int, Int> sort by value", input: [Int].self) { input in
+            let values: [Int] = input.shuffled()
+            return { timer in
+                var dictionary: OrderedDictionary<Int, Int> = OrderedDictionary(uniqueKeys: input, values: values)
+                timer.measure { dictionary.sort { $0.value < $1.value } }
+                blackHole(dictionary)
+            }
+        }
+
+        // MARK: Reassigning values among keys
+
+        add(title: "PermutableDictionary<Int, Int> shuffle values among keys", input: [Int].self) { input in
+            return { timer in
+                var dictionary: PermutableDictionary<Int, Int> = PermutableDictionary(uniqueKeys: input, values: input)
+                timer.measure { dictionary.reassignValues() }
+                blackHole(dictionary)
+            }
+        }
+        add(title: "OrderedDictionary<Int, Int> shuffle values among keys", input: [Int].self) { input in
             return { timer in
                 var dictionary: OrderedDictionary<Int, Int> = OrderedDictionary(uniqueKeys: input, values: input)
-                timer.measure { dictionary.values.sort() }
+                timer.measure { dictionary.values.shuffle() }
                 blackHole(dictionary)
             }
         }

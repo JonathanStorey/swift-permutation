@@ -129,20 +129,21 @@ let order: Permutation = tags.sort()
 
 ### `PermutableDictionary`
 
-An ordered dictionary with O(1) lookup, insertion and removal by key, whose keys are an `Arrangement`. It separates two kinds of reorder that other ordered dictionaries blur:
+An ordered dictionary with O(1) lookup, insertion and removal by key, whose keys are an `Arrangement`. Every reorder moves whole entries, whether you sort the dictionary, its `keys` or its `values`, so a key never loses its value by accident. Handing values around while the keys stay put is a separate, deliberately named operation:
 
 ```swift
 var scores: PermutableDictionary<String, Int> = ["ann": 3, "bob": 9, "cy": 5]
 scores.keys.sort()               // moves whole entries: ["ann": 3, "bob": 9, "cy": 5]
-scores.sort { $0.value > $1.value }  // also moves entries: ["bob": 9, "cy": 5, "ann": 3]
-scores.values.sort()             // hands the values around, keys stay put: ["bob": 3, "cy": 5, "ann": 9]
+scores.values.sort()             // sorts by value, ties keep their order: ["ann": 3, "cy": 5, "bob": 9]
+scores.values.sorted()           // just the values, dictionary untouched: [3, 5, 9]
+scores.sort { $0.value > $1.value }  // any order you like: ["bob": 9, "cy": 5, "ann": 3]
 scores["dee", default: 0] += 1   // edits in place, appending when new
 
 var santas = PermutableDictionary(uniqueKeys: friends, values: friends)
-santas.values.shuffle(.derangement)  // a fair Secret Santa: nobody draws themselves
+santas.reassignValues(shuffling: .derangement)  // keys stay put: a fair Secret Santa
 ```
 
-Reordering `keys` or the dictionary moves each key together with its value. Reordering `values` reassigns values among keys that stay where they are. Neither copies a key or a value, because both live in storage that reordering never touches, and both hand back the permutation so either kind of reorder can be undone.
+Reordering the dictionary, `keys` or `values` moves each key together with its value. `reassignValues` hands values around among keys that stay where they are. Neither copies a key or a value, because both live in storage that reordering never touches, and both hand back the permutation so either kind of reorder can be undone.
 
 ## Performance
 
