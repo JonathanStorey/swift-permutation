@@ -13,7 +13,7 @@ extension Permutation {
     /// Returns the permutation `distance` steps after this one, so `Permutation().advanced(by: 1)` swaps the first two offsets and a negative distance steps back. Stepping back past the identity is a precondition failure. A short distance is stepped straight on the Foata word, and a long one jumps through the `LehmerCode` in O(m log m).
     public func advanced(by distance: Int) -> Permutation {
         guard distance != 0 else { return self }
-        guard distance.magnitude <= 16 else { return advanced(by: LehmerCode(distance)) }
+        guard distance.magnitude <= 16 else { return Permutation(lehmerCode: lehmerCode + LehmerCode(distance)) }
         var word: [Int] = foataWord(count: minimumCount)
         if distance > 0 {
             for _ in 0..<distance { Permutation.stepForward(&word) }

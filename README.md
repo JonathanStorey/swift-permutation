@@ -70,6 +70,7 @@ let cubed: Permutation = faro.raised(to: 3)         // powers, negative too
 let next: Permutation = faro.advanced(by: 1)        // the next permutation, one cheap step
 let place: LehmerCode = faro.lehmerCode             // its place among all permutations, never overflows
 let far: Permutation = Permutation(lehmerCode: 1_000_000_000)  // jump straight to any place
+for place in stride(from: LehmerCode(0), to: 24, by: 1) { _ = Permutation(lehmerCode: place) }  // every order of 4
 let merged: Permutation? = mine.merging(with: theirs, from: base)  // three-way merge of reorders
 ```
 

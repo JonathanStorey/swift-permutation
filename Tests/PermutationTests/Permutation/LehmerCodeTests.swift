@@ -53,4 +53,10 @@ import Testing
         let bad: Data = Data(#"{"digits":[2]}"#.utf8)
         #expect(throws: DecodingError.self) { try JSONDecoder().decode(LehmerCode.self, from: bad) }
     }
+
+    @Test func stridesLikeAnInteger() {
+        #expect(Array(stride(from: LehmerCode(3), through: 7, by: 2)) == [3, 5, 7])
+        #expect(LehmerCode(10).distance(to: 4) == -6)
+        #expect(LehmerCode(digits: Array(1...30)).advanced(by: 1) > LehmerCode(digits: Array(1...30)))
+    }
 }
