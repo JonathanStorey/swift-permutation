@@ -29,4 +29,11 @@ import Testing
         let letters: [String] = ["a", "b", "c", "d", "e"]
         #expect(letters.applying(Permutation(reversing: letters.count)) == ["e", "d", "c", "b", "a"])
     }
+
+    @Test func defaultInitializerIsTheIdentity() {
+        let order: Permutation = Permutation(sorting: [3, 1, 2])
+        #expect(Permutation().cycle.isEmpty)
+        #expect(Permutation().followed(by: order) == order)
+        #expect([7, 8, 9].applying(Permutation()) == [7, 8, 9])
+    }
 }
