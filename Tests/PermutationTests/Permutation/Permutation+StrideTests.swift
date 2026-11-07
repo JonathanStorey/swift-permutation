@@ -59,4 +59,28 @@ import Testing
         #expect(orders.count == 6)
         #expect(Set(orders.map { [0, 1, 2].applying($0) }).count == 6)
     }
+
+    @Test func singleStepsMatchTheDigitArithmetic() {
+        var generator: SeededGenerator = SeededGenerator(state: 34)
+        for count in [2, 5, 9, 200] {
+            for _ in 0..<20 {
+                let permutation: Permutation = Permutation(shuffles: count, using: &generator)
+                let next: Permutation = permutation.successor()
+                #expect(next == permutation.advanced(by: 3).advanced(by: -2))
+                #expect(next.predecessor() == permutation)
+                #expect(Permutation(foataWord: permutation.foataWord(count: count)) == permutation)
+            }
+        }
+    }
+
+    @Test func threeElementsStepInTheDocumentedOrder() {
+        var order: Permutation = Permutation()
+        var words: [[Int]] = []
+        for _ in 0..<6 {
+            words.append(order.foataWord(count: 3))
+            order.advance(by: 1)
+        }
+        #expect(words == [[0, 1, 2], [1, 0, 2], [0, 2, 1], [2, 0, 1], [1, 2, 0], [2, 1, 0]])
+        #expect(order.foataWord(count: 4) == [0, 1, 3, 2])
+    }
 }

@@ -1,18 +1,24 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Permutation/Permutation+Stride.swift
-// dependencies: [Permutation/Permutation+Sources.swift, Permutation/Permutation.swift]
+// dependencies: [Permutation/Permutation.swift]
 
 // Every permutation has a place in one endless list, its rank, so `advance(by: 1)` steps to the next permutation the way `Strideable` steps any value.
 //
-// - The rank reads the Lehmer code of the sources in the factorial number system: digit `i` counts the earlier positions whose source is larger than position `i`'s, and is worth `i!`. Offsets that stay put add nothing, so every permutation of the first `n` offsets ranks below `n!` whatever `n` is, and stepping from the identity visits every order of `n` elements before it moves any offset past them.
-// - Stepping adds the distance to the digits with carries, so it never computes a rank and works for a permutation of any size. Only `distance(to:)` multiplies by factorials, from the highest differing digit down, and traps if the true distance does not fit in an `Int`.
-// - Digits and orders are read and rebuilt with a Fenwick tree in O(m log m), where m is `minimumCount`.
+// - The order is read off the Foata word, the line with each fixed point written in as its own cycle. Positions count from the right, so the last position matters most, and at each position a larger offset ranks first. Offsets past the moved ones sit at their own positions, which is the first choice there, so every permutation of the first `n` offsets ranks below `n!` whatever `n` is, and stepping from the identity visits every order of `n` elements before it moves any offset past them.
+// - One step works straight on the word, like `next_permutation` read from the right: find the first rise from the left, swap its larger end with the first smaller entry before it, and reverse what lies before it. The entries touched average fewer than three, so a step costs one pass to write the fixed points in and one to drop them.
+// - A longer step adds the distance to the word's Lehmer code in the factorial number system, carrying digit by digit, so it never computes a rank and works for a permutation of any size. Only `distance(to:)` multiplies by factorials, from the highest differing digit down, and traps if the true distance does not fit in an `Int`.
+// - Digits are read and turned back into a word with a Fenwick tree in O(m log m), where m is `minimumCount`.
 
 extension Permutation: Strideable {
 
     /// Returns the permutation `distance` places after this one in rank order, so `Permutation().advanced(by: 1)` swaps the first two offsets and a negative distance steps back. Stepping back past the identity is a precondition failure.
     public func advanced(by distance: Int) -> Permutation {
-        guard distance != 0 else { return self }
+        switch distance {
+        case 0: return self
+        case 1: return successor()
+        case -1: return predecessor()
+        default: break
+        }
         var digits: [Int] = lehmerDigits
         var carry: Int = distance
         var place: Int = 1
@@ -71,21 +77,91 @@ extension Permutation: Strideable {
 
 extension Permutation {
 
-    /// The Lehmer code of the sources over `0..<minimumCount`: digit `i` counts the positions before `i` whose source is larger than the source at `i`, so it lies in `0...i`, and the highest digit is never zero.
+    /// The next permutation in rank order, stepped straight on the Foata word: the first rise from the left, read as `word[p - 1] < word[p]`, takes the first earlier entry smaller than `word[p]` in exchange, and the entries before `p` are reversed. A word that falls all the way down is the last order of its length, so the next offset is written in as a fixed point to rise to.
+    @usableFromInline func successor() -> Permutation {
+        var word: [Int] = foataWord(count: minimumCount)
+        while word.count < 2 { word.append(word.count) }
+        var rise: Int = 1
+        while rise < word.count && word[rise - 1] > word[rise] { rise += 1 }
+        if rise == word.count { word.append(word.count) }
+        var partner: Int = 0
+        while word[partner] > word[rise] { partner += 1 }
+        word.swapAt(partner, rise)
+        word[..<rise].reverse()
+        return Permutation(foataWord: word)
+    }
+
+    /// The previous permutation in rank order, the mirror of `successor()`: the first fall from the left takes the first earlier entry larger than it in exchange, and the entries before it are reversed. Stepping back from the identity is a precondition failure.
+    @usableFromInline func predecessor() -> Permutation {
+        var word: [Int] = foataWord(count: minimumCount)
+        var fall: Int = 1
+        while fall < word.count && word[fall - 1] < word[fall] { fall += 1 }
+        precondition(fall < word.count, "No permutation ranks before the identity.")
+        var partner: Int = 0
+        while word[partner] < word[fall] { partner += 1 }
+        word.swapAt(partner, fall)
+        word[..<fall].reverse()
+        return Permutation(foataWord: word)
+    }
+
+    /// The line over `0..<count` with every fixed point written in as its own cycle, just before the first cycle whose largest offset is larger. The result lists every offset below `count` once, so it reads as a permutation of its own.
+    @usableFromInline func foataWord(count: Int) -> [Int] {
+        var isMoved: [Bool] = [Bool](repeating: false, count: count)
+        for offset in cycle { isMoved[offset] = true }
+        var word: [Int] = []
+        word.reserveCapacity(count)
+        var candidate: Int = 0
+        var position: Int = 0
+        while position < cycle.count {
+            let root: Int = cycle[position]
+            while candidate < root {
+                if !isMoved[candidate] { word.append(candidate) }
+                candidate += 1
+            }
+            word.append(root)
+            position += 1
+            while position < cycle.count && cycle[position] < root {
+                word.append(cycle[position])
+                position += 1
+            }
+        }
+        while candidate < count {
+            if !isMoved[candidate] { word.append(candidate) }
+            candidate += 1
+        }
+        return word
+    }
+
+    /// Creates the permutation whose Foata word, fixed points included, is the word: each entry larger than every one before it starts a cycle, and cycles of one offset are dropped.
+    @usableFromInline init(foataWord word: [Int]) {
+        var line: [Int] = []
+        line.reserveCapacity(word.count)
+        var start: Int = 0
+        while start < word.count {
+            let root: Int = word[start]
+            var end: Int = start + 1
+            while end < word.count && word[end] < root { end += 1 }
+            if end - start > 1 { line.append(contentsOf: word[start..<end]) }
+            start = end
+        }
+        self.init(cycle: line)
+    }
+
+    /// The Lehmer code of the Foata word over `0..<minimumCount`: digit `i` counts the entries before position `i` that are larger than the entry there, so it lies in `0...i`.
     @usableFromInline var lehmerDigits: [Int] {
         let count: Int = minimumCount
-        let sources: [Int] = sources(count: count)
+        let word: [Int] = foataWord(count: count)
         var tree: [Int] = [Int](repeating: 0, count: count + 1)
         var digits: [Int] = [Int](repeating: 0, count: count)
         for position in 0..<count {
             var smaller: Int = 0
-            var node: Int = sources[position]
+            var node: Int = word[position]
             while node > 0 {
                 smaller += tree[node]
                 node -= node & -node
             }
             digits[position] = position - smaller
-            node = sources[position] + 1
+            node = word[position] + 1
             while node <= count {
                 tree[node] += 1
                 node += node & -node
@@ -94,7 +170,7 @@ extension Permutation {
         return digits
     }
 
-    /// Creates the permutation whose sources have the Lehmer code, filling positions from the last down: each takes the remaining source with exactly its digit of larger sources still remaining, found by descending a Fenwick tree.
+    /// Creates the permutation whose Foata word has the Lehmer code, filling positions from the last down: each takes the remaining offset with exactly its digit of larger offsets still remaining, found by descending a Fenwick tree.
     @usableFromInline init(lehmerDigits digits: [Int]) {
         let count: Int = digits.count
         guard count > 1 else {
@@ -109,7 +185,7 @@ extension Permutation {
         }
         var highest: Int = 1
         while highest * 2 <= count { highest *= 2 }
-        var sources: [Int] = [Int](repeating: 0, count: count)
+        var word: [Int] = [Int](repeating: 0, count: count)
         for position in stride(from: count - 1, through: 0, by: -1) {
             var remaining: Int = position - digits[position] + 1
             var node: Int = 0
@@ -122,13 +198,13 @@ extension Permutation {
                 }
                 step >>= 1
             }
-            sources[position] = node
+            word[position] = node
             var update: Int = node + 1
             while update <= count {
                 tree[update] -= 1
                 update += update & -update
             }
         }
-        self.init(sources: sources)
+        self.init(foataWord: word)
     }
 }
