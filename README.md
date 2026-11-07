@@ -1,14 +1,16 @@
 # Permutation
 
-Reorder Swift collections **without moving their elements**, and get back the reorder itself as a value you can undo, store, compose and merge.
+Reorder Swift collections and get back the reorder itself as a value you can undo, store, compose and merge.
 
 ## Why permutations
 
-Every app reorders things. A list is sorted by date, a playlist is shuffled, and a user drags a row to a new spot. Each of those changes is a **permutation**, a rule for where every element goes. Mathematicians treat a permutation as an object you can hold, reverse and combine. The Swift standard library has no such object. It can only perform a reorder, and once the reorder is done, the record of what happened is gone.
+A list is sorted by date, a playlist is shuffled, and a user drags a row to a new spot. Each of those changes is a **permutation**, a rule for where every element goes. Mathematicians treat a permutation as an object you can hold, reverse and combine. The Swift standard library has no such object. Without it, one can still perform a reorder, but once the reorder is done, the record of what happened is gone.
 
-That gap shows up in a familiar place. `sort()` works **in place**: instead of building a new sorted copy, it moves the elements around inside the array you already have, which saves memory and time. But it returns nothing. Afterwards you can't say which element came from where, so you can't undo the sort, animate it, apply the same reorder to a parallel array, or send it to another device. In-place sorting also requires `MutableCollection`, which means the collection must let anyone overwrite any element at any time. Collections that need to protect their contents can't safely make that promise. An ordered set can't hold the same element twice, even for a moment in the middle of a sort, so swift-collections' `OrderedSet` and `OrderedDictionary` each carry their own custom sorting code instead of sharing one standard version. In the 2023 Swift Forums pitch for a [`PermutableCollection` protocol](https://forums.swift.org/t/permutablecollection-protocol/65314), Swift's library developers agreed the need was real. They noted that a new protocol can't be inserted into the standard library's existing hierarchy without breaking compatibility, so it stayed out.
+Most reordering in Swift is performed within a collection that conforms to `MutableCollection`. However, this ability to sort comes with the promise of "mutability", which allows any element of the collection to be overwritten at any time. While this works in many situations, there are collection types that can't safely make that promise of "mutability". For example, an ordered set or an ordered dictionary can't hold the same element twice. In SwiftUI, a `List` also misbehaves if two elements share the same identifier.
 
-This package supplies both missing pieces. `Permutation` is a small value that records a reorder. Every sort, shuffle, reverse and move returns one, so the information that `sort()` throws away is kept. You can invert it to undo, combine two of them into one, replay it as the fewest drag-and-drop moves, or apply it to a second collection so the two stay in step. `PermutableCollection` asks a collection only to swap two of its elements, never to overwrite them, so sets, dictionaries and identified collections can reorder freely without risking their rules. The package's collections go one step further and never move an element at all. They rewrite only a short list of positions, so a reorder costs the same whether each element is a number or a large struct, and lookups stay instant throughout. If your code reorders anything you later need to explain, undo, animate or sync, keep the permutation.
+This package allows one to separate the act of reordering from mutation while simultaneously preserving the details of the sort. `Permutation` is the small value type that records the details of a reorder. Every sort, shuffle, reverse and move returns one, so the information is kept. You can invert it to undo, combine two of them into one, replay it as the fewest drag-and-drop moves, or apply it to a second collection so the two stay in step.
+
+Meanwhile, our base protocol `PermutableCollection` only requires that a collection can swap two of its elements. Unlike `MutableCollection`, it never needs to overwrite them, so sets, dictionaries and identified collections can reorder freely without risking their rules. By focusing on permutation, our collections (`Arrangement`, `IdentifiedSet`, `PermutableSet` and `PermutableDictionary`) consistently outperform the standard library and other competing packages on these reordering operations.
 
 ```swift
 import Permutation
@@ -51,7 +53,7 @@ Then add `.product(name: "Permutation", package: "swift-permutation")` to your t
 
 ### `Permutation`
 
-This is the record that `sort()` throws away. Where the standard library performs a reorder and forgets it, a `Permutation` holds it as an ordinary value you can keep in a property, compare, save to disk or send over the network.
+This is the record of the reordering. Where the standard library performs a reorder and forgets it, a `Permutation` holds it as an ordinary value you can keep in a property, compare, save to disk or send over the network.
 
 It is stored in **Foata's single-line notation**: the cycles written one after another, each starting at its largest offset, in increasing order of those offsets. Offsets it doesn't mention stay put, so a single `Permutation` applies to any collection that is long enough.
 
@@ -72,7 +74,7 @@ Because the reorder is an object, you can do things with it after the fact. `inv
 
 ### `PermutableCollection`
 
-This is the protocol the standard library couldn't add. `MutableCollection` asks a collection to accept any new element at any position, a promise that sets, dictionaries and identified collections can't keep without risking duplicates. `PermutableCollection` asks only that two elements trade places, which every ordered collection can do safely.
+This is the protocol the standard library skipped over. `MutableCollection` asks a collection to accept any new element at any position, a promise that sets, dictionaries and identified collections can't keep without risking duplicates. `PermutableCollection` asks only that two elements trade places, which every ordered collection can do safely.
 
 It has two requirements, `apply(_:)` and `swapAt(_:_:)`, and in return supplies every reorder below, each returning its `Permutation`:
 
@@ -89,7 +91,7 @@ Every one of these still works in place, so nothing is copied, but unlike the st
 
 ### `Arrangement`
 
-The simplest `PermutableCollection`: a fixed list of elements that can only be reordered. Nothing can be added, removed or overwritten, which is exactly the guarantee `MutableCollection` can't make. The elements need not be `Hashable` or even `Equatable`, and since they never move in memory, an arrangement always remembers its starting order and knows the single permutation that took it from there to the order shown.
+The simplest `PermutableCollection` is a fixed list of elements that can only be reordered. Nothing can be added, removed or overwritten, which is exactly the guarantee `MutableCollection` can't make. The elements need not be `Hashable` or even `Equatable`, and since they never move in memory, an arrangement always remembers its starting order and knows the single permutation that took it from there to the order shown.
 
 ```swift
 var deck: Arrangement<Card> = Arrangement(newDeck)
@@ -100,7 +102,7 @@ deck.isInOriginalOrder    // true again after 8 out-faros
 
 ### `IdentifiedSet`
 
-An ordered collection of `Identifiable` elements with O(1) lookup, insertion and removal by id, built for the lists an app shows. Sorting or dragging a row never moves an element. Only a short list of positions changes, so reordering a list of large models is as cheap as reordering numbers, and the permutation it returns is what you need to undo the change or animate it. It conforms to `PermutableCollection` and `UpsertableCollection`.
+An ordered collection of `Identifiable` elements with O(1) lookup, insertion and removal by id, built for SwiftUI's `List` and `ForEach`. Element binding is supported as well, working through the ID rather than the index. Reordering a list of large models is as cheap as reordering numbers, and the permutation it returns is what you need to undo the change or animate it. It conforms to `PermutableCollection` and `UpsertableCollection`.
 
 ```swift
 var roster: IdentifiedSet<Player> = []
@@ -115,7 +117,7 @@ With SwiftUI, `$roster[id:]` and `$roster.elements()` give bindings that follow 
 
 ### `PermutableSet`
 
-The same storage with each `Hashable` element as its own key. This is the case from the forums pitch: an ordered set must never hold the same element twice, even halfway through a sort, so it can reorder only by swapping, never by overwriting. It offers the set operations whose result has a clear order. The receiver's elements keep their order, and new elements follow in the order of the argument.
+The same storage with each `Hashable` element as its own key. It only offers the set operations whose result has a clear order. The receiver's elements keep their order, and new elements follow in the order of the argument.
 
 ```swift
 var tags: PermutableSet<String> = ["swift", "ios", "math"]
