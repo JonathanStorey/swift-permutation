@@ -114,6 +114,7 @@ var deck: Arrangement<Card> = Arrangement(newDeck)
 deck.shuffle(.outFaro)
 deck.permutation          // every reorder so far, folded into one
 deck.isInOriginalOrder    // true again after 8 out-faros
+deck.permutation = Permutation()  // back to the original order in one step
 ```
 
 ### `IdentifiedSet`

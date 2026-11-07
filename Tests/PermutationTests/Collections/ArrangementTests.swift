@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Collections/ArrangementTests.swift
-// dependencies: [Collections/Arrangement.swift, Collections/PermutableCollection.swift, Permutation/Permutation.swift, Support/SeededGenerator.swift]
+// dependencies: [Collections/Arrangement.swift, Collections/PermutableDictionary.swift, Collections/PermutableCollection.swift, Permutation/Permutation.swift, Support/SeededGenerator.swift]
 
 import Foundation
 import Testing
@@ -91,5 +91,29 @@ import Testing
         #expect(decoded == arrangement)
         #expect(decoded.isInOriginalOrder)
         #expect(arrangement.description == "[\"y\", \"z\", \"x\"]")
+    }
+
+    @Test func settingThePermutationJumpsStraightToThatOrder() {
+        var generator: SeededGenerator = SeededGenerator(state: 11)
+        var arrangement: Arrangement<Int> = Arrangement(0..<30)
+        arrangement.shuffle(using: &generator)
+        arrangement.reverse()
+        let target: Permutation = Permutation(shuffles: 30, using: &generator)
+        arrangement.permutation = target
+        #expect(arrangement.permutation == target)
+        #expect(Array(arrangement) == Array(0..<30).applying(target))
+        #expect(arrangement.elements == Array(0..<30))
+        arrangement.permutation = Permutation()
+        #expect(arrangement.isInOriginalOrder)
+        #expect(Array(arrangement) == Array(0..<30))
+    }
+
+    @Test func settingTheKeysPermutationReordersWholeEntries() {
+        var scores: PermutableDictionary<String, Int> = ["ann": 3, "bob": 9, "cy": 5]
+        scores.sort { $0.value > $1.value }
+        scores.keys.permutation = Permutation()
+        #expect(Array(scores.keys) == ["ann", "bob", "cy"])
+        #expect(Array(scores.values) == [3, 9, 5])
+        #expect(scores["bob"] == 9)
     }
 }
