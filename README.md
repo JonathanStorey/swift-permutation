@@ -117,6 +117,16 @@ deck.isInOriginalOrder    // true again after 8 out-faros
 deck.permutation = Permutation()  // back to the original order in one step
 ```
 
+Setting `permutation` jumps straight to any order, so walking the powers of a shuffle visits every arrangement it can reach before it repeats:
+
+```swift
+let faro: Permutation = Permutation(shuffles: deck.count, .outFaro)
+for power in 0..<faro.order {               // 8 arrangements, then the deck repeats
+    deck.permutation = faro.advanced(by: power)
+    print(deck.prefix(5))
+}
+```
+
 ### `IdentifiedSet`
 
 An ordered collection of `Identifiable` elements with O(1) lookup, insertion and removal by id, built for SwiftUI's `List` and `ForEach`. Element binding is supported as well, working through the ID rather than the index. Reordering a list of large models is as cheap as reordering numbers, and the permutation it returns is what you need to undo the change or animate it. It conforms to `PermutableCollection` and `UpsertableCollection`.
