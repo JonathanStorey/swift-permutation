@@ -1,54 +1,57 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
-// path: Permutation/LehmerCode.swift
+// path: Permutation/Permutation+Rank.swift
 // dependencies: []
 
-/// A whole number written in the factorial number system, which is how a permutation's place among all permutations is counted.
-///
-/// The digit worth `k!` lies in `0...k`, so every number has one spelling, and the permutations of `n` offsets take exactly the places below `n!`. Because the digits grow with the number, a code never overflows: the place of a permutation of a thousand offsets is as easy to hold and add to as the place of one of three.
-///
-/// A code is signed so it can measure distances in both directions, as `Strideable` asks of a stride. It is `Strideable` itself too, with itself as its stride, so `stride(from: 0, to: 24, by: 1)` counts through the places of every order of four offsets. Addition and subtraction carry digit by digit in O(n) for n digits. Multiplication, which `Strideable` requires but stepping never uses, doubles and adds in O(n² log n).
-public struct LehmerCode: Sendable, Hashable {
+extension Permutation {
 
-    /// The digits from the one worth `1!` upward, so `digits[i]` is worth `(i + 1)!` and lies in `0...(i + 1)`, with no zeros at the end.
-    public private(set) var digits: [Int]
+    /// A permutation's place among all permutations: its Lehmer code, read as a whole number in the factorial number system.
+    ///
+    /// The digit worth `k!` lies in `0...k`, so every number has one spelling, and the permutations of `n` offsets take exactly the places below `n!`. Because the digits grow with the number, a rank never overflows: the place of a permutation of a thousand offsets is as easy to hold and add to as the place of one of three.
+    ///
+    /// A rank is signed so it can measure distances in both directions, as `Strideable` asks of a stride. It is `Strideable` itself too, with itself as its stride, so `stride(from: 0, to: 24, by: 1)` counts through the places of every order of four offsets. Addition and subtraction carry digit by digit in O(n) for n digits. Multiplication, which `Strideable` requires but stepping never uses, doubles and adds in O(n² log n).
+    public struct Rank: Sendable, Hashable {
 
-    /// Whether the code is below zero. Zero is never negative.
-    public private(set) var isNegative: Bool
+        /// The digits from the one worth `1!` upward, so `digits[i]` is worth `(i + 1)!` and lies in `0...(i + 1)`, with no zeros at the end.
+        public private(set) var digits: [Int]
 
-    /// Creates a code from its digits, starting with the one worth `1!`, each at most its place.
-    public init(digits: [Int], isNegative: Bool = false) {
-        for (index, digit) in digits.enumerated() {
-            precondition(digit >= 0 && digit <= index + 1, "The digit worth k! must lie in 0...k.")
+        /// Whether the rank is below zero. Zero is never negative.
+        public private(set) var isNegative: Bool
+
+        /// Creates a rank from its digits, starting with the one worth `1!`, each at most its place.
+        public init(digits: [Int], isNegative: Bool = false) {
+            for (index, digit) in digits.enumerated() {
+                precondition(digit >= 0 && digit <= index + 1, "The digit worth k! must lie in 0...k.")
+            }
+            self.init(unchecked: digits, isNegative: isNegative)
         }
-        self.init(unchecked: digits, isNegative: isNegative)
-    }
 
-    /// Creates a code from digits already in range, dropping zeros at the end.
-    @usableFromInline init(unchecked digits: [Int], isNegative: Bool) {
-        var trimmed: [Int] = digits
-        while trimmed.last == 0 { trimmed.removeLast() }
-        self.digits = trimmed
-        self.isNegative = isNegative && !trimmed.isEmpty
-    }
-
-    /// Creates the code for the integer, dividing by 2, 3, 4 and so on to read off each digit.
-    public init<Source: BinaryInteger>(_ source: Source) {
-        var remaining: Source.Magnitude = source.magnitude
-        var digits: [Int] = []
-        var base: Int = 2
-        while remaining != 0 {
-            let divisor: Source.Magnitude = Source.Magnitude(base)
-            digits.append(Int(remaining % divisor))
-            remaining /= divisor
-            base += 1
+        /// Creates a rank from digits already in range, dropping zeros at the end.
+        @usableFromInline init(unchecked digits: [Int], isNegative: Bool) {
+            var trimmed: [Int] = digits
+            while trimmed.last == 0 { trimmed.removeLast() }
+            self.digits = trimmed
+            self.isNegative = isNegative && !trimmed.isEmpty
         }
-        self.init(unchecked: digits, isNegative: source < 0)
+
+        /// Creates the rank for the integer, dividing by 2, 3, 4 and so on to read off each digit.
+        public init<Source: BinaryInteger>(_ source: Source) {
+            var remaining: Source.Magnitude = source.magnitude
+            var digits: [Int] = []
+            var base: Int = 2
+            while remaining != 0 {
+                let divisor: Source.Magnitude = Source.Magnitude(base)
+                digits.append(Int(remaining % divisor))
+                remaining /= divisor
+                base += 1
+            }
+            self.init(unchecked: digits, isNegative: source < 0)
+        }
     }
 }
 
 // MARK: - Digit arithmetic
 
-extension LehmerCode {
+extension Permutation.Rank {
 
     /// Adds two magnitudes, carrying at most one into each next place.
     @usableFromInline static func add(_ lhs: [Int], _ rhs: [Int]) -> [Int] {
@@ -103,65 +106,65 @@ extension LehmerCode {
 
 // MARK: - Numbers
 
-extension LehmerCode: ExpressibleByIntegerLiteral {
+extension Permutation.Rank: ExpressibleByIntegerLiteral {
 
     public init(integerLiteral value: Int) {
         self.init(value)
     }
 }
 
-extension LehmerCode: Comparable {
+extension Permutation.Rank: Comparable {
 
-    /// Two codes are equal when they have the same sign and digits. Written out so that `Strideable`'s default, which goes through `distance(to:)`, never stands in.
-    public static func == (lhs: LehmerCode, rhs: LehmerCode) -> Bool {
+    /// Two ranks are equal when they have the same sign and digits. Written out so that `Strideable`'s default, which goes through `distance(to:)`, never stands in.
+    public static func == (lhs: Permutation.Rank, rhs: Permutation.Rank) -> Bool {
         lhs.isNegative == rhs.isNegative && lhs.digits == rhs.digits
     }
 
-    public static func < (lhs: LehmerCode, rhs: LehmerCode) -> Bool {
+    public static func < (lhs: Permutation.Rank, rhs: Permutation.Rank) -> Bool {
         if lhs.isNegative != rhs.isNegative { return lhs.isNegative }
         let order: Int = compare(lhs.digits, rhs.digits)
         return lhs.isNegative ? order > 0 : order < 0
     }
 }
 
-extension LehmerCode: SignedNumeric {
+extension Permutation.Rank: SignedNumeric {
 
     public init?<Source: BinaryInteger>(exactly source: Source) {
         self.init(source)
     }
 
-    /// The code without its sign.
-    public var magnitude: LehmerCode {
-        LehmerCode(unchecked: digits, isNegative: false)
+    /// The rank without its sign.
+    public var magnitude: Permutation.Rank {
+        Permutation.Rank(unchecked: digits, isNegative: false)
     }
 
-    public static func + (lhs: LehmerCode, rhs: LehmerCode) -> LehmerCode {
+    public static func + (lhs: Permutation.Rank, rhs: Permutation.Rank) -> Permutation.Rank {
         if lhs.isNegative == rhs.isNegative {
-            return LehmerCode(unchecked: add(lhs.digits, rhs.digits), isNegative: lhs.isNegative)
+            return Permutation.Rank(unchecked: add(lhs.digits, rhs.digits), isNegative: lhs.isNegative)
         }
         switch compare(lhs.digits, rhs.digits) {
         case 0: return 0
-        case 1: return LehmerCode(unchecked: subtract(lhs.digits, rhs.digits), isNegative: lhs.isNegative)
-        default: return LehmerCode(unchecked: subtract(rhs.digits, lhs.digits), isNegative: rhs.isNegative)
+        case 1: return Permutation.Rank(unchecked: subtract(lhs.digits, rhs.digits), isNegative: lhs.isNegative)
+        default: return Permutation.Rank(unchecked: subtract(rhs.digits, lhs.digits), isNegative: rhs.isNegative)
         }
     }
 
-    public static func - (lhs: LehmerCode, rhs: LehmerCode) -> LehmerCode {
-        var negated: LehmerCode = rhs
+    public static func - (lhs: Permutation.Rank, rhs: Permutation.Rank) -> Permutation.Rank {
+        var negated: Permutation.Rank = rhs
         negated.negate()
         return lhs + negated
     }
 
-    public static func += (lhs: inout LehmerCode, rhs: LehmerCode) {
+    public static func += (lhs: inout Permutation.Rank, rhs: Permutation.Rank) {
         lhs = lhs + rhs
     }
 
-    public static func -= (lhs: inout LehmerCode, rhs: LehmerCode) {
+    public static func -= (lhs: inout Permutation.Rank, rhs: Permutation.Rank) {
         lhs = lhs - rhs
     }
 
     /// Multiplies by doubling and adding, reading the right side's bits by halving it.
-    public static func * (lhs: LehmerCode, rhs: LehmerCode) -> LehmerCode {
+    public static func * (lhs: Permutation.Rank, rhs: Permutation.Rank) -> Permutation.Rank {
         guard !lhs.digits.isEmpty && !rhs.digits.isEmpty else { return 0 }
         var product: [Int] = []
         var addend: [Int] = lhs.digits
@@ -170,10 +173,10 @@ extension LehmerCode: SignedNumeric {
             if halve(&multiplier) == 1 { product = add(product, addend) }
             if !multiplier.isEmpty { addend = add(addend, addend) }
         }
-        return LehmerCode(unchecked: product, isNegative: lhs.isNegative != rhs.isNegative)
+        return Permutation.Rank(unchecked: product, isNegative: lhs.isNegative != rhs.isNegative)
     }
 
-    public static func *= (lhs: inout LehmerCode, rhs: LehmerCode) {
+    public static func *= (lhs: inout Permutation.Rank, rhs: Permutation.Rank) {
         lhs = lhs * rhs
     }
 
@@ -184,8 +187,8 @@ extension LehmerCode: SignedNumeric {
 
 public extension Int {
 
-    /// The code as an `Int`, or nil when it does not fit, which happens for the places of permutations that move offsets past the first 20. Read with Horner's rule from the top digit down.
-    init?(exactly code: LehmerCode) {
+    /// The rank as an `Int`, or nil when it does not fit, which happens for the places of permutations that move offsets past the first 20. Read with Horner's rule from the top digit down.
+    init?(exactly code: Permutation.Rank) {
         var value: Int = 0
         for index in code.digits.indices.reversed() {
             let (sum, sumOverflow): (Int, Bool) = value.addingReportingOverflow(code.digits[index])
@@ -197,29 +200,29 @@ public extension Int {
     }
 }
 
-extension LehmerCode: Strideable {
+extension Permutation.Rank: Strideable {
 
-    /// The code `distance` places later.
-    public func advanced(by distance: LehmerCode) -> LehmerCode {
+    /// The rank `distance` places later.
+    public func advanced(by distance: Permutation.Rank) -> Permutation.Rank {
         self + distance
     }
 
-    /// The number of places from this code to the other.
-    public func distance(to other: LehmerCode) -> LehmerCode {
+    /// The number of places from this rank to the other.
+    public func distance(to other: Permutation.Rank) -> Permutation.Rank {
         other - self
     }
 }
 
-extension LehmerCode: CustomStringConvertible {
+extension Permutation.Rank: CustomStringConvertible {
 
     /// The decimal value when it fits in an `Int`, otherwise the digits.
     public var description: String {
         if let value: Int = Int(exactly: self) { return String(value) }
-        return "\(isNegative ? "-" : "")LehmerCode(digits: \(digits))"
+        return "\(isNegative ? "-" : "")Rank(digits: \(digits))"
     }
 }
 
-extension LehmerCode: Codable {
+extension Permutation.Rank: Codable {
 
     private enum CodingKeys: String, CodingKey {
         case digits

@@ -1,17 +1,17 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
-// path: Permutation/Permutation+LehmerCode.swift
-// dependencies: [Permutation/LehmerCode.swift, Permutation/Permutation+Advance.swift, Permutation/Permutation.swift]
+// path: Permutation/Permutation+Ranking.swift
+// dependencies: [Permutation/Permutation+Rank.swift, Permutation/Permutation+Advance.swift, Permutation/Permutation.swift]
 
-// A permutation's place among all permutations, as a `LehmerCode`, which makes `Permutation` `Strideable` with no ceiling.
+// A permutation's place among all permutations, as a `Permutation.Rank`, which makes `Permutation` `Strideable` with no ceiling.
 //
-// - The place counts in the order `advance(by: 1)` steps through: `Permutation(lehmerCode: k)` is exactly `Permutation().advanced(by: k)`.
+// - The place counts in the order `advance(by: 1)` steps through: `Permutation(rank: k)` is exactly `Permutation().advanced(by: k)`.
 // - The code is read off the Foata word, the line with each fixed point written in. The digit worth `i!` counts the entries before position `i` that are larger than the entry there, so offsets that stay put add nothing and every permutation of the first `n` offsets has a code below `n!`.
 // - Both directions count with a Fenwick tree in O(m log m), where m is `minimumCount`.
 
 extension Permutation {
 
     /// This permutation's place in the order `advance(by:)` steps through, starting from the identity at zero.
-    public var lehmerCode: LehmerCode {
+    public var rank: Permutation.Rank {
         let count: Int = minimumCount
         guard count > 1 else { return 0 }
         let word: [Int] = foataWord(count: count)
@@ -31,11 +31,11 @@ extension Permutation {
                 node += node & -node
             }
         }
-        return LehmerCode(unchecked: digits, isNegative: false)
+        return Permutation.Rank(unchecked: digits, isNegative: false)
     }
 
-    /// Creates the permutation at the place the code gives, filling the Foata word from its last position down: each takes the remaining offset with exactly its digit of larger offsets still remaining, found by descending a Fenwick tree. The code must not be negative.
-    public init(lehmerCode code: LehmerCode) {
+    /// Creates the permutation at the place the rank gives, filling the Foata word from its last position down: each takes the remaining offset with exactly its digit of larger offsets still remaining, found by descending a Fenwick tree. The rank must not be negative.
+    public init(rank code: Permutation.Rank) {
         precondition(!code.isNegative, "No permutation comes before the identity.")
         let count: Int = code.digits.count + 1
         guard count > 1 else {
@@ -75,7 +75,7 @@ extension Permutation {
     }
 
     /// Replaces the permutation with the one `distance` places after it, and returns the new permutation.
-    @discardableResult public mutating func advance(by distance: LehmerCode) -> Permutation {
+    @discardableResult public mutating func advance(by distance: Permutation.Rank) -> Permutation {
         self = advanced(by: distance)
         return self
     }
@@ -84,18 +84,18 @@ extension Permutation {
 extension Permutation: Strideable {
 
     /// Returns the permutation `distance` places after this one, in O(m log m) however far the jump. Stepping back past the identity is a precondition failure.
-    public func advanced(by distance: LehmerCode) -> Permutation {
+    public func advanced(by distance: Permutation.Rank) -> Permutation {
         guard !distance.digits.isEmpty else { return self }
-        return Permutation(lehmerCode: lehmerCode + distance)
+        return Permutation(rank: rank + distance)
     }
 
     /// The number of places from this permutation to the other, negative when the other comes first.
-    public func distance(to other: Permutation) -> LehmerCode {
-        other.lehmerCode - lehmerCode
+    public func distance(to other: Permutation) -> Permutation.Rank {
+        other.rank - rank
     }
 
     /// Whether this permutation comes before the other in the order `advance(by:)` steps through.
     public static func < (lhs: Permutation, rhs: Permutation) -> Bool {
-        lhs.lehmerCode < rhs.lehmerCode
+        lhs.rank < rhs.rank
     }
 }
