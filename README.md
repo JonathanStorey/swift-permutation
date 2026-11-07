@@ -87,7 +87,15 @@ It has two requirements, `apply(_:)` and `swapAt(_:_:)`, and in return supplies 
 | `swap(_:_:)` | a single transposition |
 | `stablePartition(by:)` | the partition index |
 
-Every one of these still works in place, so nothing is copied, but unlike the standard library's versions, each one hands back what it did. A type that is also a `MutableCollection` keeps the standard library's in-place `sort` and `reverse`, and gets the permutation only by asking for one: `let ranking: Permutation = tiles.sort()`.
+Every one of these still works in place, so nothing is copied, but unlike the standard library's versions, each one hands back what it did. Each also takes a `recording:` argument that folds what it did into a running history:
+
+```swift
+var history: Permutation = Permutation()
+tiles.sort(recording: &history)
+tiles.move(from: 2, to: 0, recording: &history)
+tiles.apply(history.inverted)        // undo both at once
+```
+ A type that is also a `MutableCollection` keeps the standard library's in-place `sort` and `reverse`, and gets the permutation only by asking for one: `let ranking: Permutation = tiles.sort()`.
 
 ### `Arrangement`
 
