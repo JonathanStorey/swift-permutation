@@ -89,6 +89,14 @@ It has two requirements, `apply(_:)` and `swapAt(_:_:)`, and in return supplies 
 
 Every one of these still works in place, so nothing is copied, but unlike the standard library's versions, each one hands back what it did. A type that is also a `MutableCollection` keeps the standard library's in-place `sort` and `reverse`, and gets the permutation only by asking for one: `let ranking: Permutation = tiles.sort()`.
 
+The non-mutating `sorted`, `shuffled` and `reversed` forget how they built their result, so this package adds versions that record it. They work on any collection, including a plain array, and a `PermutableCollection` gets back its own type:
+
+```swift
+var order: Permutation = Permutation()
+let ranked: [Int] = scores.sorted(by: >, recording: &order)  // scores is unchanged
+names.apply(order)                                           // a parallel array follows along
+```
+
 ### `Arrangement`
 
 The simplest `PermutableCollection` is a fixed list of elements that can only be reordered. Nothing can be added, removed or overwritten, which is exactly the guarantee `MutableCollection` can't make. The elements need not be `Hashable` or even `Equatable`, and since they never move in memory, an arrangement always remembers its starting order and knows the single permutation that took it from there to the order shown.
