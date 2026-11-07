@@ -107,8 +107,14 @@ extension Arrangement: PermutableCollection {
 public extension Arrangement {
 
     /// Every reorder since the arrangement was created, folded into the one permutation that takes the original order to the order shown. For a dictionary's keys, the original order is the order the keys are stored in.
+    ///
+    /// Setting it shows the original elements in the new permutation's order, whatever came before, so `Permutation()` restores the original order and a saved permutation restores a saved order. The permutation must fit within the count.
     @inlinable var permutation: Permutation {
-        Permutation(sources: offsets.sources.map { Int($0) })
+        get { Permutation(sources: offsets.sources.map { Int($0) }) }
+        set {
+            offsets.resetToStorageOrder()
+            offsets.apply(newValue)
+        }
     }
 
     /// Whether the elements are back in the order the arrangement was created with, in O(n) at worst.

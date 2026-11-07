@@ -81,6 +81,12 @@ extension Offsets: PermutableCollection {
         sources[start] = carried
     }
 
+    /// Shows every storage offset at its own position again, leaving the table untouched.
+    @inlinable mutating func resetToStorageOrder() {
+        for position in sources.indices { sources[position] = Int32(truncatingIfNeeded: position) }
+        isInStorageOrder = true
+    }
+
     /// Exchanges the storage offsets at the two positions.
     @inlinable mutating func swapAt(_ i: Int, _ j: Int) {
         guard i != j else { return }
