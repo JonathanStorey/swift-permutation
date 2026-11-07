@@ -80,7 +80,7 @@ It has two requirements, `apply(_:)` and `swapAt(_:_:)`, and in return supplies 
 
 | Method | Returns |
 | --- | --- |
-| `sort()`, `sort(by:)` | the permutation that sorted it |
+| `sort()`, `sort(by:)`, `sort(using:)` | the permutation that sorted it |
 | `shuffle(_:)` | random, cyclic, derangement, riffle, or out- and in-faro |
 | `reverse()`, `rotate(toStartAt:)` | the permutation applied |
 | `move(from:to:)`, `move(fromOffsets:toOffset:)` | ready for SwiftUI's `onMove` |
@@ -98,6 +98,12 @@ let rankedNames: [String] = names.applying(order)    // a parallel array follows
 ```
 
 `Permutation(shuffles:)` and `Permutation(reversing:)` do the same for shuffles and reversals.
+
+`sort(using:)` and `Permutation(sorting:using:)` take a Foundation `SortDescriptor` or `KeyPathComparator`, or an array of them in which each one breaks the ties of the ones before it:
+
+```swift
+let order: Permutation = roster.sort(using: [SortDescriptor(\.lastName), SortDescriptor(\.firstName)])
+```
 
 ### `Arrangement`
 
