@@ -95,7 +95,8 @@ tiles.sort(recording: &history)
 tiles.move(from: 2, to: 0, recording: &history)
 tiles.apply(history.inverted)        // undo both at once
 ```
- A type that is also a `MutableCollection` keeps the standard library's in-place `sort` and `reverse`, and gets the permutation only by asking for one: `let ranking: Permutation = tiles.sort()`.
+
+A type that is also a `MutableCollection` keeps the standard library's in-place `sort` and `reverse`, and gets the permutation by asking for one, as in `let ranking: Permutation = tiles.sort()`, or by recording it with `tiles.sort(recording: &history)`. A `stablePartition` returns its partition index, so recording is the way to keep its permutation.
 
 ### `Arrangement`
 
