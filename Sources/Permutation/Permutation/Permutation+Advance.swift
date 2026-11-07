@@ -6,13 +6,14 @@
 //
 // - Each step works straight on the Foata word, the line with each fixed point written in as its own cycle, like `next_permutation` read from the right: find the first rise from the left, swap its larger end with the first smaller entry before it, and reverse what lies before it. The entries touched average fewer than three.
 // - Offsets past the moved ones are already where a step leaves them for last, so stepping from the identity visits all `n!` orders of the first `n` offsets before it moves any offset past them. No count is needed.
-// - A longer step writes the fixed points in once, takes every step on the word, and drops them once at the end.
+// - A few steps write the fixed points in once, take every step on the word, and drop them once at the end. Longer jumps go through the `LehmerCode` instead.
 
 extension Permutation {
 
-    /// Returns the permutation `distance` steps after this one, so `Permutation().advanced(by: 1)` swaps the first two offsets and a negative distance steps back. Stepping back past the identity is a precondition failure. Each step is cheap, but the steps are taken one at a time.
+    /// Returns the permutation `distance` steps after this one, so `Permutation().advanced(by: 1)` swaps the first two offsets and a negative distance steps back. Stepping back past the identity is a precondition failure. A short distance is stepped straight on the Foata word, and a long one jumps through the `LehmerCode` in O(m log m).
     public func advanced(by distance: Int) -> Permutation {
         guard distance != 0 else { return self }
+        guard distance.magnitude <= 16 else { return advanced(by: LehmerCode(distance)) }
         var word: [Int] = foataWord(count: minimumCount)
         if distance > 0 {
             for _ in 0..<distance { Permutation.stepForward(&word) }
