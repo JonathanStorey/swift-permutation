@@ -68,6 +68,8 @@ let both: Permutation = first.followed(by: second)  // composition
 let undo: Permutation = both.inverted               // inverse
 let cubed: Permutation = faro.raised(to: 3)         // powers, negative too
 let next: Permutation = faro.advanced(by: 1)        // the next permutation, one cheap step
+let place: Permutation.Rank = faro.rank             // its place among all permutations, never overflows
+let far: Permutation = Permutation(rank: 1_000_000_000)  // jump straight to any place
 let merged: Permutation? = mine.merging(with: theirs, from: base)  // three-way merge of reorders
 ```
 

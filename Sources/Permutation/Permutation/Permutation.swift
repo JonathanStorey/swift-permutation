@@ -8,6 +8,11 @@ public struct Permutation: Hashable, Sendable {
     /// The cycles written one after another, each starting with its largest offset, in increasing order of those starting offsets.
     public let cycle: [Int]
 
+    /// Two permutations are equal when they move every offset to the same place, which in Foata form means the same line. Written out so that `Strideable`'s default, which goes through `distance(to:)`, never stands in.
+    @inlinable public static func == (lhs: Permutation, rhs: Permutation) -> Bool {
+        lhs.cycle == rhs.cycle
+    }
+
     /// Creates the identity, which leaves every offset in place. It is the starting point for folding reorders together with `followed(by:)`.
     @inlinable public init() {
         cycle = []
