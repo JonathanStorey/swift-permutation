@@ -20,6 +20,6 @@ If your group wants one big chain, which makes for a nicer reveal, a fair hat dr
 
 ## In this package
 
-The example builds a `PermutableDictionary` that maps each giver to themselves, then calls `recipients.values.shuffle(.derangement)`. Shuffling the **values** hands the recipients around while every giver stays where they are, so the keys keep their order and no one draws their own name. It then follows the gifts with ordinary key lookups and counts how often the chain visits everyone, over 200,000 draws.
+The example builds a `PermutableDictionary` that maps each giver to themselves, then calls `recipients.reassignValues(shuffling: .derangement)`. Reassigning the values hands the recipients around while every giver stays where they are, so the keys keep their order and no one draws their own name. It then follows the gifts with ordinary key lookups and counts how often the chain visits everyone, over 200,000 draws.
 
-Reordering `recipients.keys` instead would move whole entries, so every giver would keep the recipient they had. That distinction between moving entries and handing values around is what `PermutableDictionary` is built for.
+Shuffling `recipients.keys` or `recipients.values` instead would move whole entries, so every giver would keep the recipient they had. That distinction between moving entries and handing values around is what `PermutableDictionary` is built for.

@@ -96,22 +96,35 @@ import Testing
 
     // MARK: Reordering values
 
-    @Test func sortingValuesHandsThemAroundWhileKeysStay() {
-        var dictionary: PermutableDictionary<String, Int> = ["a": 3, "b": 1, "c": 2]
-        dictionary.values.sort()
-        expectConsistent(dictionary, equals: [("a", 1), ("b", 2), ("c", 3)])
-        #expect(dictionary.valueStorage == [3, 1, 2])
+    @Test func sortingValuesSortsTheWholeDictionaryStably() {
+        var dictionary: PermutableDictionary<String, Int> = ["a": 3, "b": 1, "c": 2, "d": 1, "e": 3]
+        let sorting: Permutation = dictionary.values.sort()
+        expectConsistent(dictionary, equals: [("b", 1), ("d", 1), ("c", 2), ("a", 3), ("e", 3)])
+        #expect(dictionary.valueStorage == [3, 1, 2, 1, 3])
+        #expect(["a", "b", "c", "d", "e"].applying(sorting) == Array(dictionary.keys))
         dictionary.values.reverse()
-        expectConsistent(dictionary, equals: [("a", 3), ("b", 2), ("c", 1)])
+        expectConsistent(dictionary, equals: [("e", 3), ("a", 3), ("c", 2), ("d", 1), ("b", 1)])
         dictionary.values.swapAt(0, 1)
-        expectConsistent(dictionary, equals: [("a", 2), ("b", 3), ("c", 1)])
+        expectConsistent(dictionary, equals: [("a", 3), ("e", 3), ("c", 2), ("d", 1), ("b", 1)])
+        #expect(dictionary.values.sorted() == [1, 1, 2, 3, 3])
+    }
+
+    @Test func reassigningValuesHandsThemAroundWhileKeysStay() {
+        var dictionary: PermutableDictionary<String, Int> = ["a": 3, "b": 1, "c": 2]
+        dictionary.reassignValues(Permutation(reversing: 3))
+        expectConsistent(dictionary, equals: [("a", 2), ("b", 1), ("c", 3)])
+        #expect(dictionary.valueStorage == [3, 1, 2])
+        dictionary.reassignValues(Permutation(cycle: [1, 0]))
+        expectConsistent(dictionary, equals: [("a", 1), ("b", 2), ("c", 3)])
+        dictionary.values.sort(by: >)
+        expectConsistent(dictionary, equals: [("c", 3), ("b", 2), ("a", 1)])
     }
 
     @Test func derangedValuesGiveEveryKeySomeoneElsesValue() {
         var generator: SeededGenerator = SeededGenerator(state: 11)
         let names: [String] = ["Ava", "Ben", "Cy", "Dee", "Eli", "Fay", "Gus"]
         var santas: PermutableDictionary<String, String> = PermutableDictionary(uniqueKeys: names, values: names)
-        santas.values.shuffle(.derangement, using: &generator)
+        santas.reassignValues(shuffling: .derangement, using: &generator)
         expectConsistent(santas)
         #expect(santas.allSatisfy { $0.key != $0.value })
         #expect(Set(santas.values) == Set(names))
@@ -121,7 +134,7 @@ import Testing
     @Test func valueEditsThroughPositionsLandOnTheRightKey() {
         var dictionary: PermutableDictionary<String, Int> = ["a": 1, "b": 2, "c": 3]
         dictionary.keys.reverse()
-        dictionary.values.rotate(toStartAt: 1)
+        dictionary.reassignValues(Permutation(rotating: 3, by: 1))
         dictionary.values[0] += 100
         expectConsistent(dictionary, equals: [("c", 102), ("b", 1), ("a", 3)])
     }
@@ -139,7 +152,7 @@ import Testing
     @Test func removingAfterValuesMoveKeepsEveryPairing() {
         var generator: SeededGenerator = SeededGenerator(state: 3)
         var dictionary: PermutableDictionary<Int, Int> = PermutableDictionary(uniqueKeysWithValues: (0..<60).map { ($0, $0 + 1000) })
-        dictionary.values.shuffle(using: &generator)
+        dictionary.reassignValues(using: &generator)
         dictionary.shuffle(using: &generator)
         var model: [(Int, Int)] = dictionary.map { ($0.key, $0.value) }
         for key in [5, 59, 0, 33, 17, 18, 41] {
@@ -155,7 +168,7 @@ import Testing
 
     @Test func bulkRemovalsCompactInOrder() {
         var dictionary: PermutableDictionary<Int, String> = PermutableDictionary(uniqueKeysWithValues: (0..<40).map { ($0, String($0)) })
-        dictionary.values.reverse()
+        dictionary.reassignValues(Permutation(reversing: 40))
         dictionary.removeAll { $0.key % 3 == 0 }
         var model: [(Int, String)] = (0..<40).map { ($0, String(39 - $0)) }.filter { $0.0 % 3 != 0 }
         expectConsistent(dictionary, equals: model)
@@ -186,7 +199,7 @@ import Testing
                 let permutation: Permutation = dictionary.shuffle(using: &generator)
                 model.apply(permutation)
             case 4:
-                let permutation: Permutation = dictionary.values.shuffle(using: &generator)
+                let permutation: Permutation = dictionary.reassignValues(using: &generator)
                 let values: [Int] = model.map { $0.1 }.applying(permutation)
                 model = zip(model.map { $0.0 }, values).map { ($0, $1) }
             case 5:
@@ -209,7 +222,7 @@ import Testing
     @Test func mapValuesKeepsKeysAndOrder() {
         var dictionary: PermutableDictionary<String, Int> = ["a": 1, "b": 2, "c": 3]
         dictionary.keys.reverse()
-        dictionary.values.rotate(toStartAt: 1)
+        dictionary.reassignValues(Permutation(rotating: 3, by: 1))
         let doubled: PermutableDictionary<String, Int> = dictionary.mapValues { $0 * 2 }
         expectConsistent(doubled, equals: dictionary.map { ($0.key, $0.value * 2) })
     }
@@ -222,13 +235,13 @@ import Testing
         #expect(first == second)
         #expect(first.hashValue == second.hashValue)
         var third: PermutableDictionary<String, Int> = ["b": 1, "a": 2]
-        third.values.reverse()
+        third.reassignValues(Permutation(reversing: 2))
         #expect(third == second)
     }
 
     @Test func codableAlternatesKeysAndValues() throws {
         var dictionary: PermutableDictionary<String, Int> = ["a": 1, "b": 2]
-        dictionary.values.reverse()
+        dictionary.reassignValues(Permutation(reversing: 2))
         let data: Data = try JSONEncoder().encode(dictionary)
         #expect(String(decoding: data, as: UTF8.self) == "[\"a\",2,\"b\",1]")
         let decoded: PermutableDictionary<String, Int> = try JSONDecoder().decode(PermutableDictionary<String, Int>.self, from: data)

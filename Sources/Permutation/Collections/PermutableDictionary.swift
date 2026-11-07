@@ -6,8 +6,8 @@
 ///
 /// Keys and values each sit in an array that reordering never touches. `Offsets` keeps the order of the entries and a hash index from each key to where it is stored, and a second table records which stored value each key owns. That gives three ways to change the dictionary, each through its own door:
 ///
-/// - Reordering the dictionary, or its `keys`, moves whole entries. `dictionary.sort { $0.value < $1.value }`, `dictionary.keys.sort()` and `dictionary.keys.shuffle()` all keep every key with its value.
-/// - Reordering `values` hands the values around while every key stays put. `dictionary.values.shuffle(.derangement)` gives every key a value that belonged to another key, and `dictionary.values.sort()` gives the first key the smallest value.
+/// - Reordering the dictionary, its `keys` or its `values` moves whole entries. `dictionary.keys.sort()` sorts by key, `dictionary.values.sort()` sorts by value, keeping tied keys in their current order, and `dictionary.shuffle()` shuffles the entries. Every key keeps its value.
+/// - `reassignValues` hands the values around while every key stays put. `dictionary.reassignValues(shuffling: .derangement)` gives every key a value that belonged to another key.
 /// - Writing through a key or through `values[position]` edits a value in place.
 ///
 /// Lookups, insertions and removals by key are O(1). Finding the position of a key is O(n).
@@ -215,29 +215,35 @@ public extension PermutableDictionary {
 
 public extension PermutableDictionary {
 
-    /// The values in order. Writing through a position edits that value, and reordering them hands the values around while every key stays where it is.
+    /// The values in order. Writing through a position edits that value, and reordering them reorders the whole dictionary, so every value keeps its key. `values.sort()` sorts the dictionary by value, keeping tied keys in their current order, while `values.sorted()` only returns the values as a sorted array.
+    ///
+    /// To hand the values around while every key stays where it is, use `reassignValues(_:)` instead.
     ///
     /// Assigning a whole new collection of values must give exactly one value per key, which is checked.
     @inlinable var values: Values {
         get {
-            Values(storage: valueStorage, slots: valueSlots, sources: offsets.sources, isInStorageOrder: offsets.isInStorageOrder)
+            Values(storage: valueStorage, slots: valueSlots, offsets: offsets, keys: keyStorage)
         }
         _modify {
-            var view: Values = Values(storage: valueStorage, slots: valueSlots, sources: offsets.sources, isInStorageOrder: offsets.isInStorageOrder)
+            let original: Offsets = offsets
+            var view: Values = Values(storage: valueStorage, slots: valueSlots, offsets: offsets, keys: keyStorage)
             valueStorage = []
-            valueSlots = []
-            defer { adoptValues(view) }
+            offsets = Offsets()
+            defer { adoptValues(view, original: original) }
             yield &view
         }
     }
 
-    /// Takes the values back after a mutation. A view still built on this dictionary's order kept its layout. Anything else is stored afresh in its own order, one value per position.
-    @inlinable internal mutating func adoptValues(_ view: Values) {
-        if view.storage.count == keyStorage.count && Self.sharesStorage(view.sources, offsets.sources) {
+    /// Takes the values back after a mutation. A view still built on this dictionary's keys kept its layout and brings back the order it may have changed. Anything else leaves the order as it was and stores the new values afresh, one per position.
+    @inlinable internal mutating func adoptValues(_ view: Values, original: Offsets) {
+        if view.offsets.count == keyStorage.count && view.storage.count == keyStorage.count && Self.sharesStorage(view.keys, keyStorage) {
             valueStorage = view.storage
             valueSlots = view.slots
+            offsets = view.offsets
+            offsets.table = original.table
             return
         }
+        offsets = original
         precondition(view.count == count, "New values must hold exactly one value per key.")
         valueStorage = Array(view)
         guard !offsets.isInStorageOrder else {
@@ -249,38 +255,70 @@ public extension PermutableDictionary {
         valueSlots = slots
     }
 
-    /// The values of a dictionary in order, which reorder among the keys rather than with them.
+    /// Hands the values around the cycles of the permutation while every key stays where it is, so the value at each position moves to the next position in its cycle. No key and no value moves in memory: only the record of which value each key owns changes. Only each cycle's largest offset needs a bounds check in Foata form.
+    @inlinable mutating func reassignValues(_ permutation: Permutation) {
+        guard !permutation.cycle.isEmpty else { return }
+        if valueSlots.isEmpty { valueSlots = (0..<Int32(truncatingIfNeeded: valueStorage.count)).map { $0 } }
+        let sources: [Int32] = offsets.sources
+        let count: Int = sources.count
+        var start: Int = -1
+        var carried: Int32 = 0
+        for offset in permutation.cycle {
+            if offset > start {
+                precondition(offset < count, "Every offset in the cycle must be within the collection.")
+                if start >= 0 { valueSlots[Int(sources[start])] = carried }
+                start = offset
+                carried = valueSlots[Int(sources[offset])]
+            } else {
+                let keySlot: Int = Int(sources[offset])
+                let next: Int32 = valueSlots[keySlot]
+                valueSlots[keySlot] = carried
+                carried = next
+            }
+        }
+        valueSlots[Int(sources[start])] = carried
+    }
+
+    /// Shuffles the values among the keys in the given style while every key stays where it is, and returns the permutation applied to the values. With `.derangement`, every key ends up with a value that belonged to another key, as in a fair Secret Santa draw.
+    @inlinable @discardableResult mutating func reassignValues(shuffling style: Permutation.Shuffle = .random) -> Permutation {
+        let permutation: Permutation = Permutation(shuffles: count, style)
+        reassignValues(permutation)
+        return permutation
+    }
+
+    /// Shuffles the values among the keys in the given style, using the given generator as a source for randomness, while every key stays where it is, and returns the permutation applied to the values.
+    @inlinable @discardableResult mutating func reassignValues<R: RandomNumberGenerator>(shuffling style: Permutation.Shuffle = .random, using generator: inout R) -> Permutation {
+        let permutation: Permutation = Permutation(shuffles: count, style, using: &generator)
+        reassignValues(permutation)
+        return permutation
+    }
+
+    /// The values of a dictionary in order, whose reorders move whole entries.
     struct Values {
 
         /// The values in storage order, which reordering never changes.
         @usableFromInline var storage: [Value]
 
         /// The value storage offset each key storage offset owns, or empty while each key owns the value at its own offset.
-        @usableFromInline var slots: [Int32]
+        @usableFromInline let slots: [Int32]
 
-        /// The dictionary's order, the key storage offset at each position, which the view never changes.
-        @usableFromInline let sources: [Int32]
+        /// The dictionary's order and hash index, which a reorder through the view rewrites as it would for the dictionary itself.
+        @usableFromInline var offsets: Offsets
 
-        /// Whether the dictionary's order is its storage order.
-        @usableFromInline let isInStorageOrder: Bool
+        /// The dictionary's keys, held only so a mutation can tell this view from one taken from another dictionary.
+        @usableFromInline let keys: [Key]
 
-        @inlinable init(storage: [Value], slots: [Int32], sources: [Int32], isInStorageOrder: Bool) {
+        @inlinable init(storage: [Value], slots: [Int32], offsets: Offsets, keys: [Key]) {
             self.storage = storage
             self.slots = slots
-            self.sources = sources
-            self.isInStorageOrder = isInStorageOrder
+            self.offsets = offsets
+            self.keys = keys
         }
 
         /// The value storage offset shown at the position.
         @inlinable func slot(at position: Int) -> Int {
-            let keySlot: Int = Int(sources[position])
+            let keySlot: Int = offsets[position]
             return slots.isEmpty ? keySlot : Int(slots[keySlot])
-        }
-
-        /// Writes out the identity table before the first reorder, so each key can be handed another value.
-        @inlinable mutating func materializeSlots() {
-            guard slots.isEmpty else { return }
-            slots = (0..<Int32(truncatingIfNeeded: storage.count)).map { $0 }
         }
     }
 }
@@ -289,7 +327,7 @@ extension PermutableDictionary.Values: RandomAccessCollection {
 
     @inlinable public var startIndex: Int { 0 }
 
-    @inlinable public var endIndex: Int { sources.count }
+    @inlinable public var endIndex: Int { offsets.count }
 
     /// The value at the position, which can be edited in place.
     @inlinable public subscript(position: Int) -> Value {
@@ -299,41 +337,21 @@ extension PermutableDictionary.Values: RandomAccessCollection {
 
     /// Hands over the storage itself while the values are shown in storage order.
     @inlinable public func withContiguousStorageIfAvailable<Result>(_ body: (UnsafeBufferPointer<Value>) throws -> Result) rethrows -> Result? {
-        guard isInStorageOrder && slots.isEmpty else { return nil }
+        guard offsets.isInStorageOrder && slots.isEmpty else { return nil }
         return try storage.withUnsafeBufferPointer(body)
     }
 }
 
 extension PermutableDictionary.Values: PermutableCollection {
 
-    /// Hands the values around the cycles of the permutation by rotating which value each key owns, so no key and no value moves in memory. Only each cycle's largest offset needs a bounds check in Foata form.
+    /// Reorders the whole dictionary, so every value keeps its key, by applying the permutation to the order alone.
     @inlinable public mutating func apply(_ permutation: Permutation) {
-        guard !permutation.cycle.isEmpty else { return }
-        materializeSlots()
-        let count: Int = sources.count
-        var start: Int = -1
-        var carried: Int32 = 0
-        for offset in permutation.cycle {
-            if offset > start {
-                precondition(offset < count, "Every offset in the cycle must be within the collection.")
-                if start >= 0 { slots[Int(sources[start])] = carried }
-                start = offset
-                carried = slots[Int(sources[offset])]
-            } else {
-                let keySlot: Int = Int(sources[offset])
-                let next: Int32 = slots[keySlot]
-                slots[keySlot] = carried
-                carried = next
-            }
-        }
-        slots[Int(sources[start])] = carried
+        offsets.apply(permutation)
     }
 
-    /// Exchanges the values of the keys at the two positions.
+    /// Exchanges the entries at the two positions.
     @inlinable public mutating func swapAt(_ i: Int, _ j: Int) {
-        guard i != j else { return }
-        materializeSlots()
-        slots.swapAt(Int(sources[i]), Int(sources[j]))
+        offsets.swapAt(i, j)
     }
 }
 
@@ -344,7 +362,7 @@ extension PermutableDictionary.Values: CustomStringConvertible {
     }
 }
 
-extension PermutableDictionary.Values: Sendable where Value: Sendable {}
+extension PermutableDictionary.Values: Sendable where Key: Sendable, Value: Sendable {}
 
 // MARK: - Lookup and update
 

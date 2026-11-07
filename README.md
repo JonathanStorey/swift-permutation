@@ -6,11 +6,11 @@ Reorder Swift collections and get back the reorder itself as a value you can und
 
 A list is sorted by date, a playlist is shuffled, and a user drags a row to a new spot. Each of those changes is a **permutation**, a rule for where every element goes. Mathematicians treat a permutation as an object you can hold, reverse and combine. The Swift standard library has no such object. Without it, one can still perform a reorder, but once the reorder is done, the record of what happened is gone.
 
-Most reordering in Swift is performed within a collection that conforms to `MutableCollection`. However, this ability to sort comes with the promise of "mutability" that allows a collection element can be overwritten at any time. While this works in many situations, there are collection types that can't safely make that promise of "mutability". For example, an ordered set or an ordered dictionary can't hold the same element twice. In SwiftUI, our `List` also misbehave if two elements share the same identifier.
+Most reordering in Swift is performed within a collection that conforms to `MutableCollection`. However, this ability to sort comes with the promise of "mutability", which allows any element of the collection to be overwritten at any time. While this works in many situations, there are collection types that can't safely make that promise of "mutability". For example, an ordered set or an ordered dictionary can't hold the same element twice. In SwiftUI, a `List` also misbehaves if two elements share the same identifier.
 
 This package allows one to separate the act of reordering from mutation while simultaneously preserving the details of the sort. `Permutation` is the small value type that records the details of a reorder. Every sort, shuffle, reverse and move returns one, so the information is kept. You can invert it to undo, combine two of them into one, replay it as the fewest drag-and-drop moves, or apply it to a second collection so the two stay in step.
 
-Meanwhile, our base protocol `PermutableCollection` only requires that a collection element can swap with another. Unlike MutableCollection, there is no need to overwrite them, so sets, dictionaries and identified collections can reorder freely without risking their rules. By focusing on permutation, our collections (`Arrangement`, `IdentifiedSet`, `PermutableSet` and `PermutableDictionary`) consistently outperform the standard library and other competing packages on these reordering operations.
+Meanwhile, our base protocol `PermutableCollection` only requires that a collection can swap two of its elements. Unlike `MutableCollection`, it never needs to overwrite them, so sets, dictionaries and identified collections can reorder freely without risking their rules. By focusing on permutation, our collections (`Arrangement`, `IdentifiedSet`, `PermutableSet` and `PermutableDictionary`) consistently outperform the standard library and other competing packages on these reordering operations.
 
 ```swift
 import Permutation
@@ -55,7 +55,7 @@ Then add `.product(name: "Permutation", package: "swift-permutation")` to your t
 
 This is the record of the reordering. Where the standard library performs a reorder and forgets it, a `Permutation` holds it as an ordinary value you can keep in a property, compare, save to disk or send over the network.
 
-It is stored in **Foata's single-line notation**: the cycles written one after another, each starting at its largest offset, in increasing order of those offsets. Offsets it doesn't mention stay put, so a single `Permutation` applies to any collection long enough.
+It is stored in **Foata's single-line notation**: the cycles written one after another, each starting at its largest offset, in increasing order of those offsets. Offsets it doesn't mention stay put, so a single `Permutation` applies to any collection that is long enough.
 
 ```swift
 let faro: Permutation = Permutation(shuffles: 52, .outFaro)
@@ -87,7 +87,7 @@ It has two requirements, `apply(_:)` and `swapAt(_:_:)`, and in return supplies 
 | `swap(_:_:)` | a single transposition |
 | `stablePartition(by:)` | the partition index |
 
-Every one of these still works in place, so nothing is copied, but unlike the standard library's versions each one hands back what it did. A type that is also a `MutableCollection` keeps the standard library's in-place `sort` and `reverse`, and gets the permutation only by asking for one: `let ranking: Permutation = tiles.sort()`.
+Every one of these still works in place, so nothing is copied, but unlike the standard library's versions, each one hands back what it did. A type that is also a `MutableCollection` keeps the standard library's in-place `sort` and `reverse`, and gets the permutation only by asking for one: `let ranking: Permutation = tiles.sort()`.
 
 ### `Arrangement`
 
@@ -127,28 +127,29 @@ tags.isSubset(of: allTags)
 let order: Permutation = tags.sort()
 ```
 
-`PermutableSet` does not conform to `SetAlgebra`, because `==` respects order, which breaks SetAlgebra's laws.
+`PermutableSet` does not conform to `SetAlgebra`, because `==` respects order, which breaks the laws of `SetAlgebra`.
 
 ### `PermutableDictionary`
 
-An ordered dictionary with O(1) lookup, insertion and removal by key, whose keys are an `Arrangement`. It separates two kinds of reorder that other ordered dictionaries blur:
+An ordered dictionary with O(1) lookup, insertion and removal by key, whose keys are an `Arrangement`. Every reorder moves whole entries, whether you sort the dictionary, its `keys` or its `values`, so a key never loses its value by accident. Handing values around while the keys stay put is a separate, deliberately named operation:
 
 ```swift
 var scores: PermutableDictionary<String, Int> = ["ann": 3, "bob": 9, "cy": 5]
 scores.keys.sort()               // moves whole entries: ["ann": 3, "bob": 9, "cy": 5]
-scores.sort { $0.value > $1.value }  // also moves entries: ["bob": 9, "cy": 5, "ann": 3]
-scores.values.sort()             // hands the values around, keys stay put: ["bob": 3, "cy": 5, "ann": 9]
+scores.values.sort()             // sorts by value, ties keep their order: ["ann": 3, "cy": 5, "bob": 9]
+scores.values.sorted()           // just the values, dictionary untouched: [3, 5, 9]
+scores.sort { $0.value > $1.value }  // any order you like: ["bob": 9, "cy": 5, "ann": 3]
 scores["dee", default: 0] += 1   // edits in place, appending when new
 
 var santas = PermutableDictionary(uniqueKeys: friends, values: friends)
-santas.values.shuffle(.derangement)  // a fair Secret Santa: nobody draws themselves
+santas.reassignValues(shuffling: .derangement)  // keys stay put: a fair Secret Santa
 ```
 
-Reordering `keys` or the dictionary moves each key together with its value. Reordering `values` reassigns values among keys that stay where they are. Neither copies a key or a value, because both live in storage that reordering never touches, and both hand back the permutation so either kind of reorder can be undone.
+Reordering the dictionary, its `keys` or its `values` moves each key together with its value. `reassignValues` hands values around among keys that stay where they are. Neither copies a key or a value, because both live in storage that reordering never touches, and both hand back the permutation so either kind of reorder can be undone.
 
 ## Performance
 
-[**Benchmarks/RESULTS.md**](Benchmarks/RESULTS.md) has tables comparing `PermutableSet` with swift-collections' `OrderedSet`, `PermutableDictionary` with its `OrderedDictionary`, and `IdentifiedSet` with Point-Free's `IdentifiedArray`, along with the charts. In short, removal and reordering are where moving offsets instead of elements pays off most.
+[**Benchmarks/RESULTS.md**](Benchmarks/RESULTS.md) has tables and charts comparing `PermutableSet` and `PermutableDictionary` with swift-collections' `OrderedSet` and `OrderedDictionary`, and `IdentifiedSet` with Point-Free's `IdentifiedArray`. In short, removal and reordering are where moving offsets instead of elements pays off most.
 
 ## Development
 
@@ -157,7 +158,7 @@ swift build
 swift test
 ```
 
-The [Benchmarks](Benchmarks) package uses [swift-collections-benchmark](https://github.com/apple/swift-collections-benchmark). It takes about half an hour, so it runs from the **Benchmarks** workflow in the Actions tab, or locally:
+The [Benchmarks](Benchmarks) package uses [swift-collections-benchmark](https://github.com/apple/swift-collections-benchmark). A full run takes about half an hour, so it runs from the **Benchmarks** workflow in the Actions tab, or locally:
 
 ```sh
 cd Benchmarks
@@ -178,8 +179,8 @@ swift run -c release FunFacts
 Each one is a few lines of code in the [Examples](Examples) package, with a page explaining the mathematics.
 
 1. **Nobody gets their own coat, 36.8% of the time.** Hand back n coats at random, and the chance that nobody gets their own tends to 1/e. It barely changes between 10 guests and a million. → [Derangements](Examples/Docs/Derangements.md)
-2. **100 prisoners beat (1/2)^100 by following cycles.** If each prisoner may open only half the drawers, a strategy built on cycle structure frees all of them 31% of the time, where guessing succeeds with probability about 10^−30. → [The 100 prisoners problem](Examples/Docs/HundredPrisoners.md)
-3. **Eight perfect shuffles restore a deck.** Eight out-faro shuffles put 52 cards back in order, but the in-faro needs 52. Both numbers are the least common multiple of a cycle structure. → [Eight perfect shuffles](Examples/Docs/FaroShuffles.md)
+2. **100 prisoners beat (1/2)^100 by following cycles.** If each prisoner may open only half the drawers, a strategy built on cycle structure frees all of them 31% of the time, while guessing succeeds with probability about 10^−30. → [The 100 prisoners problem](Examples/Docs/HundredPrisoners.md)
+3. **Eight perfect shuffles restore a deck.** Eight out-faro shuffles put 52 cards back in order, but in-faros need 52. Both numbers are the least common multiple of a cycle structure. → [Eight perfect shuffles](Examples/Docs/FaroShuffles.md)
 4. **Half of all 15 puzzles are impossible.** Every slide flips the parity of the arrangement, so Sam Loyd's famous 14–15 swap can never be solved. → [The 15 puzzle](Examples/Docs/FifteenPuzzle.md)
 5. **A shuffled deck hides an increasing run of about 2√n cards.** Ulam's problem links patience sorting to random matrix theory, and it also gives the fewest moves that sort a list, which `forEachMove` uses. → [Ulam's problem](Examples/Docs/UlamsProblem.md)
 6. **A fair Secret Santa forms one big chain only e/n of the time.** Follow the gifts from person to person, and with ten friends the chain closes before reaching everyone almost three times in four. → [Secret Santa](Examples/Docs/SecretSanta.md)
