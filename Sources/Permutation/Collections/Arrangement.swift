@@ -51,7 +51,7 @@ extension Arrangement: RandomAccessCollection {
 
     /// Iterates the elements in order, reading storage straight through while nothing has reordered it.
     @inlinable public func makeIterator() -> Iterator {
-        Iterator(elements: elements, sources: offsets.sources, isInStorageOrder: offsets.isInStorageOrder)
+        Iterator(elements: elements, sources: offsets.storedSources, count: offsets.count, isInStorageOrder: offsets.isInStorageOrder)
     }
 
     /// Hands over the storage itself while it is in the order shown.
@@ -67,20 +67,23 @@ extension Arrangement: RandomAccessCollection {
 
         @usableFromInline let sources: [Int32]
 
+        @usableFromInline let count: Int
+
         @usableFromInline let isInStorageOrder: Bool
 
         @usableFromInline var position: Int
 
-        @inlinable init(elements: [Element], sources: [Int32], isInStorageOrder: Bool) {
+        @inlinable init(elements: [Element], sources: [Int32], count: Int, isInStorageOrder: Bool) {
             self.elements = elements
             self.sources = sources
+            self.count = count
             self.isInStorageOrder = isInStorageOrder
             position = 0
         }
 
         @inlinable public mutating func next() -> Element? {
             let current: Int = position
-            guard current < sources.count else { return nil }
+            guard current < count else { return nil }
             position = current + 1
             return isInStorageOrder ? elements[current] : elements[Int(sources[current])]
         }
@@ -110,7 +113,7 @@ public extension Arrangement {
     ///
     /// Setting it shows the original elements in the new permutation's order, whatever came before, so `Permutation()` restores the original order and a saved permutation restores a saved order. The permutation must fit within the count.
     @inlinable var permutation: Permutation {
-        get { Permutation(sources: offsets.sources.map { Int($0) }) }
+        get { offsets.isInStorageOrder ? Permutation() : Permutation(sources: offsets.storedSources.map { Int($0) }) }
         set {
             offsets.resetToStorageOrder()
             offsets.apply(newValue)
@@ -120,7 +123,7 @@ public extension Arrangement {
     /// Whether the elements are back in the order the arrangement was created with, in O(n) at worst.
     @inlinable var isInOriginalOrder: Bool {
         if offsets.isInStorageOrder { return true }
-        return offsets.sources.indices.allSatisfy { offsets.sources[$0] == Int32(truncatingIfNeeded: $0) }
+        return offsets.storedSources.indices.allSatisfy { offsets.storedSources[$0] == Int32(truncatingIfNeeded: $0) }
     }
 }
 

@@ -49,7 +49,7 @@ extension PermutableSet: RandomAccessCollection {
 
     /// Iterates the elements in order, reading storage straight through while nothing has reordered it.
     @inlinable public func makeIterator() -> Iterator {
-        Iterator(elements: elements, sources: offsets.sources, isInStorageOrder: offsets.isInStorageOrder)
+        Iterator(elements: elements, sources: offsets.storedSources, count: offsets.count, isInStorageOrder: offsets.isInStorageOrder)
     }
 
     /// Hands over the storage itself while it is in the order shown, so copying the set into an array or scanning it runs at array speed.
@@ -65,20 +65,23 @@ extension PermutableSet: RandomAccessCollection {
 
         @usableFromInline let sources: [Int32]
 
+        @usableFromInline let count: Int
+
         @usableFromInline let isInStorageOrder: Bool
 
         @usableFromInline var position: Int
 
-        @inlinable init(elements: [Element], sources: [Int32], isInStorageOrder: Bool) {
+        @inlinable init(elements: [Element], sources: [Int32], count: Int, isInStorageOrder: Bool) {
             self.elements = elements
             self.sources = sources
+            self.count = count
             self.isInStorageOrder = isInStorageOrder
             position = 0
         }
 
         @inlinable public mutating func next() -> Element? {
             let current: Int = position
-            guard current < sources.count else { return nil }
+            guard current < count else { return nil }
             position = current + 1
             return isInStorageOrder ? elements[current] : elements[Int(sources[current])]
         }
@@ -174,7 +177,7 @@ public extension PermutableSet {
     /// Reserves room for the count of elements, so adding up to it neither copies storage nor rebuilds the hash index.
     @inlinable mutating func reserveCapacity(_ minimumCapacity: Int) {
         elements.reserveCapacity(minimumCapacity)
-        offsets.sources.reserveCapacity(minimumCapacity)
+        offsets.reserveSourcesCapacity(minimumCapacity)
         offsets.reserveCapacity(minimumCapacity, for: elements, by: Self.key)
     }
 }
