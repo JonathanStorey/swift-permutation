@@ -36,10 +36,11 @@ import Testing
             var stepped: Permutation = permutation
             for _ in 0..<40 { stepped.advance(by: 1) }
             #expect(permutation.advanced(by: 40) == stepped)
-            #expect(Permutation(lehmerCode: permutation.lehmerCode + 40) == stepped)
+            #expect(permutation.advanced(by: LehmerCode(40)) == stepped)
             #expect(stepped.advanced(by: -40) == permutation)
-            #expect(stepped.lehmerCode - permutation.lehmerCode == 40)
-            #expect(permutation.lehmerCode < stepped.lehmerCode)
+            #expect(permutation.distance(to: stepped) == 40)
+            #expect(stepped.distance(to: permutation) == -40)
+            #expect(permutation < stepped)
         }
     }
 
@@ -47,14 +48,14 @@ import Testing
         var generator: SeededGenerator = SeededGenerator(state: 233)
         let permutation: Permutation = Permutation(shuffles: 50, using: &generator)
         let jump: LehmerCode = LehmerCode(digits: Array(1...45))
-        let later: Permutation = Permutation(lehmerCode: permutation.lehmerCode + jump)
-        #expect(later.lehmerCode - permutation.lehmerCode == jump)
-        #expect(Permutation(lehmerCode: later.lehmerCode - jump) == permutation)
+        let later: Permutation = permutation.advanced(by: jump)
+        #expect(permutation.distance(to: later) == jump)
+        #expect(later.advanced(by: LehmerCode(0) - jump) == permutation)
         #expect(Int(exactly: Permutation(reversing: 30).lehmerCode) == nil)
     }
 
-    @Test func strideOverCodesWalksEveryOrder() {
-        let orders: [Permutation] = stride(from: LehmerCode(0), to: 6, by: 1).map(Permutation.init(lehmerCode:))
+    @Test func strideWalksEveryOrder() {
+        let orders: [Permutation] = Array(stride(from: Permutation(), to: Permutation(lehmerCode: 6), by: 1))
         #expect(orders.count == 6)
         #expect(Set(orders.map { [0, 1, 2].applying($0) }).count == 6)
     }

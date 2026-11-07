@@ -6,7 +6,7 @@
 ///
 /// The digit worth `k!` lies in `0...k`, so every number has one spelling, and the permutations of `n` offsets take exactly the places below `n!`. Because the digits grow with the number, a code never overflows: the place of a permutation of a thousand offsets is as easy to hold and add to as the place of one of three.
 ///
-/// A code is `Strideable` with itself as its stride, so `stride(from: 0, to: 24, by: 1)` counts through the places of every order of four offsets, and it is signed so a stride can run backward. Addition and subtraction carry digit by digit in O(n) for n digits. Multiplication, which `Strideable` requires but stepping never uses, doubles and adds in O(n² log n).
+/// A code is signed so it can measure distances in both directions, as `Strideable` asks of a stride. It is `Strideable` itself too, with itself as its stride, so `stride(from: 0, to: 24, by: 1)` counts through the places of every order of four offsets. Addition and subtraction carry digit by digit in O(n) for n digits. Multiplication, which `Strideable` requires but stepping never uses, doubles and adds in O(n² log n).
 public struct LehmerCode: Sendable, Hashable {
 
     /// The digits from the one worth `1!` upward, so `digits[i]` is worth `(i + 1)!` and lies in `0...(i + 1)`, with no zeros at the end.

@@ -2,7 +2,7 @@
 // path: Permutation/Permutation+LehmerCode.swift
 // dependencies: [Permutation/LehmerCode.swift, Permutation/Permutation+Advance.swift, Permutation/Permutation.swift]
 
-// A permutation's place among all permutations, as a `LehmerCode`. The code is the `Strideable` counter, so a loop strides over codes and turns each into its permutation.
+// A permutation's place among all permutations, as a `LehmerCode`, which makes `Permutation` `Strideable` with no ceiling.
 //
 // - The place counts in the order `advance(by: 1)` steps through: `Permutation(lehmerCode: k)` is exactly `Permutation().advanced(by: k)`.
 // - The code is read off the Foata word, the line with each fixed point written in. The digit worth `i!` counts the entries before position `i` that are larger than the entry there, so offsets that stay put add nothing and every permutation of the first `n` offsets has a code below `n!`.
@@ -72,5 +72,30 @@ extension Permutation {
             }
         }
         self.init(foataWord: word)
+    }
+
+    /// Replaces the permutation with the one `distance` places after it, and returns the new permutation.
+    @discardableResult public mutating func advance(by distance: LehmerCode) -> Permutation {
+        self = advanced(by: distance)
+        return self
+    }
+}
+
+extension Permutation: Strideable {
+
+    /// Returns the permutation `distance` places after this one, in O(m log m) however far the jump. Stepping back past the identity is a precondition failure.
+    public func advanced(by distance: LehmerCode) -> Permutation {
+        guard !distance.digits.isEmpty else { return self }
+        return Permutation(lehmerCode: lehmerCode + distance)
+    }
+
+    /// The number of places from this permutation to the other, negative when the other comes first.
+    public func distance(to other: Permutation) -> LehmerCode {
+        other.lehmerCode - lehmerCode
+    }
+
+    /// Whether this permutation comes before the other in the order `advance(by:)` steps through.
+    public static func < (lhs: Permutation, rhs: Permutation) -> Bool {
+        lhs.lehmerCode < rhs.lehmerCode
     }
 }
