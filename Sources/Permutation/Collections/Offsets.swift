@@ -14,10 +14,13 @@
     /// Storage offsets placed by the hash of their element's key with linear probing, where -1 marks an empty bucket. Its count is zero or a power of two, and it is zero only while there are at most `linearLimit` elements.
     @usableFromInline var table: [Int32]
 
-    /// The storage offset at each position.
-    @usableFromInline var sources: [Int32]
+    /// The storage offset at each position, left empty while every position shows its own offset so a collection that is never reordered never builds it. `materialize()` writes it out before the first change that could break storage order.
+    @usableFromInline var storedSources: [Int32]
 
-    /// Whether every position shows its own storage offset, so the owner can read its elements straight through. Anything that might break that clears it, and only rebuilding the order in storage order sets it again.
+    /// The count while `storedSources` is left empty, and zero otherwise.
+    @usableFromInline var identityCount: Int
+
+    /// Whether every position shows its own storage offset, so the owner can read its elements straight through and `storedSources` stays empty. Anything that might break that clears it, and only rebuilding the order in storage order sets it again.
     @usableFromInline var isInStorageOrder: Bool
 
     /// The most elements kept without a hash table.
@@ -26,7 +29,8 @@
     /// Creates empty offsets.
     @inlinable init() {
         table = []
-        sources = []
+        storedSources = []
+        identityCount = 0
         isInStorageOrder = true
     }
 
@@ -34,8 +38,46 @@
     @inlinable init(count: Int) {
         precondition(count < Int(Int32.max), "Offsets holds at most Int32.max elements.")
         table = []
-        sources = (0..<Int32(truncatingIfNeeded: count)).map { $0 }
+        storedSources = []
+        identityCount = count
         isInStorageOrder = true
+    }
+
+    /// The storage offset at each position, built on demand while the order is the storage order.
+    @inlinable var sources: [Int32] {
+        isInStorageOrder ? (0..<Int32(truncatingIfNeeded: identityCount)).map { $0 } : storedSources
+    }
+
+    /// Writes out the storage order before a change that may break it, and clears the fast path.
+    @inlinable mutating func materialize() {
+        guard isInStorageOrder else { return }
+        storedSources = (0..<Int32(truncatingIfNeeded: identityCount)).map { $0 }
+        identityCount = 0
+        isInStorageOrder = false
+    }
+
+    /// Shows the count of stored elements in storage order without writing a single offset.
+    @inlinable mutating func showStorageOrder(count: Int) {
+        storedSources = []
+        identityCount = count
+        isInStorageOrder = true
+    }
+
+    /// Takes over a whole order, keeping it unwritten when it turns out to be the storage order.
+    @inlinable mutating func adopt(sources: [Int32]) {
+        if sources.indices.allSatisfy({ sources[$0] == Int32(truncatingIfNeeded: $0) }) {
+            showStorageOrder(count: sources.count)
+        } else {
+            storedSources = sources
+            identityCount = 0
+            isInStorageOrder = false
+        }
+    }
+
+    /// Reserves room in the written order, which a collection still in storage order does not need.
+    @inlinable mutating func reserveSourcesCapacity(_ minimumCapacity: Int) {
+        guard !isInStorageOrder else { return }
+        storedSources.reserveCapacity(minimumCapacity)
     }
 }
 
@@ -47,11 +89,13 @@ extension Offsets: RandomAccessCollection {
 
     @inlinable var startIndex: Int { 0 }
 
-    @inlinable var endIndex: Int { sources.count }
+    @inlinable var endIndex: Int { isInStorageOrder ? identityCount : storedSources.count }
 
     /// The storage offset of the element at the position.
     @inlinable subscript(position: Int) -> Int {
-        Int(sources[position])
+        guard isInStorageOrder else { return Int(storedSources[position]) }
+        precondition(position >= 0 && position < identityCount, "Index out of range.")
+        return position
     }
 }
 
@@ -59,48 +103,49 @@ extension Offsets: RandomAccessCollection {
 
 extension Offsets: PermutableCollection {
 
-    /// Applies the permutation by rotating each cycle of `sources` through one carried offset, leaving the table untouched. The bounds check runs only at each cycle's largest offset, since in Foata form no other offset can be out of range when those are in range.
+    /// Applies the permutation by rotating each cycle of the order through one carried offset, leaving the table untouched. The bounds check runs only at each cycle's largest offset, since in Foata form no other offset can be out of range when those are in range, so the rotation itself reads and writes the buffer unchecked.
     @inlinable mutating func apply(_ permutation: Permutation) {
         guard !permutation.cycle.isEmpty else { return }
-        isInStorageOrder = false
-        let count: Int = sources.count
-        var start: Int = -1
-        var carried: Int32 = 0
-        for offset in permutation.cycle {
-            if offset > start {
-                precondition(offset < count, "Every offset in the cycle must be within the collection.")
-                if start >= 0 { sources[start] = carried }
-                start = offset
-                carried = sources[offset]
-            } else {
-                let next: Int32 = sources[offset]
-                sources[offset] = carried
-                carried = next
+        materialize()
+        storedSources.withUnsafeMutableBufferPointer { buffer in
+            let count: Int = buffer.count
+            var start: Int = -1
+            var carried: Int32 = 0
+            for offset in permutation.cycle {
+                if offset > start {
+                    precondition(offset < count, "Every offset in the cycle must be within the collection.")
+                    if start >= 0 { buffer[start] = carried }
+                    start = offset
+                    carried = buffer[offset]
+                } else {
+                    let next: Int32 = buffer[offset]
+                    buffer[offset] = carried
+                    carried = next
+                }
             }
+            buffer[start] = carried
         }
-        sources[start] = carried
     }
 
     /// Shows every storage offset at its own position again, leaving the table untouched.
     @inlinable mutating func resetToStorageOrder() {
-        for position in sources.indices { sources[position] = Int32(truncatingIfNeeded: position) }
-        isInStorageOrder = true
+        showStorageOrder(count: count)
     }
 
     /// Exchanges the storage offsets at the two positions.
     @inlinable mutating func swapAt(_ i: Int, _ j: Int) {
         guard i != j else { return }
-        isInStorageOrder = false
-        sources.swapAt(i, j)
+        materialize()
+        storedSources.swapAt(i, j)
     }
 
     /// Moves the block of positions from `start` to the end so it begins at `index`, as a batch insert does after appending.
     @inlinable mutating func moveTail(from start: Int, to index: Int) {
         guard index < start else { return }
-        isInStorageOrder = false
-        let block: ArraySlice<Int32> = sources[start...]
-        sources.removeSubrange(start...)
-        sources.insert(contentsOf: block, at: index)
+        materialize()
+        let block: ArraySlice<Int32> = storedSources[start...]
+        storedSources.removeSubrange(start...)
+        storedSources.insert(contentsOf: block, at: index)
     }
 }
 
@@ -115,7 +160,7 @@ extension Offsets {
         return Int(table[bucket])
     }
 
-    /// The position showing the storage offset, in O(n).
+    /// The position showing the storage offset, in O(1) while the order is the storage order and O(n) otherwise.
     @inlinable func position(ofOffset offset: Int) -> Int? {
         let target: Int32 = Int32(truncatingIfNeeded: offset)
         let found: Int = positions(of: target, and: target).first
@@ -124,8 +169,11 @@ extension Offsets {
 
     /// The positions showing two storage offsets, or -1 for one that is not shown, found in one pass that compares sixteen offsets at a time.
     @inlinable func positions(of first: Int32, and second: Int32) -> Positions {
+        if isInStorageOrder {
+            return Positions(first: first >= 0 && Int(first) < identityCount ? Int(first) : -1, second: second >= 0 && Int(second) < identityCount ? Int(second) : -1)
+        }
         var found: Positions = Positions(first: -1, second: -1)
-        sources.withUnsafeBufferPointer { buffer in
+        storedSources.withUnsafeBufferPointer { buffer in
             guard let base: UnsafePointer<Int32> = buffer.baseAddress else { return }
             let count: Int = buffer.count
             let firsts: SIMD16<Int32> = SIMD16(repeating: first)
@@ -191,8 +239,7 @@ extension Offsets {
         if table.isEmpty && elements.count < Self.linearLimit {
             guard !elements.contains(where: { keyOf($0) == key }) else { return false }
             elements.append(element)
-            if position < sources.count { isInStorageOrder = false }
-            sources.insert(Int32(truncatingIfNeeded: elements.count - 1), at: position)
+            show(Int32(truncatingIfNeeded: elements.count - 1), at: position)
             return true
         }
         if table.isEmpty { rebuild(for: elements, by: keyOf) }
@@ -206,9 +253,18 @@ extension Offsets {
         } else {
             table[bucket] = Int32(truncatingIfNeeded: offset)
         }
-        if position < sources.count { isInStorageOrder = false }
-        sources.insert(Int32(truncatingIfNeeded: offset), at: position)
+        show(Int32(truncatingIfNeeded: offset), at: position)
         return true
+    }
+
+    /// Shows the newly stored offset at the position, which keeps storage order only when it lands at the end.
+    @inlinable mutating func show(_ offset: Int32, at position: Int) {
+        if isInStorageOrder && position == identityCount {
+            identityCount += 1
+            return
+        }
+        materialize()
+        storedSources.insert(offset, at: position)
     }
 
     /// Appends each element whose key is not already present, sizing the table once for the whole sequence.
@@ -222,7 +278,6 @@ extension Offsets {
     /// Indexes elements already in storage, showing them in stored order and dropping any whose key repeats an earlier one, so a whole array is adopted without copying it.
     @inlinable mutating func index<Element, Key: Hashable>(_ elements: inout [Element], by keyOf: (Element) -> Key) {
         precondition(elements.count < Int(Int32.max), "Offsets holds at most Int32.max elements.")
-        isInStorageOrder = true
         if elements.count <= Self.linearLimit {
             table = []
             var end: Int = 0
@@ -233,7 +288,7 @@ extension Offsets {
                 end += 1
             }
             if end < elements.count { elements.removeSubrange(end...) }
-            sources = (0..<Int32(truncatingIfNeeded: elements.count)).map { $0 }
+            showStorageOrder(count: elements.count)
             return
         }
         var capacity: Int = 8
@@ -263,13 +318,13 @@ extension Offsets {
             elements = kept
             rebuild(for: elements, by: keyOf)
         }
-        sources = (0..<Int32(truncatingIfNeeded: elements.count)).map { $0 }
+        showStorageOrder(count: elements.count)
     }
 
     /// Removes and returns the element at the position, moving the last stored element into its storage offset.
     @inlinable mutating func remove<Element, Key: Hashable>(at position: Int, from elements: inout [Element], by keyOf: (Element) -> Key) -> Element {
         let last: Int32 = Int32(truncatingIfNeeded: elements.count - 1)
-        let lastPosition: Int = sources[position] == last ? position : positions(of: last, and: last).first
+        let lastPosition: Int = self[position] == Int(last) ? position : positions(of: last, and: last).first
         return remove(at: position, lastAt: lastPosition, from: &elements, by: keyOf)
     }
 
@@ -284,18 +339,23 @@ extension Offsets {
 
     /// Removes the element at the position, given the position showing the last storage offset, by moving the last stored element into the freed offset and closing the gap in the order with one block move.
     @inlinable mutating func remove<Element, Key: Hashable>(at position: Int, lastAt lastPosition: Int, from elements: inout [Element], by keyOf: (Element) -> Key) -> Element {
-        let offset: Int32 = sources[position]
+        let offset: Int32 = Int32(truncatingIfNeeded: self[position])
         let removed: Element = elements[Int(offset)]
         let hashed: Bool = !table.isEmpty
         if hashed { empty(bucket(holding: Int(offset), hash: keyOf(removed).hashValue), in: elements, by: keyOf) }
         let last: Int32 = Int32(truncatingIfNeeded: elements.count - 1)
+        if isInStorageOrder && offset == last {
+            identityCount -= 1
+            elements.removeLast()
+            return removed
+        }
+        materialize()
         if offset != last {
-            isInStorageOrder = false
             if hashed { table[bucket(holding: Int(last), hash: keyOf(elements[Int(last)]).hashValue)] = offset }
-            sources[lastPosition] = offset
+            storedSources[lastPosition] = offset
             elements.swapAt(Int(offset), Int(last))
         }
-        sources.remove(at: position)
+        storedSources.remove(at: position)
         elements.removeLast()
         return removed
     }
@@ -304,8 +364,8 @@ extension Offsets {
     @inlinable mutating func removeAll<Element, Key: Hashable>(from elements: inout [Element], by keyOf: (Element) -> Key, where shouldBeRemoved: (Element) throws -> Bool) rethrows {
         var kept: [Element] = []
         kept.reserveCapacity(count)
-        for offset in sources {
-            let element: Element = elements[Int(offset)]
+        for position in 0..<count {
+            let element: Element = elements[self[position]]
             if try !shouldBeRemoved(element) { kept.append(element) }
         }
         keep(kept, in: &elements, by: keyOf)
@@ -315,8 +375,9 @@ extension Offsets {
     @inlinable mutating func removeAll<Element, Key: Hashable>(marked doomed: [Bool], from elements: inout [Element], by keyOf: (Element) -> Key) {
         var kept: [Element] = []
         kept.reserveCapacity(count)
-        for offset in sources where !doomed[Int(offset)] {
-            kept.append(elements[Int(offset)])
+        for position in 0..<count {
+            let offset: Int = self[position]
+            if !doomed[offset] { kept.append(elements[offset]) }
         }
         keep(kept, in: &elements, by: keyOf)
     }
@@ -325,8 +386,7 @@ extension Offsets {
     @inlinable mutating func keep<Element, Key: Hashable>(_ kept: [Element], in elements: inout [Element], by keyOf: (Element) -> Key) {
         guard kept.count < count else { return }
         elements = kept
-        sources = (0..<Int32(truncatingIfNeeded: kept.count)).map { $0 }
-        isInStorageOrder = true
+        showStorageOrder(count: kept.count)
         if kept.count <= Self.linearLimit {
             table = []
         } else {
@@ -368,8 +428,7 @@ extension Offsets {
     /// Removes every offset and releases the table.
     @inlinable mutating func removeAll() {
         table = []
-        sources = []
-        isInStorageOrder = true
+        showStorageOrder(count: 0)
     }
 }
 

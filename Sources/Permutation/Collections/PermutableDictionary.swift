@@ -108,7 +108,7 @@ extension PermutableDictionary: RandomAccessCollection {
 
     /// Iterates the entries in order, reading storage straight through while nothing has reordered it.
     @inlinable public func makeIterator() -> Iterator {
-        Iterator(keys: keyStorage, values: valueStorage, valueSlots: valueSlots, sources: offsets.sources, isInStorageOrder: offsets.isInStorageOrder)
+        Iterator(keys: keyStorage, values: valueStorage, valueSlots: valueSlots, sources: offsets.storedSources, count: offsets.count, isInStorageOrder: offsets.isInStorageOrder)
     }
 
     /// An iterator over the entries in order.
@@ -122,22 +122,25 @@ extension PermutableDictionary: RandomAccessCollection {
 
         @usableFromInline let sources: [Int32]
 
+        @usableFromInline let count: Int
+
         @usableFromInline let isInStorageOrder: Bool
 
         @usableFromInline var position: Int
 
-        @inlinable init(keys: [Key], values: [Value], valueSlots: [Int32], sources: [Int32], isInStorageOrder: Bool) {
+        @inlinable init(keys: [Key], values: [Value], valueSlots: [Int32], sources: [Int32], count: Int, isInStorageOrder: Bool) {
             self.keys = keys
             self.values = values
             self.valueSlots = valueSlots
             self.sources = sources
+            self.count = count
             self.isInStorageOrder = isInStorageOrder
             position = 0
         }
 
         @inlinable public mutating func next() -> Element? {
             let current: Int = position
-            guard current < sources.count else { return nil }
+            guard current < count else { return nil }
             position = current + 1
             let keySlot: Int = isInStorageOrder ? current : Int(sources[current])
             let valueSlot: Int = valueSlots.isEmpty ? keySlot : Int(valueSlots[keySlot])
@@ -204,8 +207,7 @@ public extension PermutableDictionary {
             isSeen[keySlot] = true
             sources.append(Int32(truncatingIfNeeded: keySlot))
         }
-        lookup.isInStorageOrder = sources.indices.allSatisfy { sources[$0] == Int32(truncatingIfNeeded: $0) }
-        lookup.sources = sources
+        lookup.adopt(sources: sources)
         keyStorage = storage
         offsets = lookup
     }
@@ -251,7 +253,7 @@ public extension PermutableDictionary {
             return
         }
         var slots: [Int32] = [Int32](repeating: 0, count: count)
-        for (position, keySlot) in offsets.sources.enumerated() { slots[Int(keySlot)] = Int32(truncatingIfNeeded: position) }
+        for position in 0..<count { slots[offsets[position]] = Int32(truncatingIfNeeded: position) }
         valueSlots = slots
     }
 
@@ -438,7 +440,7 @@ public extension PermutableDictionary {
     @inlinable mutating func reserveCapacity(_ minimumCapacity: Int) {
         keyStorage.reserveCapacity(minimumCapacity)
         valueStorage.reserveCapacity(minimumCapacity)
-        offsets.sources.reserveCapacity(minimumCapacity)
+        offsets.reserveSourcesCapacity(minimumCapacity)
         offsets.reserveCapacity(minimumCapacity, for: keyStorage, by: Self.key)
     }
 }
@@ -496,8 +498,8 @@ public extension PermutableDictionary {
         var keptValues: [Value] = []
         keptKeys.reserveCapacity(count)
         keptValues.reserveCapacity(count)
-        for source in offsets.sources {
-            let keySlot: Int = Int(source)
+        for position in 0..<count {
+            let keySlot: Int = offsets[position]
             let key: Key = keyStorage[keySlot]
             let value: Value = valueStorage[valueSlot(ofKeySlot: keySlot)]
             if try isKept(keySlot, key, value) {
