@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Permutation/Permutation+MathPropertiesTests.swift
-// dependencies: [Collections/PermutableCollection.swift, Permutation/Permutation+Composition.swift, Permutation/Permutation+MathProperties.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation+Sources.swift, Permutation/Permutation+Stride.swift, Permutation/Permutation.swift, Support/Deck.swift, Support/SeededGenerator.swift]
+// dependencies: [Collections/PermutableCollection.swift, Permutation/Permutation+Composition.swift, Permutation/Permutation+MathProperties.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation+Sources.swift, Permutation/Permutation+Power.swift, Permutation/Permutation.swift, Support/Deck.swift, Support/SeededGenerator.swift]
 
 import Testing
 @testable import Permutation
@@ -26,8 +26,8 @@ import Testing
         #expect(Permutation(cycle: [2, 0, 1, 4, 3]).order == 6)
         for permutation in randomPermutations(seed: 12) {
             let order: Int = permutation.order
-            #expect(permutation.advanced(by: order).cycle.isEmpty)
-            #expect((1..<order).allSatisfy { !permutation.advanced(by: $0).cycle.isEmpty })
+            #expect(permutation.raised(to: order).cycle.isEmpty)
+            #expect((1..<order).allSatisfy { !permutation.raised(to: $0).cycle.isEmpty })
         }
     }
 

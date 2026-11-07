@@ -66,7 +66,8 @@ faro[0]             // where the element at offset 0 goes
 
 let both: Permutation = first.followed(by: second)  // composition
 let undo: Permutation = both.inverted               // inverse
-let cubed: Permutation = faro.advanced(by: 3)       // powers, negative too
+let cubed: Permutation = faro.raised(to: 3)         // powers, negative too
+let next: Permutation = faro.advanced(by: 1)        // the next permutation in rank order
 let merged: Permutation? = mine.merging(with: theirs, from: base)  // three-way merge of reorders
 ```
 
@@ -115,6 +116,18 @@ deck.shuffle(.outFaro)
 deck.permutation          // every reorder so far, folded into one
 deck.isInOriginalOrder    // true again after 8 out-faros
 deck.permutation = Permutation()  // back to the original order in one step
+```
+
+`Permutation` is `Strideable`. Every permutation has a rank, and those of `n` elements fill ranks `0..<n!`, so stepping from the identity walks every possible order:
+
+```swift
+var hand: Arrangement<String> = ["a", "b", "c"]
+var order: Permutation = Permutation()
+for _ in 0..<6 {                  // 3! orders
+    hand.permutation = order
+    print(hand)
+    order.advance(by: 1)
+}
 ```
 
 ### `IdentifiedSet`

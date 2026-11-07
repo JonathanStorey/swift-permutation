@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Permutation/Permutation+ShuffleTests.swift
-// dependencies: [Collections/PermutableCollection.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation+Stride.swift, Permutation/Permutation.swift]
+// dependencies: [Collections/PermutableCollection.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation+Power.swift, Permutation/Permutation.swift]
 
 import Testing
 @testable import Permutation
@@ -32,14 +32,14 @@ import Testing
 
     @Test func inFaroOnFiftyTwoCardsHasOrderFiftyTwo() {
         let faro: Permutation = Permutation(shuffles: 52, .inFaro)
-        #expect(faro.advanced(by: 52).cycle.isEmpty)
-        #expect([1, 2, 4, 13, 26].allSatisfy { !faro.advanced(by: $0).cycle.isEmpty })
+        #expect(faro.raised(to: 52).cycle.isEmpty)
+        #expect([1, 2, 4, 13, 26].allSatisfy { !faro.raised(to: $0).cycle.isEmpty })
     }
 
     @Test func outFaroOnFiftyTwoCardsHasOrderEight() {
         let faro: Permutation = Permutation(shuffles: 52, .outFaro)
-        #expect(faro.advanced(by: 8).cycle.isEmpty)
-        #expect((1..<8).allSatisfy { !faro.advanced(by: $0).cycle.isEmpty })
+        #expect(faro.raised(to: 8).cycle.isEmpty)
+        #expect((1..<8).allSatisfy { !faro.raised(to: $0).cycle.isEmpty })
     }
 
     @Test func permutationShuffleOfEmptyPermutationIsEmpty() {

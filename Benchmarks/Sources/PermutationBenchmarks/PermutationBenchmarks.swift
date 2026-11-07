@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: PermutationBenchmarks.swift
-// dependencies: [Collections/Collection+Permutation.swift, Collections/IdentifiedSet.swift, Permutation/Permutation+Composition.swift, Permutation/Permutation+ForEach.swift, Permutation/Permutation+Merge.swift, Permutation/Permutation+RangeReplace.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation+Stride.swift, Record.swift]
+// dependencies: [Collections/Collection+Permutation.swift, Collections/IdentifiedSet.swift, Permutation/Permutation+Composition.swift, Permutation/Permutation+ForEach.swift, Permutation/Permutation+Merge.swift, Permutation/Permutation+RangeReplace.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation+Power.swift, Record.swift]
 
 import CollectionsBenchmark
 import Permutation
@@ -34,10 +34,10 @@ extension Benchmark {
             }
         }
 
-        add(title: "Permutation advanced(by: 3)", input: [Int].self) { input in
+        add(title: "Permutation raised(to: 3)", input: [Int].self) { input in
             let permutation: Permutation = Permutation(shuffles: input.count)
             return { timer in
-                timer.measure { blackHole(permutation.advanced(by: 3)) }
+                timer.measure { blackHole(permutation.raised(to: 3)) }
             }
         }
 
