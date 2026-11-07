@@ -130,6 +130,12 @@ for _ in 0..<6 {                  // 3! orders
 }
 ```
 
+`forEachPermutation` walks the same `n!` orders in place, one swap apart, and puts the elements back when it finishes:
+
+```swift
+hand.forEachPermutation { print(Array($0)) }  // all 6 orders, starting with the current one
+```
+
 ### `IdentifiedSet`
 
 An ordered collection of `Identifiable` elements with O(1) lookup, insertion and removal by id, built for SwiftUI's `List` and `ForEach`. Element binding is supported as well, working through the ID rather than the index. Reordering a list of large models is as cheap as reordering numbers, and the permutation it returns is what you need to undo the change or animate it. It conforms to `PermutableCollection` and `UpsertableCollection`.
