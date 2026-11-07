@@ -8,11 +8,6 @@ public struct Permutation: Hashable, Sendable {
     /// The cycles written one after another, each starting with its largest offset, in increasing order of those starting offsets.
     public let cycle: [Int]
 
-    /// Creates the identity, which leaves every offset in place, ready to receive reorders through the `recording:` overloads.
-    @inlinable public init() {
-        cycle = []
-    }
-
     /// Creates a permutation from a line already in Foata's single-line notation.
     @inlinable init(cycle: [Int]) {
         self.cycle = cycle

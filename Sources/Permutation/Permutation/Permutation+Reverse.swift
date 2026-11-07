@@ -4,8 +4,8 @@
 
 extension Permutation {
 
-    /// Creates the permutation that reverses `0..<count`, writing each swapped pair directly with its larger offset first.
-    @inlinable init(reversing count: Int) {
+    /// Creates the permutation that reverses the first `count` offsets, as `applying` it to a collection of that length would. It writes each swapped pair directly with its larger offset first.
+    @inlinable public init(reversing count: Int) {
         var line: [Int] = []
         line.reserveCapacity(count)
         for offset in (0..<(count / 2)).reversed() {
