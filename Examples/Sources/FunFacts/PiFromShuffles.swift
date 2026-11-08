@@ -19,7 +19,7 @@ enum PiFromShuffles {
         for _ in 0..<trials {
             let shuffle: Permutation = Permutation(shuffles: cards, using: &generator)
             // A card left in place is a cycle of length 1, and the Foata line omits it, so every card must be on the line.
-            if shuffle.cycle.count == cards && shuffle.cycleLengths.allSatisfy({ $0 % 2 == 0 }) { allEven += 1 }
+            if shuffle.cycles.movedCount == cards && shuffle.cycles.allSatisfy({ $0.count % 2 == 0 }) { allEven += 1 }
         }
         let share: Double = Double(allEven) / Double(trials)
         // The exact share is C(2n, n) / 4^n, which Wallis's product ties to π.

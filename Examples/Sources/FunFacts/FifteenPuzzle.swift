@@ -20,7 +20,7 @@ enum FifteenPuzzle {
         let solution: Permutation = sorting.sort()
         let blank: Int = board.firstIndex(of: 0)!
         let distance: Int = (3 - blank / 4) + (3 - blank % 4)
-        return solution.isEven == distance.isMultiple(of: 2)
+        return solution.cycles.parity == (distance.isMultiple(of: 2) ? .even : .odd)
     }
 
     static func run() {

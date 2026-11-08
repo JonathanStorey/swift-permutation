@@ -25,7 +25,7 @@ extension Permutation {
 
     /// Returns the two-way merge by matching cycles through a dictionary, for permutations whose offsets are scattered far apart.
     func mergingSparse(with theirs: Permutation) -> Permutation? {
-        Permutation.merge(cycles, theirs.cycles).map(Permutation.init(cycles:))
+        Permutation.merge(cycleArrays, theirs.cycleArrays).map(Permutation.init(cycles:))
     }
 
     /// Returns the three-way merge of this permutation and theirs, both descended from base, by merging each side's change since base, or nil when a cycle from one side shares an offset with a different cycle from the other.

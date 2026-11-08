@@ -59,10 +59,12 @@ It is stored in **Foata's single-line notation**: the cycles written one after a
 
 ```swift
 let faro: Permutation = Permutation(shuffles: 52, .outFaro)
-faro.order          // 8, the least common multiple of the cycle lengths
-faro.isEven         // parity, read straight off the line
-faro.cycleLengths   // lengths of the cycles, in one pass
-faro[0]             // where the element at offset 0 goes
+faro.cycles                 // its cycles, printed in standard notation like (2 0)(5 3 4)
+faro.cycles.order           // 8, the least common multiple of the cycle lengths
+faro.cycles.parity          // .even or .odd, read straight off the line
+faro.cycles.map(\.count)    // lengths of the cycles, in one pass
+faro[0]                     // where the element at offset 0 goes
+let built: Permutation = Permutation(cycles: [[0, 2], [3, 5, 4]])  // from cycles in any rotation
 
 let both: Permutation = first.followed(by: second)  // composition
 let undo: Permutation = both.inverted               // inverse

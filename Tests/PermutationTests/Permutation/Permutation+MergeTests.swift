@@ -69,7 +69,7 @@ import Testing
         var generator: SeededGenerator = SeededGenerator(state: 37)
         for _ in 0..<300 {
             let count: Int = Int.random(in: 0...10, using: &generator)
-            let whole: [[Int]] = Permutation(shuffles: count, using: &generator).cycles
+            let whole: [[Int]] = Permutation(shuffles: count, using: &generator).cycleArrays
             let ours: Permutation = Permutation(cycles: whole.filter { _ in Bool.random(using: &generator) })
             let theirs: Permutation = Bool.random(using: &generator)
                 ? Permutation(cycles: whole.filter { _ in Bool.random(using: &generator) })

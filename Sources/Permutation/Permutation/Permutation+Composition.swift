@@ -39,7 +39,7 @@ extension Permutation {
     /// The offset each moved offset sends its element to, read straight from the cycles.
     private var successors: [Int: Int] {
         var successors: [Int: Int] = Dictionary(minimumCapacity: cycle.count)
-        for cycle in cycles {
+        for cycle in cycleArrays {
             for (position, offset) in cycle.enumerated() {
                 successors[offset] = cycle[(position + 1) % cycle.count]
             }

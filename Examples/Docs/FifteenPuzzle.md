@@ -14,4 +14,4 @@ Loyd's board has the blank at home (distance 0, even) but the tiles one swap fro
 
 ## In this package
 
-The example puts a board into a `PermutableSet` and sorts it. `sort()` returns the `Permutation` it applied, and `isEven` gives that permutation's parity from the Foata line, without counting inversions. Across 100,000 random boards, very close to half come out solvable.
+The example puts a board into a `PermutableSet` and sorts it. `sort()` returns the `Permutation` it applied, and `cycles.parity` gives that permutation's parity from the Foata line, without counting inversions. Across 100,000 random boards, very close to half come out solvable.

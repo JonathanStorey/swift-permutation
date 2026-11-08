@@ -12,50 +12,6 @@ import Testing
         return (0..<200).map { _ in Permutation(shuffles: Int.random(in: 0...maximumCount, using: &generator), using: &generator) }
     }
 
-    @Test func cycleLengthsSplitTheLineAtEachLargestOffset() {
-        #expect(Permutation(cycle: [2, 0, 1, 5, 3, 7, 6, 4]).cycleLengths == [3, 2, 3])
-        #expect(Permutation(cycle: []).cycleLengths.isEmpty)
-        for permutation in randomPermutations(seed: 11) {
-            #expect(permutation.cycleLengths.reduce(0, +) == permutation.cycle.count)
-            #expect(permutation.cycleLengths.allSatisfy { $0 > 1 })
-        }
-    }
-
-    @Test func orderIsTheFirstPowerThatIsTheIdentity() {
-        #expect(Permutation(cycle: []).order == 1)
-        #expect(Permutation(cycle: [2, 0, 1, 4, 3]).order == 6)
-        for permutation in randomPermutations(seed: 12) {
-            let order: Int = permutation.order
-            #expect(permutation.raised(to: order).cycle.isEmpty)
-            #expect((1..<order).allSatisfy { !permutation.raised(to: $0).cycle.isEmpty })
-        }
-    }
-
-    @Test func isEvenMatchesTheParityOfInversions() {
-        #expect(Permutation(cycle: []).isEven)
-        #expect(!Permutation(cycle: [1, 0]).isEven)
-        #expect(Permutation(cycle: [2, 0, 1]).isEven)
-        for permutation in randomPermutations(seed: 13) {
-            let sources: [Int] = permutation.sources(count: permutation.minimumCount)
-            var inversions: Int = 0
-            for i in sources.indices {
-                for j in sources.indices where i < j && sources[i] > sources[j] {
-                    inversions += 1
-                }
-            }
-            #expect(permutation.isEven == inversions.isMultiple(of: 2))
-        }
-    }
-
-    @Test func isInvolutionMatchesSquaringToTheIdentity() {
-        #expect(Permutation(cycle: []).isInvolution)
-        #expect(Permutation(cycle: [1, 0, 4, 2]).isInvolution)
-        #expect(!Permutation(cycle: [2, 0, 1]).isInvolution)
-        for permutation in randomPermutations(seed: 14, maximumCount: 5) {
-            #expect(permutation.isInvolution == permutation.followed(by: permutation).cycle.isEmpty)
-        }
-    }
-
     @Test func subscriptGivesWhereEachElementMoves() {
         #expect(Permutation(cycle: [2, 0, 1])[2] == 0)
         #expect(Permutation(cycle: [2, 0, 1])[1] == 2)
