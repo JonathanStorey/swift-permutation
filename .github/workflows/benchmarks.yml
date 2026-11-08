@@ -19,12 +19,14 @@ jobs:
       - name: Draw charts
         working-directory: Benchmarks
         run: |
-          python3 -m pip install --quiet matplotlib
-          python3 Scripts/charts.py results.json charts
+          python3 -m venv .venv
+          .venv/bin/pip install --quiet matplotlib
+          .venv/bin/python Scripts/charts.py results.json charts
       - name: Write the comparison tables
         working-directory: Benchmarks
         run: python3 Scripts/tables.py results.json > tables.md && cat tables.md
       - name: Upload benchmark results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: benchmarks
