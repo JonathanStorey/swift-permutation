@@ -219,7 +219,7 @@ Start with the [package overview](Sources/Permutation/Permutation.docc/README.md
 
 ## Performance
 
-[**Benchmarks/RESULTS.md**](Benchmarks/RESULTS.md) has tables and charts comparing `PermutableSet` and `PermutableDictionary` with swift-collections' `OrderedSet` and `OrderedDictionary`, and `IdentifiedSet` with Point-Free's `IdentifiedArray`. In short, removal and reordering are where moving offsets instead of elements pays off most.
+[**Benchmarks/RESULTS.md**](Benchmarks/RESULTS.md) has charts and tables comparing `Arrangement` with `Array`, `PermutableSet` and `PermutableDictionary` with swift-collections' `OrderedSet` and `OrderedDictionary`, and `IdentifiedSet` with Point-Free's `IdentifiedArray`, one operation per chart. In short, removal and reordering are where moving offsets instead of elements pays off most.
 
 ## Development
 
@@ -233,7 +233,7 @@ The [Benchmarks](Benchmarks) package uses [swift-collections-benchmark](https://
 ```sh
 cd Benchmarks
 swift run -c release PermutationBenchmarks run results.json --cycles 3 --max-size 256k
-swift run -c release PermutationBenchmarks render results.json chart.png --filter 'PermutableSet|OrderedSet'
+python3 Scripts/charts.py results.json Charts
 python3 Scripts/tables.py results.json
 ```
 

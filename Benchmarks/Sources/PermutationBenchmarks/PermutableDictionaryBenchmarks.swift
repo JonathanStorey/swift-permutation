@@ -157,6 +157,48 @@ extension Benchmark {
             }
         }
 
+        add(title: "PermutableDictionary<Int, Int> rotate by a third", input: [Int].self) { input in
+            return { timer in
+                var dictionary: PermutableDictionary<Int, Int> = PermutableDictionary(uniqueKeys: input, values: input)
+                timer.measure { dictionary.rotate(toStartAt: dictionary.count / 3) }
+                blackHole(dictionary)
+            }
+        }
+        add(title: "OrderedDictionary<Int, Int> rotate by a third", input: [Int].self) { input in
+            return { timer in
+                var dictionary: OrderedDictionary<Int, Int> = OrderedDictionary(uniqueKeys: input, values: input)
+                timer.measure {
+                    let pivot: Int = dictionary.count / 3
+                    let keys: [Int] = dictionary.keys.elements
+                    let values: [Int] = Array(dictionary.values)
+                    dictionary = OrderedDictionary(uncheckedUniqueKeys: keys[pivot...] + keys[..<pivot], values: values[pivot...] + values[..<pivot])
+                }
+                blackHole(dictionary)
+            }
+        }
+
+        add(title: "PermutableDictionary<Int, Int> move first to last", input: [Int].self) { input in
+            return { timer in
+                var dictionary: PermutableDictionary<Int, Int> = PermutableDictionary(uniqueKeys: input, values: input)
+                timer.measure {
+                    if !dictionary.isEmpty { dictionary.move(from: 0, to: dictionary.count - 1) }
+                }
+                blackHole(dictionary)
+            }
+        }
+        add(title: "OrderedDictionary<Int, Int> move first to last", input: [Int].self) { input in
+            return { timer in
+                var dictionary: OrderedDictionary<Int, Int> = OrderedDictionary(uniqueKeys: input, values: input)
+                timer.measure {
+                    if !dictionary.isEmpty {
+                        let (key, value): (Int, Int) = dictionary.remove(at: 0)
+                        dictionary[key] = value
+                    }
+                }
+                blackHole(dictionary)
+            }
+        }
+
         // MARK: Reordering by value
 
         add(title: "PermutableDictionary<Int, Int> sort by value", input: [Int].self) { input in
