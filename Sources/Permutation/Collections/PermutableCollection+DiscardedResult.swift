@@ -46,12 +46,18 @@ public extension Arrangement {
 
     /// Sorts the order by sorting the offsets, comparing the stored elements they show without copying any. Ask for a `Permutation` result to get the one applied.
     @inlinable mutating func sort(by areInIncreasingOrder: (Element, Element) throws -> Bool) rethrows {
-        try offsets.sortOffsets { try areInIncreasingOrder(elements[$0], elements[$1]) }
+        let stored: [Element] = elements
+        try stored.withUnsafeBufferPointer { stored in
+            try offsets.sortOffsets { try areInIncreasingOrder(stored[$0], stored[$1]) }
+        }
     }
 
     /// Moves the elements that satisfy the predicate after those that do not, keeping the relative order within each group, by partitioning the offsets. Returns the index of the first moved element.
     @inlinable @discardableResult mutating func stablePartition(by belongsInSecondPartition: (Element) throws -> Bool) rethrows -> Int {
-        try offsets.partitionOffsets { try belongsInSecondPartition(elements[$0]) }
+        let stored: [Element] = elements
+        return try stored.withUnsafeBufferPointer { stored in
+            try offsets.partitionOffsets { try belongsInSecondPartition(stored[$0]) }
+        }
     }
 }
 
@@ -98,12 +104,18 @@ public extension PermutableSet {
 
     /// Sorts the order by sorting the offsets, comparing the stored elements they show without copying any. Ask for a `Permutation` result to get the one applied.
     @inlinable mutating func sort(by areInIncreasingOrder: (Element, Element) throws -> Bool) rethrows {
-        try offsets.sortOffsets { try areInIncreasingOrder(elements[$0], elements[$1]) }
+        let stored: [Element] = elements
+        try stored.withUnsafeBufferPointer { stored in
+            try offsets.sortOffsets { try areInIncreasingOrder(stored[$0], stored[$1]) }
+        }
     }
 
     /// Moves the elements that satisfy the predicate after those that do not, keeping the relative order within each group, by partitioning the offsets. Returns the index of the first moved element.
     @inlinable @discardableResult mutating func stablePartition(by belongsInSecondPartition: (Element) throws -> Bool) rethrows -> Int {
-        try offsets.partitionOffsets { try belongsInSecondPartition(elements[$0]) }
+        let stored: [Element] = elements
+        return try stored.withUnsafeBufferPointer { stored in
+            try offsets.partitionOffsets { try belongsInSecondPartition(stored[$0]) }
+        }
     }
 }
 
@@ -150,12 +162,18 @@ public extension IdentifiedSet {
 
     /// Sorts the order by sorting the offsets, comparing the stored elements they show without copying any. Ask for a `Permutation` result to get the one applied.
     @inlinable mutating func sort(by areInIncreasingOrder: (Element, Element) throws -> Bool) rethrows {
-        try offsets.sortOffsets { try areInIncreasingOrder(elements[$0], elements[$1]) }
+        let stored: [Element] = elements
+        try stored.withUnsafeBufferPointer { stored in
+            try offsets.sortOffsets { try areInIncreasingOrder(stored[$0], stored[$1]) }
+        }
     }
 
     /// Moves the elements that satisfy the predicate after those that do not, keeping the relative order within each group, by partitioning the offsets. Returns the index of the first moved element.
     @inlinable @discardableResult mutating func stablePartition(by belongsInSecondPartition: (Element) throws -> Bool) rethrows -> Int {
-        try offsets.partitionOffsets { try belongsInSecondPartition(elements[$0]) }
+        let stored: [Element] = elements
+        return try stored.withUnsafeBufferPointer { stored in
+            try offsets.partitionOffsets { try belongsInSecondPartition(stored[$0]) }
+        }
     }
 }
 
