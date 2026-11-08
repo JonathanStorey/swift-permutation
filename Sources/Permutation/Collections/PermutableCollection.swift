@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Collections/PermutableCollection.swift
-// dependencies: [Permutation/Permutation+ForEach.swift, Permutation/Permutation+Move.swift, Permutation/Permutation+Reverse.swift, Permutation/Permutation+Rotate.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation+Sources.swift, Permutation/Permutation.swift]
+// dependencies: [Permutation/Permutation+Swaps.swift, Permutation/Permutation+Moves.swift, Permutation/Permutation+Reverse.swift, Permutation/Permutation+Rotate.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation+Sources.swift, Permutation/Permutation.swift]
 
 /// A collection whose every reorder passes through `apply(_:)`, so overriding that one method lets a conforming type reorder in its own cheapest way, or observe every reorder.
 ///

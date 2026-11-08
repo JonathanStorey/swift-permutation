@@ -18,4 +18,4 @@ If you can only reorder a list by picking up one element and putting it elsewher
 
 ## In this package
 
-`Permutation.forEach(.move)` uses exactly this to replay a reorder with the fewest single-element moves. It finds a longest increasing subsequence by patience sorting in O(n log n) and moves everything else once. The example shuffles an `Arrangement` of 100, 10,000 and 1,000,000 cards, sorts it, and keeps the permutation `sort()` returns. Counting that permutation's moves gives the fewest single-card moves that sort the hand, and n − moves is the longest increasing run, which it reports against 2√n.
+`Permutation.moves` uses exactly this to replay a reorder with the fewest single-element moves. It finds a longest increasing subsequence by patience sorting in O(n log n) and moves everything else once. The example shuffles an `Arrangement` of 100, 10,000 and 1,000,000 cards, sorts it, and keeps the permutation `sort()` returns. Counting that permutation's moves gives the fewest single-card moves that sort the hand, and n − moves is the longest increasing run, which it reports against 2√n.
