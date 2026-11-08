@@ -215,7 +215,7 @@ extension Benchmark {
                 var dictionary: OrderedDictionary<Int, Record> = OrderedDictionary(uniqueKeys: input, values: records)
                 timer.measure {
                     if !dictionary.isEmpty {
-                        let (key, value): (Int, Int) = dictionary.remove(at: 0)
+                        let (key, value): (Int, Record) = dictionary.remove(at: 0)
                         dictionary[key] = value
                     }
                 }

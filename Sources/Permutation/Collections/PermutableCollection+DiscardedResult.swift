@@ -211,14 +211,13 @@ public extension PermutableDictionary {
 
     /// Sorts the order by sorting the offsets, comparing the stored entries they show without copying any. Ask for a `Permutation` result to get the one applied.
     @inlinable mutating func sort(by areInIncreasingOrder: (Element, Element) throws -> Bool) rethrows {
-        try offsets.sortOffsets { try areInIncreasingOrder(entry(atKeySlot: $0), entry(atKeySlot: $1)) }
-    }
-}
-
-extension PermutableDictionary {
-
-    /// The entry whose key is stored at the slot.
-    @inlinable func entry(atKeySlot keySlot: Int) -> Element {
-        (key: keyStorage[keySlot], value: valueStorage[valueSlot(ofKeySlot: keySlot)])
+        let keys: [Key] = keyStorage
+        let values: [Value] = valueStorage
+        let slots: [Int32] = valueSlots
+        try offsets.sortOffsets { first, second in
+            let firstValue: Int = slots.isEmpty ? first : Int(slots[first])
+            let secondValue: Int = slots.isEmpty ? second : Int(slots[second])
+            return try areInIncreasingOrder((key: keys[first], value: values[firstValue]), (key: keys[second], value: values[secondValue]))
+        }
     }
 }
