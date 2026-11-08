@@ -30,6 +30,9 @@ import Testing
     @Test func cyclesPrintInStandardNotation() {
         #expect(Permutation(cycle: [2, 0, 5, 3, 4]).cycles.description == "(2 0)(5 3 4)")
         #expect(Permutation().cycles.description == "()")
+        #expect(Permutation(cycle: [2, 0, 5, 3, 4]).description == "(2 0)(5 3 4)")
+        #expect(Permutation(cycle: [2, 0, 5, 3, 4]).debugDescription == "Permutation((2 0)(5 3 4))")
+        #expect("\(Permutation())" == "()")
     }
 
     @Test func cycleContainingFindsTheOffsetsCycle() {
