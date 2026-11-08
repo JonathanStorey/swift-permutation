@@ -4,7 +4,8 @@
 
 // A permutation's cycles, read straight off the Foata line it stores, along with the properties that depend only on them.
 //
-// - Each cycle runs from one left-to-right maximum of the line up to the next. Each index holds a cycle's bounds, so finding the cycles reads the line once, and only reading a cycle out as an `[Int]` copies it.
+// - Each cycle runs from one left-to-right maximum of the line up to the next. Iterating finds each cycle's end as it goes, so walking every cycle reads the line once, and only handing a cycle out as an `[Int]` copies it.
+// - `Cycles` is a sequence, not a collection: a cycle is read in order, never by position. To ask where one offset goes, use the permutation's `subscript(destinationOf:)`.
 // - Code inside the package reads `slices` instead, which copies nothing.
 // - Fixed points are not cycles here. A permutation that moves nothing has no cycles at all.
 // - The order, parity and involution test depend only on cycle lengths, so they are read in one pass over the line.
@@ -19,7 +20,7 @@ extension Permutation {
 
     /// The cycles of a permutation, each starting with its largest offset, in increasing order of those offsets. The element at each offset moves to the next offset in its cycle, and the last moves to the first. Fixed points are left out.
     ///
-    /// Each cycle is an `[Int]` indexed from zero, copied out of the stored line as it is read.
+    /// Each cycle is an `[Int]` indexed from zero, copied out of the stored line as iteration reaches it.
     public struct Cycles: Hashable, Sendable {
 
         /// The Foata line the cycles are read from.
@@ -36,51 +37,76 @@ extension Permutation {
     }
 }
 
-extension Permutation.Cycles: Collection {
+extension Permutation.Cycles: Sequence {
 
-    /// A position among the cycles, holding the bounds of the cycle there so reading it is O(1).
-    public struct Index: Comparable, Hashable, Sendable {
+    /// Reads the cycles off the line one at a time, finding where each ends as it goes, so walking every cycle reads the line once.
+    public struct Iterator: IteratorProtocol {
 
-        @usableFromInline let start: Int
+        @usableFromInline var bounds: Bounds
 
-        @usableFromInline let end: Int
-
-        @inlinable init(start: Int, end: Int) {
-            self.start = start
-            self.end = end
+        @inlinable init(line: [Int]) {
+            bounds = Bounds(line: line)
         }
 
-        @inlinable public static func < (lhs: Index, rhs: Index) -> Bool {
-            lhs.start < rhs.start
+        /// The next cycle, copied out of the line, or nil after the last.
+        @inlinable public mutating func next() -> [Int]? {
+            bounds.next().map { Array(bounds.line[$0]) }
         }
     }
 
-    /// The first cycle's position, found by reading to the end of that cycle.
-    @inlinable public var startIndex: Index {
-        Index(start: 0, end: end(ofCycleAt: 0))
+    /// The range of positions in the line that each cycle fills, in order.
+    @usableFromInline struct Bounds: Sequence, IteratorProtocol {
+
+        @usableFromInline let line: [Int]
+
+        @usableFromInline var start: Int = 0
+
+        @inlinable init(line: [Int]) {
+            self.line = line
+        }
+
+        /// The positions of the next cycle: from its largest offset up to the next offset larger than it, or the end of the line.
+        @inlinable mutating func next() -> Range<Int>? {
+            guard start < line.count else { return nil }
+            var end: Int = start + 1
+            while end < line.count && line[end] < line[start] { end += 1 }
+            defer { start = end }
+            return start..<end
+        }
     }
 
-    @inlinable public var endIndex: Index {
-        Index(start: line.count, end: line.count)
+    @inlinable public func makeIterator() -> Iterator {
+        Iterator(line: line)
     }
 
+    /// Whether the permutation moves nothing, in O(1).
     @inlinable public var isEmpty: Bool {
         line.isEmpty
     }
 
-    /// The cycle at the position, copied out of the line.
-    @inlinable public subscript(position: Index) -> [Int] {
-        Array(line[position.start..<position.end])
+    /// The number of cycles, counted in one pass over the line.
+    public var count: Int {
+        var cycles: Int = 0
+        var root: Int = -1
+        for offset in line where offset > root {
+            root = offset
+            cycles += 1
+        }
+        return cycles
+    }
+
+    @inlinable public var underestimatedCount: Int {
+        line.isEmpty ? 0 : 1
+    }
+
+    /// The positions each cycle fills in the line, which copies nothing.
+    @usableFromInline var bounds: Bounds {
+        Bounds(line: line)
     }
 
     /// Each cycle as a slice of the line, which copies nothing. A slice keeps the line's indices.
-    @usableFromInline var slices: LazyMapSequence<DefaultIndices<Permutation.Cycles>, ArraySlice<Int>> {
-        indices.lazy.map { line[$0.start..<$0.end] }
-    }
-
-    /// The next cycle's position, found by reading to the end of that cycle, so walking every cycle reads the line once.
-    @inlinable public func index(after position: Index) -> Index {
-        Index(start: position.end, end: end(ofCycleAt: position.end))
+    @usableFromInline var slices: LazyMapSequence<Bounds, ArraySlice<Int>> {
+        bounds.lazy.map { line[$0] }
     }
 
     /// The position just past the cycle that starts at `start`: the next offset larger than its first, or the end of the line.
@@ -114,8 +140,8 @@ extension Permutation.Cycles {
     /// The order of a permutation of `n` offsets can exceed `Int.max` once `n` reaches the thousands, and reading it then traps the same way integer overflow does.
     public var order: Int {
         var order: Int = 1
-        for position in indices {
-            let length: Int = position.end - position.start
+        for range in bounds {
+            let length: Int = range.count
             var divisor: Int = order
             var remainder: Int = length
             while remainder != 0 {
@@ -128,13 +154,7 @@ extension Permutation.Cycles {
 
     /// Whether the permutation takes an even or an odd number of swaps. A cycle of length `L` takes `L - 1` swaps, so the parity is that of the moved offsets minus the cycles.
     public var parity: Permutation.Parity {
-        var cycles: Int = 0
-        var root: Int = -1
-        for offset in line where offset > root {
-            root = offset
-            cycles += 1
-        }
-        return (line.count - cycles).isMultiple(of: 2) ? .even : .odd
+        (line.count - count).isMultiple(of: 2) ? .even : .odd
     }
 
     /// Whether applying the permutation twice restores every element, which holds exactly when every cycle swaps two offsets. The identity is an involution.

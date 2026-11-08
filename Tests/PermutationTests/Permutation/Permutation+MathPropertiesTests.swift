@@ -13,16 +13,16 @@ import Testing
     }
 
     @Test func subscriptGivesWhereEachElementMoves() {
-        #expect(Permutation(cycle: [2, 0, 1])[2] == 0)
-        #expect(Permutation(cycle: [2, 0, 1])[1] == 2)
-        #expect(Permutation(cycle: [2, 0, 1])[7] == 7)
+        #expect(Permutation(cycle: [2, 0, 1])[destinationOf: 2] == 0)
+        #expect(Permutation(cycle: [2, 0, 1])[destinationOf: 1] == 2)
+        #expect(Permutation(cycle: [2, 0, 1])[destinationOf: 7] == 7)
         for permutation in randomPermutations(seed: 15) {
             let count: Int = permutation.minimumCount
             let sources: [Int] = permutation.sources(count: count)
             for destination in 0..<count {
-                #expect(permutation[sources[destination]] == destination)
+                #expect(permutation[destinationOf: sources[destination]] == destination)
             }
-            #expect(permutation[count + 3] == count + 3)
+            #expect(permutation[destinationOf: count + 3] == count + 3)
         }
     }
 

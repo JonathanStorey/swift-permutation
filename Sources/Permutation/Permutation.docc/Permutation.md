@@ -98,7 +98,7 @@ A permutation is stored in Foata's single-line notation: its cycles written one 
 
 ### Inspecting a permutation
 
-- ``subscript(_:)``
+- ``subscript(destinationOf:)``
 - ``minimumCount``
 - ``cycles``
 - ``Cycles``
