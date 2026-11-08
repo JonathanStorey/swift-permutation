@@ -3,11 +3,11 @@
 
 Usage: python3 Scripts/charts.py results.json Charts
 
-Each chart is one operation, with one panel for every pair that has it: Arrangement and Array,
+Each chart is one operation, with every collection that has it on the same graph: Arrangement and Array,
 PermutableSet and OrderedSet, PermutableDictionary and OrderedDictionary, IdentifiedSet and IdentifiedArray.
-The package's collection is always a solid green line and the other is always a dashed red line, so the
-winner of each panel reads at a glance. Each panel plots time per element (the fastest run divided by the
-size) against size on log scales, and is labeled with the speedup at the largest size both finished.
+Each pair has its own hue. The package's collection is the darker solid line and the collection it replaces
+the lighter dashed line, and the legend gives the speedup at the largest size both finished. Every line plots
+time per element (the fastest run divided by the size) against size on log scales.
 
 It also draws speedups.png: one bar per reorder and pair at 16,384 elements, green to the right of 1×
 where the package's collection is faster and red to the left where it is slower.
@@ -32,6 +32,14 @@ INK = "#1f2328"
 MUTED = "#59636e"
 GRID = "#d8dee4"
 SUMMARY_SIZE = 16384
+
+# One hue per pair, in the order of PAIRS: a dark shade for the package's collection, a light one for the other.
+HUES = [
+    ("#1a7f37", "#8fd19e"),
+    ("#0b5cad", "#8cc4f5"),
+    ("#8250df", "#c9b3f5"),
+    ("#bc4c00", "#f5b98c"),
+]
 
 
 # Each pair: the package's collection, the collection it replaces, and their task title prefixes.
@@ -146,18 +154,38 @@ def figure_for(panels, heading, path, legend_names):
 
 
 def operation_chart(results, stem, heading, tasks, directory):
-    panels = []
-    for ours_name, theirs_name, ours_type, theirs_type in PAIRS:
+    """One graph for the operation with every collection on it. Each pair shares a hue: the package's
+    collection is the darker solid line and the collection it replaces the lighter dashed line."""
+    figure, axes = plt.subplots(figsize=(9, 5.6))
+    style(axes)
+    handles = []
+    for (ours_name, theirs_name, ours_type, theirs_type), (dark, light) in zip(PAIRS, HUES):
         suffix = tasks.get(ours_name)
         if not suffix:
             continue
         ours = series(results, f"{ours_type} {suffix}")
         theirs = series(results, f"{theirs_type} {suffix}")
-        if ours and theirs:
-            panels.append((f"{ours_name} vs {theirs_name}", ours, theirs))
-    if panels:
-        figure_for(panels, heading, os.path.join(directory, f"{stem}.png"),
-                   ("This package's collection", "The collection it replaces"))
+        if not (ours and theirs):
+            continue
+        axes.plot(list(theirs), list(theirs.values()), color=light, linewidth=2, linestyle=(0, (5, 3)))
+        axes.plot(list(ours), list(ours.values()), color=dark, linewidth=2.6)
+        shared = [size for size in ours if size in theirs]
+        note = ""
+        if shared:
+            text, _ = speedup_label(theirs[shared[-1]] / ours[shared[-1]])
+            note = f"  ({text} at {count(shared[-1])})"
+        handles.append(Line2D([0], [0], color=dark, linewidth=2.6, label=f"{ours_name}{note}"))
+        handles.append(Line2D([0], [0], color=light, linewidth=2, linestyle=(0, (5, 3)), label=theirs_name))
+    if not handles:
+        plt.close(figure)
+        return
+    axes.legend(handles=handles, loc="upper left", bbox_to_anchor=(1.01, 1), frameon=False, fontsize=9)
+    axes.set_title(heading, loc="left", fontsize=13, color=INK, fontweight="bold", pad=10)
+    figure.text(0.01, 0.01, "Time per element, log scales. Lower is better. Solid lines are this package's collections, "
+                "dashed lines the collections they replace.", fontsize=8, color=MUTED)
+    figure.tight_layout(rect=(0, 0.03, 1, 1))
+    figure.savefig(os.path.join(directory, f"{stem}.png"), dpi=160, facecolor="white")
+    plt.close(figure)
 
 
 def set_operations_chart(results, directory):
