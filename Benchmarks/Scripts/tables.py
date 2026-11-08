@@ -19,8 +19,10 @@ PAIRS = [
         "reverse()",
         "rotate by a third",
         "move first to last",
+        "move every tenth to the front",
+        "partition by odd rank",
     ]),
-    ("PermutableSet vs swift-collections OrderedSet", "PermutableSet<Int>", "OrderedSet<Int>", [
+    ("PermutableSet vs swift-collections OrderedSet", "PermutableSet<Record>", "OrderedSet<Record>", [
         "init from array",
         "append one at a time",
         "successful contains",
@@ -31,6 +33,8 @@ PAIRS = [
         "reverse",
         "rotate by a third",
         "move first to last",
+        "move every tenth to the front",
+        "partition by odd rank",
         "union half-overlapping",
         "intersection half-overlapping",
         "subtracting half-overlapping",
@@ -48,8 +52,10 @@ PAIRS = [
         "sort(by:)",
         "rotate by a third",
         "move first to last",
+        "move every tenth to the front",
+        "partition by odd rank",
     ]),
-    ("PermutableDictionary vs swift-collections OrderedDictionary", "PermutableDictionary<Int, Int>", "OrderedDictionary<Int, Int>", [
+    ("PermutableDictionary vs swift-collections OrderedDictionary", "PermutableDictionary<Int, Record>", "OrderedDictionary<Int, Record>", [
         "init from keys and values",
         "subscript insert one at a time",
         "subscript lookup",
@@ -60,6 +66,8 @@ PAIRS = [
         "reverse",
         "rotate by a third",
         "move first to last",
+        "move every tenth to the front",
+        "partition by odd rank",
         "sort by value",
         "shuffle values among keys",
     ]),

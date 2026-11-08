@@ -136,13 +136,15 @@ extension PermutableDictionary: RandomAccessCollection {
             self.count = count
             self.isInStorageOrder = isInStorageOrder
             position = 0
+            precondition(isInStorageOrder || count <= sources.count, "The count must fit the storage it reads.")
         }
 
         @inlinable public mutating func next() -> Element? {
             let current: Int = position
             guard current < count else { return nil }
             position = current + 1
-            let keySlot: Int = isInStorageOrder ? current : Int(sources[current])
+            // The initializer checked that `count` fits the order array, so reading it needs no second bounds check.
+            let keySlot: Int = isInStorageOrder ? current : Int(sources.withUnsafeBufferPointer { $0[current] })
             let valueSlot: Int = valueSlots.isEmpty ? keySlot : Int(valueSlots[keySlot])
             return (key: keys[keySlot], value: values[valueSlot])
         }

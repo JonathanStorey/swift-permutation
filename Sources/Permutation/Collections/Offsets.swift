@@ -161,18 +161,7 @@ extension Offsets: PermutableCollection {
         }
         guard isShift else { return false }
         precondition(top < storedSources.count, "Every offset in the cycle must be within the collection.")
-        storedSources.withUnsafeMutableBufferPointer { buffer in
-            let base: UnsafeMutablePointer<Int32> = buffer.baseAddress!
-            if movesUp {
-                let moved: Int32 = base[top]
-                (base + bottom + 1).update(from: base + bottom, count: length - 1)
-                base[bottom] = moved
-            } else {
-                let moved: Int32 = base[bottom]
-                (base + bottom).update(from: base + bottom + 1, count: length - 1)
-                base[top] = moved
-            }
-        }
+        if movesUp { moveOffset(from: top, to: bottom) } else { moveOffset(from: bottom, to: top) }
         return true
     }
 
