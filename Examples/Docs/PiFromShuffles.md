@@ -1,4 +1,4 @@
-# Pi from shuffles
+# Wallis's product from shuffled cards
 
 **Code:** [`PiFromShuffles.swift`](../Sources/FunFacts/PiFromShuffles.swift)
 
