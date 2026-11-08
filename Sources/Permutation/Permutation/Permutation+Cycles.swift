@@ -155,3 +155,16 @@ extension Permutation.Cycles: CustomStringConvertible {
         return slices.map { "(" + $0.map(String.init).joined(separator: " ") + ")" }.joined()
     }
 }
+
+extension Permutation: CustomStringConvertible, CustomDebugStringConvertible {
+
+    /// The permutation in standard cycle notation, such as `(2 0)(5 3 4)`, or `()` for the identity.
+    public var description: String {
+        cycles.description
+    }
+
+    /// The cycle notation wrapped in the type's name, such as `Permutation((2 0)(5 3 4))`.
+    public var debugDescription: String {
+        "Permutation(\(cycles.description))"
+    }
+}

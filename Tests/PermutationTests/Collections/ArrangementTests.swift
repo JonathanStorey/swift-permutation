@@ -82,15 +82,23 @@ import Testing
         #expect(first.hashValue == second.hashValue)
     }
 
-    @Test func codableRoundTripsTheOrderShown() throws {
+    @Test func codableKeepsTheOriginalOrderAndThePermutation() throws {
         var arrangement: Arrangement<String> = ["x", "y", "z"]
         arrangement.rotate(toStartAt: 1)
-        let data: Data = try JSONEncoder().encode(arrangement)
-        #expect(String(decoding: data, as: UTF8.self) == "[\"y\",\"z\",\"x\"]")
+        let encoder: JSONEncoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        let data: Data = try encoder.encode(arrangement)
+        #expect(String(decoding: data, as: UTF8.self) == "{\"elements\":[\"x\",\"y\",\"z\"],\"permutation\":\(String(decoding: try JSONEncoder().encode(arrangement.permutation), as: UTF8.self))}")
         let decoded: Arrangement<String> = try JSONDecoder().decode(Arrangement<String>.self, from: data)
         #expect(decoded == arrangement)
-        #expect(decoded.isInOriginalOrder)
+        #expect(decoded.permutation == arrangement.permutation)
+        #expect(!decoded.isInOriginalOrder)
         #expect(arrangement.description == "[\"y\", \"z\", \"x\"]")
+    }
+
+    @Test func decodingRejectsAPermutationPastTheElements() {
+        let data: Data = Data(#"{"elements":["a","b"],"permutation":[2,0]}"#.utf8)
+        #expect(throws: DecodingError.self) { try JSONDecoder().decode(Arrangement<String>.self, from: data) }
     }
 
     @Test func settingThePermutationJumpsStraightToThatOrder() {
