@@ -51,7 +51,11 @@
     /// Writes out the storage order before a change that may break it, and clears the fast path.
     @inlinable mutating func materialize() {
         guard isInStorageOrder else { return }
-        storedSources = (0..<Int32(truncatingIfNeeded: identityCount)).map { $0 }
+        let count: Int = identityCount
+        storedSources = [Int32](unsafeUninitializedCapacity: count) { buffer, initialized in
+            for offset in 0..<count { buffer[offset] = Int32(truncatingIfNeeded: offset) }
+            initialized = count
+        }
         identityCount = 0
         isInStorageOrder = false
     }
@@ -128,7 +132,7 @@ extension Offsets: PermutableCollection {
         }
     }
 
-    /// Applies a cycle that moves one element across a run of positions, the shape `move(from:to:)` and its inverse produce, with one block copy of the offsets in between instead of a walk through the cycle. Returns false, having changed nothing, for any other shape, which a general permutation reveals within its first few offsets.
+    /// Applies a cycle that moves one element across a run of positions, the shape `move(from:to:)` and its inverse produce, with one block copy of the offsets in between instead of a walk through the cycle. Returns false, having changed nothing, for any other shape. A general permutation almost always fails on its second offset, and the full check is one branch-free pass.
     ///
     /// The line `[top, top - 1, …, bottom]` moves the element at `bottom` to `top` and every other one down a place. The line `[top, bottom, bottom + 1, …, top - 1]` moves the element at `top` to `bottom` and every other one up a place.
     @inlinable mutating func applyAsShift(_ cycle: [Int]) -> Bool {
@@ -139,14 +143,23 @@ extension Offsets: PermutableCollection {
         guard bottom >= 0 else { return false }
         let movesUp: Bool
         if cycle[1] == top - 1 {
-            for position in 2..<length where cycle[position] != top - position { return false }
             movesUp = false
         } else if cycle[1] == bottom {
-            for position in 2..<length where cycle[position] != bottom + position - 1 { return false }
             movesUp = true
         } else {
             return false
         }
+        // Each offset differs from its expected value by zero, so OR-ing the differences finds a mismatch without a branch per offset.
+        let isShift: Bool = cycle.withUnsafeBufferPointer { line in
+            var difference: Int = 0
+            if movesUp {
+                for position in 1..<length { difference |= line[position] &- (bottom &+ position &- 1) }
+            } else {
+                for position in 1..<length { difference |= line[position] &- (top &- position) }
+            }
+            return difference == 0
+        }
+        guard isShift else { return false }
         precondition(top < storedSources.count, "Every offset in the cycle must be within the collection.")
         storedSources.withUnsafeMutableBufferPointer { buffer in
             let base: UnsafeMutablePointer<Int32> = buffer.baseAddress!
