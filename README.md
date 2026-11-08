@@ -58,7 +58,7 @@ This is the record of the reordering. Where the standard library performs a reor
 It is stored in **Foata's single-line notation**: the cycles written one after another, each starting at its largest offset, in increasing order of those offsets. Offsets it doesn't mention stay put, so a single `Permutation` applies to any collection that is long enough.
 
 ```swift
-let faro: Permutation = Permutation(shuffles: 52, .outFaro)
+let faro: Permutation = Permutation.outFaro(count: 52)
 faro.cycles                 // its cycles, printed in standard notation like (2 0)(5 3 4)
 faro.cycles.order           // 8, the least common multiple of the cycle lengths
 faro.cycles.parity          // .even or .odd, read straight off the line
@@ -102,7 +102,7 @@ let ranked: [Int] = scores.applying(order)
 let rankedNames: [String] = names.applying(order)    // a parallel array follows along
 ```
 
-`Permutation(shuffles:)` and `Permutation(reversing:)` do the same for shuffles and reversals.
+`Permutation.random(count:)`, `Permutation.outFaro(count:)` and the other shuffle styles, along with `Permutation(reversing:)`, do the same for shuffles and reversals.
 
 `sort(using:)` and `Permutation(sorting:using:)` take a Foundation `SortDescriptor` or `KeyPathComparator`, or an array of them in which each one breaks the ties of the ones before it:
 

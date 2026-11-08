@@ -17,7 +17,7 @@ enum PiFromShuffles {
         var generator: SplitMix64 = SplitMix64(state: 7)
         var allEven: Int = 0
         for _ in 0..<trials {
-            let shuffle: Permutation = Permutation(shuffles: cards, using: &generator)
+            let shuffle: Permutation = Permutation.random(count: cards, using: &generator)
             // A card left in place is a cycle of length 1, and the Foata line omits it, so every card must be on the line.
             if shuffle.cycles.movedCount == cards && shuffle.cycles.allSatisfy({ $0.count % 2 == 0 }) { allEven += 1 }
         }

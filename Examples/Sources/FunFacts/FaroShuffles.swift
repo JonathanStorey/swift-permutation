@@ -11,8 +11,8 @@ enum FaroShuffles {
 
     static func run() {
         let deck: Int = 52
-        let outFaro: Permutation = Permutation(shuffles: deck, .outFaro)
-        let inFaro: Permutation = Permutation(shuffles: deck, .inFaro)
+        let outFaro: Permutation = Permutation.outFaro(count: deck)
+        let inFaro: Permutation = Permutation.inFaro(count: deck)
         print("3. Perfect shuffles of a \(deck)-card deck")
         print("   out-faros to restore the deck: \(outFaro.cycles.order), cycle lengths \(outFaro.cycles.map(\.count))")
         print("   in-faros to restore the deck: \(inFaro.cycles.order), cycle lengths \(inFaro.cycles.map(\.count))")

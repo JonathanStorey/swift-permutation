@@ -22,4 +22,4 @@ So a question about shuffled cards, a question about coin flips, and the area of
 
 ## In this package
 
-Each `Permutation(shuffles: 20)` stores its cycles one after another on a single line, and that line leaves out any card that stayed put. So the test is two quick reads: the line must hold all 20 cards, so there is no cycle of length 1, and every cycle in `cycles` must have even length. No card is ever moved to answer it.
+Each `Permutation.random(count: 20)` stores its cycles one after another on a single line, and that line leaves out any card that stayed put. So the test is two quick reads: the line must hold all 20 cards, so there is no cycle of length 1, and every cycle in `cycles` must have even length. No card is ever moved to answer it.

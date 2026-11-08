@@ -103,4 +103,17 @@ import Testing
         #expect(Permutation(shuffles: 0).cycle.isEmpty)
         #expect(Permutation(shuffles: 1).cycle.isEmpty)
     }
+
+    @Test func staticsMatchTheirStyles() {
+        var first: SeededGenerator = SeededGenerator(state: 77)
+        var second: SeededGenerator = SeededGenerator(state: 77)
+        #expect(Permutation.random(count: 30, using: &first) == Permutation(shuffles: 30, using: &second))
+        #expect(Permutation.cyclic(count: 30, using: &first) == Permutation(shuffles: 30, .cyclic, using: &second))
+        #expect(Permutation.derangement(count: 30, using: &first) == Permutation(shuffles: 30, .derangement, using: &second))
+        #expect(Permutation.riffle(count: 30, using: &first) == Permutation(shuffles: 30, .riffle, using: &second))
+        #expect(Permutation.outFaro(count: 52) == Permutation(shuffles: 52, .outFaro))
+        #expect(Permutation.inFaro(count: 52) == Permutation(shuffles: 52, .inFaro))
+        #expect(Permutation.outFaro(count: 52).cycles.order == 8)
+        #expect(Permutation.random(count: 10).minimumCount <= 10)
+    }
 }
