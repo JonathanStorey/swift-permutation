@@ -72,10 +72,11 @@ let cubed: Permutation = faro.raised(to: 3)         // powers, negative too
 let next: Permutation = faro.advanced(by: 1)        // the next permutation, one cheap step
 let place: Permutation.Rank = faro.rank             // its place among all permutations, never overflows
 let far: Permutation = Permutation(rank: 1_000_000_000)  // jump straight to any place
-let merged: Permutation? = mine.merging(with: theirs, from: base)  // three-way merge of reorders
+let merged: Permutation? = mine.merging(with: theirs, from: base)  // three-way merge, nil on a conflict
+let synced: Permutation = mine.merging(with: theirs, from: base, by: .relativeOrder)  // never fails
 ```
 
-Because the reorder is an object, you can do things with it after the fact. `inverted` is a one-line undo, and `followed(by:)` folds a string of edits into one. `moves` replays any permutation as the fewest single-element moves, which is what a list animation or a remote sync wants, and `swaps` replays it as the fewest exchanges. Going the other way, `Permutation(new.difference(from: old))` reads a pure reorder back out of a `CollectionDifference`. `insert(at:)`, `remove(at:)` and `replaceSubrange(_:withCount:)` keep a stored permutation valid while the collection it describes grows and shrinks.
+Because the reorder is an object, you can do things with it after the fact. `inverted` is a one-line undo, and `followed(by:)` folds a string of edits into one. `moves` replays any permutation as the fewest single-element moves, which is what a list animation or a remote sync wants, and `swaps` replays it as the fewest exchanges. Going the other way, `Permutation(new.difference(from: old))` reads a pure reorder back out of a `CollectionDifference`. `insert(at:)`, `remove(at:)` and `replaceSubrange(_:withCount:)` keep a stored permutation valid while the collection it describes grows and shrinks, so a synced order can apply every insertion and removal to base, mine and theirs and then merge with `.relativeOrder`. That merge keeps every pair either side reordered and gives up only pairs neither side touched, in O(n log n).
 
 ### `PermutableCollection`
 
