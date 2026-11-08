@@ -205,7 +205,7 @@ Full reference: [PermutableDictionary](Sources/Permutation/Permutation.docc/Perm
 
 Each type has a reference page in the style of Apple's documentation, with an overview and every member grouped by task. The pages are a [DocC](https://www.swift.org/documentation/docc/) catalog, so they read as Markdown on GitHub and build into browsable documentation with Xcode's **Product › Build Documentation**.
 
-Start with the [package overview](Sources/Permutation/Permutation.docc/Documentation.md), then two guides: [Recording and undoing reorders](Sources/Permutation/Permutation.docc/Recording-and-undoing-reorders.md) and [Syncing a reordered list across devices](Sources/Permutation/Permutation.docc/Syncing-a-reordered-list-across-devices.md).
+Start with the [package overview](Sources/Permutation/Permutation.docc/README.md), then two guides: [Recording and undoing reorders](Sources/Permutation/Permutation.docc/Recording-and-undoing-reorders.md) and [Syncing a reordered list across devices](Sources/Permutation/Permutation.docc/Syncing-a-reordered-list-across-devices.md).
 
 | Type | What it is |
 | --- | --- |

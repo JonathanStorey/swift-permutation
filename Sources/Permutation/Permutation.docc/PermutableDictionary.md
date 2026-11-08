@@ -31,7 +31,7 @@ var santas = PermutableDictionary(uniqueKeys: friends, values: friends)
 santas.reassignValues(shuffling: .derangement)  // keys stay put: a fair Secret Santa
 ```
 
-Neither reordering nor reassigning copies a key or a value, because both live in storage that reordering never touches. Both return the ``Permutation/Permutation`` they applied, so you can undo either kind of change by applying its inverse.
+Neither reordering nor reassigning copies a key or a value, because both live in storage that reordering never touches. Both return the ``Permutation`` they applied, so you can undo either kind of change by applying its inverse.
 
 ## Topics
 
