@@ -79,80 +79,7 @@ import Testing
         }
     }
 
-    @Test func favoringMergeMatchesTheStrictMergeWheneverItSucceeds() {
-        var generator: SeededGenerator = SeededGenerator(state: 41)
-        for _ in 0..<300 {
-            let count: Int = Int.random(in: 0...10, using: &generator)
-            let base: Permutation = Permutation(shuffles: count, using: &generator)
-            let whole: [[Int]] = Permutation(shuffles: count, using: &generator).cycleArrays
-            let ours: Permutation = base.followed(by: Permutation(cycles: whole.filter { _ in Bool.random(using: &generator) }))
-            let theirs: Permutation = base.followed(by: Permutation(cycles: whole.filter { _ in Bool.random(using: &generator) }))
-            guard let strict: Permutation = ours.merging(with: theirs, from: base) else { continue }
-            #expect(ours.merging(with: theirs, from: base, favoring: .ours) == strict)
-            #expect(ours.merging(with: theirs, from: base, favoring: .theirs) == strict)
-        }
-    }
-
-    @Test func favoringMergeKeepsTwoDragsOfDifferentElements() {
-        let base: Permutation = Permutation()
-        let ours: Permutation = Permutation(sources: [5, 0, 1, 2, 3, 4])
-        let theirs: Permutation = Permutation(sources: [1, 2, 3, 4, 5, 0])
-        #expect(ours.merging(with: theirs, from: base) == nil)
-        let expected: Permutation = Permutation(sources: [5, 1, 2, 3, 4, 0])
-        #expect(ours.merging(with: theirs, from: base, favoring: .ours) == expected)
-        #expect(ours.merging(with: theirs, from: base, favoring: .theirs) == expected)
-    }
-
-    @Test func favoringMergeOfTheSameElementDraggedTwiceKeepsTheFurtherMove() {
-        let base: Permutation = Permutation()
-        let ours: Permutation = Permutation(sources: [3, 0, 1, 2])
-        let theirs: Permutation = Permutation(sources: [0, 3, 1, 2])
-        #expect(ours.merging(with: theirs, from: base, favoring: .ours) == ours)
-        #expect(ours.merging(with: theirs, from: base, favoring: .theirs) == ours)
-    }
-
-    @Test func favoringMergeSettlesALoopOnAValidOrder() {
-        let base: Permutation = Permutation()
-        let ours: Permutation = Permutation(sources: [1, 0, 2])
-        let theirs: Permutation = Permutation(sources: [0, 2, 1])
-        #expect(ours.merging(with: theirs, from: base) == nil)
-        #expect(ours.merging(with: theirs, from: base, favoring: .ours) == Permutation(sources: [2, 1, 0]))
-        #expect(ours.merging(with: theirs, from: base, favoring: .theirs) == ours)
-    }
-
-    @Test func favoringMergeAlwaysReturnsAPermutationOfTheSameOffsets() {
-        var generator: SeededGenerator = SeededGenerator(state: 43)
-        for _ in 0..<300 {
-            let count: Int = Int.random(in: 0...12, using: &generator)
-            let base: Permutation = Permutation(shuffles: count, using: &generator)
-            let ours: Permutation = Permutation(shuffles: count, using: &generator)
-            let theirs: Permutation = Permutation(shuffles: count, using: &generator)
-            for preference in [Permutation.MergePreference.ours, .theirs, .both] {
-                let merged: Permutation = ours.merging(with: theirs, from: base, favoring: preference)
-                #expect(merged.minimumCount <= count)
-                #expect(merged.sources(count: count).sorted() == Array(0..<count))
-                #expect(base.merging(with: theirs, from: base, favoring: preference) == theirs)
-                #expect(ours.merging(with: base, from: base, favoring: preference) == ours)
-            }
-        }
-    }
-
-    @Test func twoWayFavoringMergeIsTheThreeWayMergeFromTheIdentity() {
-        var generator: SeededGenerator = SeededGenerator(state: 47)
-        for _ in 0..<200 {
-            let count: Int = Int.random(in: 0...10, using: &generator)
-            let ours: Permutation = Permutation(shuffles: count, using: &generator)
-            let theirs: Permutation = Permutation(shuffles: count, using: &generator)
-            for preference in [Permutation.MergePreference.ours, .theirs] {
-                #expect(ours.merging(with: theirs, favoring: preference) == ours.merging(with: theirs, from: Permutation(), favoring: preference))
-            }
-            if let strict: Permutation = ours.merging(with: theirs) {
-                #expect(ours.merging(with: theirs, favoring: .ours) == strict)
-            }
-        }
-    }
-
-    @Test func favoringBothKeepsEveryReorderAndGivesUpTheFewestBasePairs() {
+    @Test func relativeOrderMergeKeepsEveryReorderAndGivesUpTheFewestBasePairs() {
         var generator: SeededGenerator = SeededGenerator(state: 53)
         for _ in 0..<150 {
             let count: Int = Int.random(in: 0...6, using: &generator)
@@ -163,23 +90,52 @@ import Testing
             let keepers: [Permutation] = Permutation.permutations(count: count).filter { reorderedPairs($0, from: base, count: count).isSuperset(of: reordered) }
             let fewest: Int = keepers.map { reorderedPairs($0, from: base, count: count).count }.min()!
             let best: [Permutation] = keepers.filter { reorderedPairs($0, from: base, count: count).count == fewest }
-            let merged: Permutation = ours.merging(with: theirs, from: base, favoring: .both)
+            let merged: Permutation = ours.merging(with: theirs, from: base, by: .relativeOrder)
             #expect(best == [merged])
-            #expect(theirs.merging(with: ours, from: base, favoring: .both) == merged)
+            #expect(theirs.merging(with: ours, from: base, by: .relativeOrder) == merged)
         }
     }
 
-    @Test func favoringBothSettlesTheLoopKeepingBothEdits() {
-        let ours: Permutation = Permutation(sources: [1, 0, 2])
-        let theirs: Permutation = Permutation(sources: [0, 2, 1])
-        #expect(ours.merging(with: theirs, favoring: .both) == Permutation(sources: [2, 1, 0]))
-        #expect(ours.merging(with: theirs, from: Permutation(), favoring: .both) == Permutation(sources: [2, 1, 0]))
+    @Test func relativeOrderMergeWithUnchangedSideReturnsTheOtherSide() {
+        var generator: SeededGenerator = SeededGenerator(state: 43)
+        for _ in 0..<100 {
+            let count: Int = Int.random(in: 0...12, using: &generator)
+            let base: Permutation = Permutation(shuffles: count, using: &generator)
+            let ours: Permutation = Permutation(shuffles: count, using: &generator)
+            #expect(base.merging(with: ours, from: base, by: .relativeOrder) == ours)
+            #expect(ours.merging(with: base, from: base, by: .relativeOrder) == ours)
+            #expect(ours.merging(with: ours, from: base, by: .relativeOrder) == ours)
+        }
     }
 
-    @Test func favoringBothKeepsTwoDragsOfDifferentElements() {
+    @Test func relativeOrderMergeSettlesTheLoopKeepingBothEdits() {
+        let ours: Permutation = Permutation(sources: [1, 0, 2])
+        let theirs: Permutation = Permutation(sources: [0, 2, 1])
+        #expect(ours.merging(with: theirs, from: Permutation()) == nil)
+        #expect(ours.merging(with: theirs, by: .relativeOrder) == Permutation(sources: [2, 1, 0]))
+    }
+
+    @Test func relativeOrderMergeKeepsTwoDragsOfDifferentElements() {
         let ours: Permutation = Permutation(sources: [5, 0, 1, 2, 3, 4])
         let theirs: Permutation = Permutation(sources: [1, 2, 3, 4, 5, 0])
-        #expect(ours.merging(with: theirs, favoring: .both) == Permutation(sources: [5, 1, 2, 3, 4, 0]))
+        #expect(ours.merging(with: theirs) == nil)
+        #expect(ours.merging(with: theirs, by: .relativeOrder) == Permutation(sources: [5, 1, 2, 3, 4, 0]))
+    }
+
+    @Test func relativeOrderMergeOfTheSameElementDraggedTwiceKeepsTheFurtherMove() {
+        let ours: Permutation = Permutation(sources: [3, 0, 1, 2])
+        let theirs: Permutation = Permutation(sources: [0, 3, 1, 2])
+        #expect(ours.merging(with: theirs, by: .relativeOrder) == ours)
+    }
+
+    @Test func twoWayRelativeOrderMergeIsTheThreeWayMergeFromTheIdentity() {
+        var generator: SeededGenerator = SeededGenerator(state: 47)
+        for _ in 0..<200 {
+            let count: Int = Int.random(in: 0...10, using: &generator)
+            let ours: Permutation = Permutation(shuffles: count, using: &generator)
+            let theirs: Permutation = Permutation(shuffles: count, using: &generator)
+            #expect(ours.merging(with: theirs, by: .relativeOrder) == ours.merging(with: theirs, from: Permutation(), by: .relativeOrder))
+        }
     }
 
     /// The pairs of offsets, earlier in base first, that the permutation shows in the opposite order from base.

@@ -64,46 +64,26 @@ extension Permutation {
 
 extension Permutation {
 
-    /// The side whose order a three-way merge leans toward when the two sides' reorders cannot all be kept.
-    public enum MergePreference: Hashable, Sendable {
+    /// How a merge that never fails settles the two sides' changes.
+    public enum MergeStrategy: Hashable, Sendable {
 
-        /// Lean toward this permutation, the one `merging` is called on.
-        case ours
-
-        /// Lean toward the permutation passed as `with`.
-        case theirs
-
-        /// Keep every pair of offsets that either side reordered since base, giving up only pairs neither side touched. Such an order always exists, and this is the one that keeps the most of base: the join of both sides in the weak order.
-        case both
+        /// Keep every pair of offsets that either side reordered since base, giving up only pairs neither side touched. A reordered pair always moves its later offset in base ahead of its earlier one, so the reordered pairs from both sides can never loop and always fit in one order. Of those orders, this is the one that keeps the most of base, the join of both sides in the weak order. Neither side is favored, so the merge gives the same result from either side.
+        case relativeOrder
     }
 
-    /// Returns the three-way merge of this permutation and theirs, both descended from base, and never fails.
-    ///
-    /// Favoring `.both` merges by relative order alone and keeps every reorder from both sides, as `MergePreference.both` describes. Favoring `.ours` or `.theirs` works as follows.
-    ///
-    /// When no cycle from one side shares an offset with a different cycle from the other, this is the same permutation the strict merge returns, so every swap and cycle from both sides survives. Otherwise the offsets are merged by relative order: each pair of offsets keeps the order either side changed it to since base, or base's order when neither touched it. Two sides can never disagree about a single pair, since a pair has only one way to change, so they conflict only when the kept pairs chase each other in a loop. Then the merge settles on an order that starts from the preferred side's and still keeps most of what both sides did.
+    /// Returns the three-way merge of this permutation and theirs, both descended from base, settled by the given strategy, and never fails.
     ///
     /// All three permutations must describe the same elements at the same offsets, so apply every insertion and removal from either side to all three before merging.
-    public func merging(with theirs: Permutation, from base: Permutation, favoring preference: MergePreference) -> Permutation {
-        if preference == .both { return joining(with: theirs, from: base) }
-        if let merged: Permutation = merging(with: theirs, from: base) { return merged }
-        let count: Int = Swift.max(minimumCount, theirs.minimumCount, base.minimumCount)
-        let basePositions: [Int] = Permutation.positions(of: base.sources(count: count))
-        let ourPositions: [Int] = Permutation.positions(of: sources(count: count))
-        let theirPositions: [Int] = Permutation.positions(of: theirs.sources(count: count))
-        let order: [Int] = preference == .ours ? sources(count: count) : theirs.sources(count: count)
-        let merged: [Int] = Permutation.mergeSorted(order) { first, second in
-            let isInBaseOrder: Bool = basePositions[first] < basePositions[second]
-            let isChanged: Bool = (ourPositions[first] < ourPositions[second]) != isInBaseOrder
-                || (theirPositions[first] < theirPositions[second]) != isInBaseOrder
-            return isChanged != isInBaseOrder
+    public func merging(with theirs: Permutation, from base: Permutation, by strategy: MergeStrategy) -> Permutation {
+        switch strategy {
+        case .relativeOrder:
+            return joining(with: theirs, from: base)
         }
-        return Permutation(sources: merged)
     }
 
-    /// Returns the two-way merge of this permutation and theirs, treating the original order as their common base, and never fails. It is the three-way merge from the identity, so it keeps every cycle the strict merge would and settles any conflict by relative order, leaning toward the preferred side.
-    public func merging(with theirs: Permutation, favoring preference: MergePreference) -> Permutation {
-        merging(with: theirs, from: Permutation(), favoring: preference)
+    /// Returns the two-way merge of this permutation and theirs, treating the original order as their common base, settled by the given strategy, and never fails.
+    public func merging(with theirs: Permutation, by strategy: MergeStrategy) -> Permutation {
+        merging(with: theirs, from: Permutation(), by: strategy)
     }
 
     /// Returns the order that keeps every pair either side reordered since base, and otherwise keeps base's order wherever it can.
@@ -179,34 +159,5 @@ extension Permutation {
             positions[offset] = position
         }
         return positions
-    }
-
-    /// Sorts the offsets with a stable bottom-up merge sort, which always returns every offset once even when the comparison loops, and leaves offsets the comparison cannot separate in their given order.
-    private static func mergeSorted(_ offsets: [Int], by isBefore: (Int, Int) -> Bool) -> [Int] {
-        var current: [Int] = offsets
-        var next: [Int] = offsets
-        var width: Int = 1
-        while width < current.count {
-            var start: Int = 0
-            while start < current.count {
-                let middle: Int = Swift.min(start + width, current.count)
-                let end: Int = Swift.min(start + 2 * width, current.count)
-                var left: Int = start
-                var right: Int = middle
-                for slot in start..<end {
-                    if left < middle && (right == end || !isBefore(current[right], current[left])) {
-                        next[slot] = current[left]
-                        left += 1
-                    } else {
-                        next[slot] = current[right]
-                        right += 1
-                    }
-                }
-                start = end
-            }
-            swap(&current, &next)
-            width *= 2
-        }
-        return current
     }
 }
