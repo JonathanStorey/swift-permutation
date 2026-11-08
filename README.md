@@ -25,10 +25,11 @@ The package provides four collections: `Arrangement`, `IdentifiedSet`, `Permutab
 
 ## Contents
 
-- [Why permutations](#why-permutations)
+- [Introduction](#introduction)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [A quick tour](#a-quick-tour)
+- [Documentation](#documentation)
 - [Performance](#performance)
 - [Development](#development)
 - [Seven fun facts about permutations](#seven-fun-facts-about-permutations)
@@ -58,25 +59,25 @@ This is the record of the reordering. Where the standard library performs a reor
 It is stored in **Foata's single-line notation**: the cycles written one after another, each starting at its largest offset, in increasing order of those offsets. Offsets it doesn't mention stay put, so a single `Permutation` applies to any collection that is long enough.
 
 ```swift
-let faro: Permutation = Permutation.outFaro(count: 52)
-faro.cycles                 // its cycles, printed in standard notation like (2 0)(5 3 4)
-faro.cycles.order           // 8, the least common multiple of the cycle lengths
-faro.cycles.parity          // .even or .odd, read straight off the line
-faro.cycles.map(\.count)    // lengths of the cycles, in one pass
-faro[0]                     // where the element at offset 0 goes
-let built: Permutation = Permutation(cycles: [[0, 2], [3, 5, 4]])  // from cycles in any rotation
+var tasks: IdentifiedSet<Task> = loadTasks()
 
-let both: Permutation = first.followed(by: second)  // composition
-let undo: Permutation = both.inverted               // inverse
-let cubed: Permutation = faro.raised(to: 3)         // powers, negative too
-let next: Permutation = faro.advanced(by: 1)        // the next permutation, one cheap step
-let place: Permutation.Rank = faro.rank             // its place among all permutations, never overflows
-let far: Permutation = Permutation(rank: 1_000_000_000)  // jump straight to any place
+let byDate: Permutation = tasks.sort { $0.due < $1.due }  // every reorder returns one
+let byPriority: Permutation = tasks.sort { $0.priority > $1.priority }
+
+let both: Permutation = byDate.followed(by: byPriority)  // composition: two reorders as one
+tasks.apply(both.inverted)                               // inverse: undo both in one step
+
+both.moves                  // the fewest single-row moves that replay it, for an animation or a sync
+both.swaps                  // the fewest exchanges that replay it
+both.cycles                 // printed in standard notation like (2 0)(5 3 4)
+both[0]                     // where the element at offset 0 went
 let merged: Permutation? = mine.merging(with: theirs, from: base)  // three-way merge, nil on a conflict
 let synced: Permutation = mine.merging(with: theirs, from: base, by: .relativeOrder)  // never fails
 ```
 
 Because the reorder is an object, you can do things with it after the fact. `inverted` is a one-line undo, and `followed(by:)` folds a string of edits into one. `moves` replays any permutation as the fewest single-element moves, which is what a list animation or a remote sync wants, and `swaps` replays it as the fewest exchanges. Going the other way, `Permutation(new.difference(from: old))` reads a pure reorder back out of a `CollectionDifference`. `insert(at:)`, `remove(at:)` and `replaceSubrange(_:withCount:)` keep a stored permutation valid while the collection it describes grows and shrinks, so a synced order can apply every insertion and removal to base, mine and theirs and then merge with `.relativeOrder`. That merge keeps every pair either side reordered and gives up only pairs neither side touched, in O(n log n).
+
+Full reference: [Permutation](Sources/Permutation/Permutation.docc/Permutation.md)
 
 ### `PermutableCollection`
 
@@ -103,7 +104,7 @@ let ranked: [Int] = scores.applying(order)
 let rankedNames: [String] = names.applying(order)    // a parallel array follows along
 ```
 
-`Permutation.random(count:)`, `Permutation.outFaro(count:)` and the other shuffle styles, along with `Permutation(reversing:)`, do the same for shuffles and reversals.
+`Permutation.random(count:)`, `Permutation.derangement(count:)` and the other shuffle styles, along with `Permutation(reversing:)`, do the same for shuffles and reversals.
 
 `sort(using:)` and `Permutation(sorting:using:)` take a Foundation `SortDescriptor` or `KeyPathComparator`, or an array of them in which each one breaks the ties of the ones before it:
 
@@ -111,16 +112,19 @@ let rankedNames: [String] = names.applying(order)    // a parallel array follows
 let order: Permutation = roster.sort(using: [SortDescriptor(\.lastName), SortDescriptor(\.firstName)])
 ```
 
+Full reference: [PermutableCollection](Sources/Permutation/Permutation.docc/PermutableCollection.md)
+
 ### `Arrangement`
 
 The simplest `PermutableCollection` is a fixed list of elements that can only be reordered. Nothing can be added, removed or overwritten, which is exactly the guarantee `MutableCollection` can't make. The elements need not be `Hashable` or even `Equatable`, and since they never move in memory, an arrangement always remembers its starting order and knows the single permutation that took it from there to the order shown.
 
 ```swift
-var deck: Arrangement<Card> = Arrangement(newDeck)
-deck.shuffle(.outFaro)
-deck.permutation          // every reorder so far, folded into one
-deck.isInOriginalOrder    // true again after 8 out-faros
-deck.permutation = Permutation()  // back to the original order in one step
+var photos: Arrangement<Photo> = Arrangement(album)  // large images, never copied
+photos.sort { $0.date < $1.date }
+photos.shuffle()
+photos.permutation                  // every reorder so far, folded into one
+photos.isInOriginalOrder            // false
+photos.permutation = Permutation()  // back to the original order in one step
 ```
 
 `advance(by:)` steps a permutation to the next one with a few swaps on its Foata line. Starting from the identity, the first `n!` steps visit every order of `n` elements:
@@ -142,6 +146,8 @@ for order in hand.permutations { print(order) }          // all 6 orders; the k-
 let found = hand.permutations.first { $0.first == "c" }  // stops at the first match
 ```
 
+Full reference: [Arrangement](Sources/Permutation/Permutation.docc/Arrangement.md)
+
 ### `IdentifiedSet`
 
 An ordered collection of `Identifiable` elements with O(1) lookup, insertion and removal by id, built for SwiftUI's `List` and `ForEach`. Element binding is supported as well, working through the ID rather than the index. Reordering a list of large models is as cheap as reordering numbers, and the permutation it returns is what you need to undo the change or animate it. It conforms to `PermutableCollection` and `UpsertableCollection`.
@@ -157,6 +163,8 @@ let moved: Permutation = roster.move(fromOffsets: source, toOffset: destination)
 
 With SwiftUI, `$roster[id:]` and `$roster.elements()` give bindings that follow each element by id through every reorder.
 
+Full reference: [IdentifiedSet](Sources/Permutation/Permutation.docc/IdentifiedSet.md)
+
 ### `PermutableSet`
 
 The same storage with each `Hashable` element as its own key. It only offers the set operations whose result has a clear order. The receiver's elements keep their order, and new elements follow in the order of the argument.
@@ -170,6 +178,8 @@ let order: Permutation = tags.sort()
 ```
 
 `PermutableSet` does not conform to `SetAlgebra`, because `==` respects order, which breaks the laws of `SetAlgebra`.
+
+Full reference: [PermutableSet](Sources/Permutation/Permutation.docc/PermutableSet.md)
 
 ### `PermutableDictionary`
 
@@ -188,6 +198,22 @@ santas.reassignValues(shuffling: .derangement)  // keys stay put: a fair Secret 
 ```
 
 Reordering the dictionary, its `keys` or its `values` moves each key together with its value. `reassignValues` hands values around among keys that stay where they are. Neither copies a key or a value, because both live in storage that reordering never touches, and both hand back the permutation so either kind of reorder can be undone.
+
+Full reference: [PermutableDictionary](Sources/Permutation/Permutation.docc/PermutableDictionary.md)
+
+## Documentation
+
+Each type has a reference page in the style of Apple's documentation, with an overview and every member grouped by task. The pages are a [DocC](https://www.swift.org/documentation/docc/) catalog, so they read as Markdown on GitHub and build into browsable documentation with Xcode's **Product › Build Documentation**.
+
+| Type | What it is |
+| --- | --- |
+| [`Permutation`](Sources/Permutation/Permutation.docc/Permutation.md) | A reorder held as a value |
+| [`PermutableCollection`](Sources/Permutation/Permutation.docc/PermutableCollection.md) | The protocol for collections that reorder by swapping |
+| [`UpsertableCollection`](Sources/Permutation/Permutation.docc/UpsertableCollection.md) | The protocol for collections that hold each element once |
+| [`Arrangement`](Sources/Permutation/Permutation.docc/Arrangement.md) | A fixed list that can only be reordered |
+| [`IdentifiedSet`](Sources/Permutation/Permutation.docc/IdentifiedSet.md) | Identifiable elements with O(1) lookup by id |
+| [`PermutableSet`](Sources/Permutation/Permutation.docc/PermutableSet.md) | An ordered set of hashable elements |
+| [`PermutableDictionary`](Sources/Permutation/Permutation.docc/PermutableDictionary.md) | An ordered dictionary whose entries move together |
 
 ## Performance
 
