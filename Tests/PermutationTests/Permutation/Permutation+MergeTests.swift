@@ -136,4 +136,19 @@ import Testing
             }
         }
     }
+
+    @Test func twoWayFavoringMergeIsTheThreeWayMergeFromTheIdentity() {
+        var generator: SeededGenerator = SeededGenerator(state: 47)
+        for _ in 0..<200 {
+            let count: Int = Int.random(in: 0...10, using: &generator)
+            let ours: Permutation = Permutation(shuffles: count, using: &generator)
+            let theirs: Permutation = Permutation(shuffles: count, using: &generator)
+            for preference in [Permutation.MergePreference.ours, .theirs] {
+                #expect(ours.merging(with: theirs, favoring: preference) == ours.merging(with: theirs, from: Permutation(), favoring: preference))
+            }
+            if let strict: Permutation = ours.merging(with: theirs) {
+                #expect(ours.merging(with: theirs, favoring: .ours) == strict)
+            }
+        }
+    }
 }

@@ -95,6 +95,11 @@ extension Permutation {
         return Permutation(sources: merged)
     }
 
+    /// Returns the two-way merge of this permutation and theirs, treating the original order as their common base, and never fails. It is the three-way merge from the identity, so it keeps every cycle the strict merge would and settles any conflict by relative order, leaning toward the preferred side.
+    public func merging(with theirs: Permutation, favoring preference: MergePreference) -> Permutation {
+        merging(with: theirs, from: Permutation(), favoring: preference)
+    }
+
     /// The position each offset is shown at, the inverse of the sources.
     private static func positions(of sources: [Int]) -> [Int] {
         var positions: [Int] = [Int](repeating: 0, count: sources.count)
