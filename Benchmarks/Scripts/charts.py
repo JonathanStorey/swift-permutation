@@ -60,6 +60,8 @@ OPERATIONS = [
     ("reverse", "Reverse", True, {"Arrangement": "reverse()", "PermutableSet": "reverse", "PermutableDictionary": "reverse", "IdentifiedSet": "reverse()"}),
     ("rotate", "Rotate by a third", True, {name: "rotate by a third" for name, *_ in PAIRS}),
     ("move", "Move first to last", True, {name: "move first to last" for name, *_ in PAIRS}),
+    ("move-many", "Move every tenth to the front", True, {name: "move every tenth to the front" for name, *_ in PAIRS}),
+    ("partition", "Partition (stable here, unstable in the others)", True, {name: "partition by odd rank" for name, *_ in PAIRS}),
     ("init", "Build from an array", False, {"PermutableSet": "init from array", "PermutableDictionary": "init from keys and values", "IdentifiedSet": "init from array"}),
     ("append", "Append one at a time", False, {"PermutableSet": "append one at a time", "PermutableDictionary": "subscript insert one at a time", "IdentifiedSet": "append one at a time"}),
     ("lookup", "Look up every element", False, {"PermutableSet": "successful contains", "PermutableDictionary": "subscript lookup", "IdentifiedSet": "subscript(id:) read"}),

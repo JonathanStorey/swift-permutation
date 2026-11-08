@@ -18,15 +18,9 @@ public extension Arrangement {
         offsets.moveOffset(from: source, to: destination)
     }
 
-    /// Moves the elements at the given offsets to just before the element at the destination offset, keeping their relative order. A single offset, as a one-row drag in SwiftUI gives, is one block copy. Ask for a `Permutation` result to get the one applied.
+    /// Moves the elements at the given offsets to just before the element at the destination offset, keeping their relative order. Only the offsets between the moved elements and the destination are rewritten. Ask for a `Permutation` result to get the one applied.
     @inlinable mutating func move(fromOffsets source: some Sequence<Int>, toOffset destination: Int) {
-        let moved: [Int] = Array(source)
-        if moved.count == 1 {
-            precondition((0...count).contains(destination), "Every offset must be within the collection.")
-            offsets.moveOffset(from: moved[0], to: destination > moved[0] ? destination - 1 : destination)
-        } else {
-            let _: Permutation = move(fromOffsets: moved, toOffset: destination)
-        }
+        offsets.moveOffsets(from: source, to: destination)
     }
 
     /// Reverses the order in place by reversing the offsets. Ask for a `Permutation` result to get the one applied.
@@ -53,6 +47,11 @@ public extension Arrangement {
     /// Sorts the order by sorting the offsets, comparing the stored elements they show without copying any. Ask for a `Permutation` result to get the one applied.
     @inlinable mutating func sort(by areInIncreasingOrder: (Element, Element) throws -> Bool) rethrows {
         try offsets.sortOffsets { try areInIncreasingOrder(elements[$0], elements[$1]) }
+    }
+
+    /// Moves the elements that satisfy the predicate after those that do not, keeping the relative order within each group, by partitioning the offsets. Returns the index of the first moved element.
+    @inlinable @discardableResult mutating func stablePartition(by belongsInSecondPartition: (Element) throws -> Bool) rethrows -> Int {
+        try offsets.partitionOffsets { try belongsInSecondPartition(elements[$0]) }
     }
 }
 
@@ -71,15 +70,9 @@ public extension PermutableSet {
         offsets.moveOffset(from: source, to: destination)
     }
 
-    /// Moves the elements at the given offsets to just before the element at the destination offset, keeping their relative order. A single offset, as a one-row drag in SwiftUI gives, is one block copy. Ask for a `Permutation` result to get the one applied.
+    /// Moves the elements at the given offsets to just before the element at the destination offset, keeping their relative order. Only the offsets between the moved elements and the destination are rewritten. Ask for a `Permutation` result to get the one applied.
     @inlinable mutating func move(fromOffsets source: some Sequence<Int>, toOffset destination: Int) {
-        let moved: [Int] = Array(source)
-        if moved.count == 1 {
-            precondition((0...count).contains(destination), "Every offset must be within the collection.")
-            offsets.moveOffset(from: moved[0], to: destination > moved[0] ? destination - 1 : destination)
-        } else {
-            let _: Permutation = move(fromOffsets: moved, toOffset: destination)
-        }
+        offsets.moveOffsets(from: source, to: destination)
     }
 
     /// Reverses the order in place by reversing the offsets. Ask for a `Permutation` result to get the one applied.
@@ -106,6 +99,11 @@ public extension PermutableSet {
     /// Sorts the order by sorting the offsets, comparing the stored elements they show without copying any. Ask for a `Permutation` result to get the one applied.
     @inlinable mutating func sort(by areInIncreasingOrder: (Element, Element) throws -> Bool) rethrows {
         try offsets.sortOffsets { try areInIncreasingOrder(elements[$0], elements[$1]) }
+    }
+
+    /// Moves the elements that satisfy the predicate after those that do not, keeping the relative order within each group, by partitioning the offsets. Returns the index of the first moved element.
+    @inlinable @discardableResult mutating func stablePartition(by belongsInSecondPartition: (Element) throws -> Bool) rethrows -> Int {
+        try offsets.partitionOffsets { try belongsInSecondPartition(elements[$0]) }
     }
 }
 
@@ -124,15 +122,9 @@ public extension IdentifiedSet {
         offsets.moveOffset(from: source, to: destination)
     }
 
-    /// Moves the elements at the given offsets to just before the element at the destination offset, keeping their relative order. A single offset, as a one-row drag in SwiftUI gives, is one block copy. Ask for a `Permutation` result to get the one applied.
+    /// Moves the elements at the given offsets to just before the element at the destination offset, keeping their relative order. Only the offsets between the moved elements and the destination are rewritten. Ask for a `Permutation` result to get the one applied.
     @inlinable mutating func move(fromOffsets source: some Sequence<Int>, toOffset destination: Int) {
-        let moved: [Int] = Array(source)
-        if moved.count == 1 {
-            precondition((0...count).contains(destination), "Every offset must be within the collection.")
-            offsets.moveOffset(from: moved[0], to: destination > moved[0] ? destination - 1 : destination)
-        } else {
-            let _: Permutation = move(fromOffsets: moved, toOffset: destination)
-        }
+        offsets.moveOffsets(from: source, to: destination)
     }
 
     /// Reverses the order in place by reversing the offsets. Ask for a `Permutation` result to get the one applied.
@@ -160,6 +152,11 @@ public extension IdentifiedSet {
     @inlinable mutating func sort(by areInIncreasingOrder: (Element, Element) throws -> Bool) rethrows {
         try offsets.sortOffsets { try areInIncreasingOrder(elements[$0], elements[$1]) }
     }
+
+    /// Moves the elements that satisfy the predicate after those that do not, keeping the relative order within each group, by partitioning the offsets. Returns the index of the first moved element.
+    @inlinable @discardableResult mutating func stablePartition(by belongsInSecondPartition: (Element) throws -> Bool) rethrows -> Int {
+        try offsets.partitionOffsets { try belongsInSecondPartition(elements[$0]) }
+    }
 }
 
 public extension IdentifiedSet where Element: Comparable {
@@ -177,15 +174,9 @@ public extension PermutableDictionary {
         offsets.moveOffset(from: source, to: destination)
     }
 
-    /// Moves the elements at the given offsets to just before the element at the destination offset, keeping their relative order. A single offset, as a one-row drag in SwiftUI gives, is one block copy. Ask for a `Permutation` result to get the one applied.
+    /// Moves the elements at the given offsets to just before the element at the destination offset, keeping their relative order. Only the offsets between the moved elements and the destination are rewritten. Ask for a `Permutation` result to get the one applied.
     @inlinable mutating func move(fromOffsets source: some Sequence<Int>, toOffset destination: Int) {
-        let moved: [Int] = Array(source)
-        if moved.count == 1 {
-            precondition((0...count).contains(destination), "Every offset must be within the collection.")
-            offsets.moveOffset(from: moved[0], to: destination > moved[0] ? destination - 1 : destination)
-        } else {
-            let _: Permutation = move(fromOffsets: moved, toOffset: destination)
-        }
+        offsets.moveOffsets(from: source, to: destination)
     }
 
     /// Reverses the order in place by reversing the offsets. Ask for a `Permutation` result to get the one applied.
@@ -218,6 +209,16 @@ public extension PermutableDictionary {
             let firstValue: Int = slots.isEmpty ? first : Int(slots[first])
             let secondValue: Int = slots.isEmpty ? second : Int(slots[second])
             return try areInIncreasingOrder((key: keys[first], value: values[firstValue]), (key: keys[second], value: values[secondValue]))
+        }
+    }
+
+    /// Moves the entries that satisfy the predicate after those that do not, keeping the relative order within each group, by partitioning the offsets. Returns the index of the first moved entry.
+    @inlinable @discardableResult mutating func stablePartition(by belongsInSecondPartition: (Element) throws -> Bool) rethrows -> Int {
+        let keys: [Key] = keyStorage
+        let values: [Value] = valueStorage
+        let slots: [Int32] = valueSlots
+        return try offsets.partitionOffsets { slot in
+            try belongsInSecondPartition((key: keys[slot], value: values[slots.isEmpty ? slot : Int(slots[slot])]))
         }
     }
 }

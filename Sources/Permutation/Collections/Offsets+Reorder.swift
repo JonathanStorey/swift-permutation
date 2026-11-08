@@ -4,7 +4,7 @@
 
 // Reorders that rewrite the table of storage offsets directly, for the calls that discard the permutation.
 //
-// - A collection's `move`, `reverse`, `rotate`, `shuffle` and `sort` return the `Permutation` they applied, which costs building it.
+// - A collection's `move`, `reverse`, `rotate`, `shuffle`, `sort` and `stablePartition` return the `Permutation` they applied, which costs building it.
 // - When the caller ignores that result, the collection calls these instead: each rewrites the 4-byte offsets in place and builds no permutation.
 
 extension Offsets {
@@ -55,5 +55,53 @@ extension Offsets {
         guard count > 1 else { return }
         materialize()
         try storedSources.sort { try areInIncreasingOrder(Int($0), Int($1)) }
+    }
+
+    /// Moves the offsets at the given positions to just before `destination`, keeping their relative order, by rewriting only the window between the first moved position or the destination and the last moved position or the destination.
+    @inlinable mutating func moveOffsets(from source: some Sequence<Int>, to destination: Int) {
+        precondition((0...count).contains(destination), "Every offset must be within the collection.")
+        var isMoved: [Bool] = [Bool](repeating: false, count: count)
+        var lower: Int = destination
+        var upper: Int = destination
+        for position in source {
+            precondition(isMoved.indices.contains(position), "Every offset must be within the collection.")
+            isMoved[position] = true
+            lower = Swift.min(lower, position)
+            upper = Swift.max(upper, position + 1)
+        }
+        guard upper - lower > 1 else { return }
+        materialize()
+        let window: [Int32] = Array(storedSources[lower..<upper])
+        var next: Int = lower
+        for position in lower..<destination where !isMoved[position] {
+            storedSources[next] = window[position - lower]
+            next += 1
+        }
+        for position in lower..<upper where isMoved[position] {
+            storedSources[next] = window[position - lower]
+            next += 1
+        }
+        for position in destination..<upper where !isMoved[position] {
+            storedSources[next] = window[position - lower]
+            next += 1
+        }
+    }
+
+    /// Moves the offsets whose storage offsets satisfy the predicate after those that do not, keeping the relative order within each group, and returns the position of the first moved offset.
+    @inlinable mutating func partitionOffsets(by belongsInSecondPartition: (Int) throws -> Bool) rethrows -> Int {
+        materialize()
+        var second: [Int32] = []
+        var kept: Int = 0
+        for position in 0..<count {
+            let source: Int32 = storedSources[position]
+            if try belongsInSecondPartition(Int(source)) {
+                second.append(source)
+            } else {
+                storedSources[kept] = source
+                kept += 1
+            }
+        }
+        storedSources.replaceSubrange(kept..., with: second)
+        return kept
     }
 }

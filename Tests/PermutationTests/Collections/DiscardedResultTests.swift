@@ -45,7 +45,9 @@ import Testing
                 check(make, { (c: inout Arrangement<Item>) in c.move(fromOffsets: [source], toOffset: destination) }, { $0.move(fromOffsets: [source], toOffset: destination) }, "move offset \(source) to \(destination)")
             }
         }
-        check(make, { (c: inout Arrangement<Item>) in c.move(fromOffsets: [1, 5, 6], toOffset: 9) }, { $0.move(fromOffsets: [1, 5, 6], toOffset: 9) }, "move offsets")
+        for (moved, destination) in [([1, 5, 6], 9), ([7, 2, 2, 8], 0), ([0, 3, 9], 5), ([4, 5], 5), ([], 3)] as [([Int], Int)] {
+            check(make, { (c: inout Arrangement<Item>) in c.move(fromOffsets: moved, toOffset: destination) }, { $0.move(fromOffsets: moved, toOffset: destination) }, "move offsets \(moved) to \(destination)")
+        }
         check(make, { (c: inout Arrangement<Item>) in c.reverse() }, { $0.reverse() }, "reverse")
         for start in [0, 3, 10] {
             check(make, { (c: inout Arrangement<Item>) in c.rotate(toStartAt: start) }, { $0.rotate(toStartAt: start) }, "rotate \(start)")
@@ -64,7 +66,9 @@ import Testing
                 check(make, { (c: inout PermutableSet<Item>) in c.move(fromOffsets: [source], toOffset: destination) }, { $0.move(fromOffsets: [source], toOffset: destination) }, "move offset \(source) to \(destination)")
             }
         }
-        check(make, { (c: inout PermutableSet<Item>) in c.move(fromOffsets: [1, 5, 6], toOffset: 9) }, { $0.move(fromOffsets: [1, 5, 6], toOffset: 9) }, "move offsets")
+        for (moved, destination) in [([1, 5, 6], 9), ([7, 2, 2, 8], 0), ([0, 3, 9], 5), ([4, 5], 5), ([], 3)] as [([Int], Int)] {
+            check(make, { (c: inout PermutableSet<Item>) in c.move(fromOffsets: moved, toOffset: destination) }, { $0.move(fromOffsets: moved, toOffset: destination) }, "move offsets \(moved) to \(destination)")
+        }
         check(make, { (c: inout PermutableSet<Item>) in c.reverse() }, { $0.reverse() }, "reverse")
         for start in [0, 3, 10] {
             check(make, { (c: inout PermutableSet<Item>) in c.rotate(toStartAt: start) }, { $0.rotate(toStartAt: start) }, "rotate \(start)")
@@ -83,7 +87,9 @@ import Testing
                 check(make, { (c: inout IdentifiedSet<Item>) in c.move(fromOffsets: [source], toOffset: destination) }, { $0.move(fromOffsets: [source], toOffset: destination) }, "move offset \(source) to \(destination)")
             }
         }
-        check(make, { (c: inout IdentifiedSet<Item>) in c.move(fromOffsets: [1, 5, 6], toOffset: 9) }, { $0.move(fromOffsets: [1, 5, 6], toOffset: 9) }, "move offsets")
+        for (moved, destination) in [([1, 5, 6], 9), ([7, 2, 2, 8], 0), ([0, 3, 9], 5), ([4, 5], 5), ([], 3)] as [([Int], Int)] {
+            check(make, { (c: inout IdentifiedSet<Item>) in c.move(fromOffsets: moved, toOffset: destination) }, { $0.move(fromOffsets: moved, toOffset: destination) }, "move offsets \(moved) to \(destination)")
+        }
         check(make, { (c: inout IdentifiedSet<Item>) in c.reverse() }, { $0.reverse() }, "reverse")
         for start in [0, 3, 10] {
             check(make, { (c: inout IdentifiedSet<Item>) in c.rotate(toStartAt: start) }, { $0.rotate(toStartAt: start) }, "rotate \(start)")
@@ -102,7 +108,9 @@ import Testing
                 check(make, { (c: inout PermutableDictionary<Int, Int>) in c.move(fromOffsets: [source], toOffset: destination) }, { $0.move(fromOffsets: [source], toOffset: destination) }, "move offset \(source) to \(destination)")
             }
         }
-        check(make, { (c: inout PermutableDictionary<Int, Int>) in c.move(fromOffsets: [1, 5, 6], toOffset: 9) }, { $0.move(fromOffsets: [1, 5, 6], toOffset: 9) }, "move offsets")
+        for (moved, destination) in [([1, 5, 6], 9), ([7, 2, 2, 8], 0), ([0, 3, 9], 5), ([4, 5], 5), ([], 3)] as [([Int], Int)] {
+            check(make, { (c: inout PermutableDictionary<Int, Int>) in c.move(fromOffsets: moved, toOffset: destination) }, { $0.move(fromOffsets: moved, toOffset: destination) }, "move offsets \(moved) to \(destination)")
+        }
         check(make, { (c: inout PermutableDictionary<Int, Int>) in c.reverse() }, { $0.reverse() }, "reverse")
         for start in [0, 3, 10] {
             check(make, { (c: inout PermutableDictionary<Int, Int>) in c.rotate(toStartAt: start) }, { $0.rotate(toStartAt: start) }, "rotate \(start)")
@@ -130,5 +138,35 @@ import Testing
         #expect(dictionary.map(\.value) == [10, 20, 30])
         dictionary.reverse()
         #expect(dictionary.map(\.key) == [3, 2, 1])
+    }
+    /// Partitions on the offsets keep both groups in their current order, unlike `MutableCollection.partition(by:)`.
+    @Test func stablePartitionKeepsBothGroupsInOrder() {
+        let isOdd: (Item) -> Bool = { !$0.rank.isMultiple(of: 2) }
+        for prepared in [false, true] {
+            let start: [Item] = prepared ? items.reversed() : items
+            let expected: [Item] = start.filter { !isOdd($0) } + start.filter(isOdd)
+            let pivot: Int = start.filter { !isOdd($0) }.count
+
+            var arrangement: Arrangement<Item> = Arrangement(items)
+            var set: PermutableSet<Item> = PermutableSet(items)
+            var identified: IdentifiedSet<Item> = IdentifiedSet(items)
+            var dictionary: PermutableDictionary<Int, Item> = PermutableDictionary(uniqueKeys: items.map(\.id), values: items)
+            if prepared {
+                arrangement.reverse()
+                set.reverse()
+                identified.reverse()
+                dictionary.reverse()
+            }
+            #expect(arrangement.stablePartition(by: isOdd) == pivot)
+            #expect(set.stablePartition(by: isOdd) == pivot)
+            #expect(identified.stablePartition(by: isOdd) == pivot)
+            #expect(dictionary.stablePartition { isOdd($0.value) } == pivot)
+            #expect(Array(arrangement) == expected, "prepared: \(prepared)")
+            #expect(Array(set) == expected, "prepared: \(prepared)")
+            #expect(Array(identified) == expected, "prepared: \(prepared)")
+            #expect(dictionary.map(\.value) == expected, "prepared: \(prepared)")
+            #expect(dictionary.map(\.key) == expected.map(\.id), "prepared: \(prepared)")
+            for item in expected { #expect(dictionary[item.id] == item) }
+        }
     }
 }
