@@ -95,6 +95,19 @@ Measured on 2026-11-06 on a GitHub `macos-latest` runner (Apple silicon), Swift 
 | shuffle values among keys (about even) | PermutableDictionary | 57 ns | 56 ns | 59 ns | 61 ns |
 | | OrderedDictionary | 50 ns | 52 ns | 56 ns | 64 ns |
 
+### Arrangement vs Array
+
+Measured with `swift run -c release PermutationComparisons`, which reports the median of repeated runs of the whole operation rather than time per element. Both hold `Record` values, and both receive the same random generator for shuffles.
+
+| Operation | Count | Arrangement | Array |
+| --- | ---: | ---: | ---: |
+| `sort(by:)` | 16,384 | 1.9 ms | 42.6 ms (21.9× slower) |
+| `shuffle()` | 16,384 | 127 µs | 320 µs (2.5× slower) |
+| `reverse()` | 16,384 | 48 µs | 133 µs (2.8× slower) |
+| `sort(by:)` | 100,000 | 17.7 ms | 323.8 ms (18.3× slower) |
+| `shuffle()` | 100,000 | 1.3 ms | 4.1 ms (3.3× slower) |
+| `reverse()` | 100,000 | 292 µs | 813 µs (2.8× slower) |
+
 In the removal rows, "1%" means 1% of the elements are removed one at a time in random order. Each removal in `OrderedSet` and `IdentifiedArray` shifts every later element. In `PermutableSet` and `IdentifiedSet`, the last stored element fills the hole and only a 4-byte offset shifts.
 
 ## Charts

@@ -19,7 +19,7 @@ roster.remove(atOffsets: offsets)     // ready for SwiftUI's onDelete
 let moved: Permutation = roster.move(fromOffsets: source, toOffset: destination)  // and onMove
 ```
 
-Every reorder returns the ``Permutation/Permutation`` it applied, which is what you need to undo the change or animate it.
+Every reorder returns the ``Permutation`` it applied, which is what you need to undo the change or animate it.
 
 ### Bindings that follow the element
 

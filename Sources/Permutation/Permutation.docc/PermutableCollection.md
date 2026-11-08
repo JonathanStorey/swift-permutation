@@ -10,7 +10,7 @@ A collection that can reorder its elements, and reports every reorder as a permu
 
 `MutableCollection` asks a collection to accept any new element at any position. Sets, dictionaries and identified collections can't keep that promise without risking duplicates, so the standard library leaves them with no way to sort or shuffle in place. `PermutableCollection` asks only that two elements can trade places, which every ordered collection can do safely.
 
-A conforming type implements two requirements, ``apply(_:)`` and ``swapAt(_:_:)``, and gets every reorder below in return. Each works in place, and each hands back the ``Permutation/Permutation`` it applied:
+A conforming type implements two requirements, ``apply(_:)`` and ``swapAt(_:_:)``, and gets every reorder below in return. Each works in place, and each hands back the ``Permutation`` it applied:
 
 ```swift
 var songs: IdentifiedSet<Song> = playlist
@@ -31,7 +31,7 @@ Implement ``swapAt(_:_:)`` so that it keeps every index valid. The default ``app
 When a type conforms to both `PermutableCollection` and `MutableCollection`, each protocol provides ``sort()->_``, ``sort(by:)->_`` and ``reverse()->_``. Swift selects the implementation from the type of the result:
 
 - When you discard the result, the call uses the standard library's in-place implementation from `MutableCollection`, which doesn't produce a permutation.
-- When you use the result as a ``Permutation/Permutation``, the call uses the `PermutableCollection` implementation. It computes the permutation, applies it through ``apply(_:)``, and returns it.
+- When you use the result as a ``Permutation``, the call uses the `PermutableCollection` implementation. It computes the permutation, applies it through ``apply(_:)``, and returns it.
 
 ```swift
 board.sort()                            // MutableCollection's in-place sort
