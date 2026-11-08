@@ -72,14 +72,20 @@ extension Permutation {
 
         /// Lean toward the permutation passed as `with`.
         case theirs
+
+        /// Keep every pair of offsets that either side reordered since base, giving up only pairs neither side touched. Such an order always exists, and this is the one that keeps the most of base: the join of both sides in the weak order.
+        case both
     }
 
     /// Returns the three-way merge of this permutation and theirs, both descended from base, and never fails.
+    ///
+    /// Favoring `.both` merges by relative order alone and keeps every reorder from both sides, as `MergePreference.both` describes. Favoring `.ours` or `.theirs` works as follows.
     ///
     /// When no cycle from one side shares an offset with a different cycle from the other, this is the same permutation the strict merge returns, so every swap and cycle from both sides survives. Otherwise the offsets are merged by relative order: each pair of offsets keeps the order either side changed it to since base, or base's order when neither touched it. Two sides can never disagree about a single pair, since a pair has only one way to change, so they conflict only when the kept pairs chase each other in a loop. Then the merge settles on an order that starts from the preferred side's and still keeps most of what both sides did.
     ///
     /// All three permutations must describe the same elements at the same offsets, so apply every insertion and removal from either side to all three before merging.
     public func merging(with theirs: Permutation, from base: Permutation, favoring preference: MergePreference) -> Permutation {
+        if preference == .both { return joining(with: theirs, from: base) }
         if let merged: Permutation = merging(with: theirs, from: base) { return merged }
         let count: Int = Swift.max(minimumCount, theirs.minimumCount, base.minimumCount)
         let basePositions: [Int] = Permutation.positions(of: base.sources(count: count))
@@ -98,6 +104,72 @@ extension Permutation {
     /// Returns the two-way merge of this permutation and theirs, treating the original order as their common base, and never fails. It is the three-way merge from the identity, so it keeps every cycle the strict merge would and settles any conflict by relative order, leaning toward the preferred side.
     public func merging(with theirs: Permutation, favoring preference: MergePreference) -> Permutation {
         merging(with: theirs, from: Permutation(), favoring: preference)
+    }
+
+    /// Returns the order that keeps every pair either side reordered since base, and otherwise keeps base's order wherever it can.
+    ///
+    /// A pair reordered since base always moves its later offset in base ahead of its earlier one, so a loop of reordered pairs would have to keep stepping backward through base and could never close. The reordered pairs from both sides together therefore always fit in one order. Placing offsets one at a time, each time taking the earliest in base that no unplaced reordered pair still holds back, gives the order that gives up the fewest base pairs. O(n²) time and O(n) space.
+    func joining(with theirs: Permutation, from base: Permutation) -> Permutation {
+        if self == base { return theirs }
+        if theirs == base || theirs == self { return self }
+        let count: Int = Swift.max(minimumCount, theirs.minimumCount, base.minimumCount)
+        let baseOrder: [Int] = base.sources(count: count)
+        let ourPositions: [Int] = Permutation.positions(of: sources(count: count))
+        let theirPositions: [Int] = Permutation.positions(of: theirs.sources(count: count))
+        let ours: [Int] = baseOrder.map { ourPositions[$0] }
+        let their: [Int] = baseOrder.map { theirPositions[$0] }
+        var blockers: [Int] = [Int](repeating: 0, count: count)
+        for later in 0..<count {
+            for earlier in 0..<later where ours[later] < ours[earlier] || their[later] < their[earlier] {
+                blockers[earlier] += 1
+            }
+        }
+        var ready: [Int] = []
+        for rank in 0..<count where blockers[rank] == 0 {
+            Permutation.pushReady(rank, onto: &ready)
+        }
+        var merged: [Int] = []
+        merged.reserveCapacity(count)
+        while !ready.isEmpty {
+            let rank: Int = Permutation.popReady(from: &ready)
+            merged.append(baseOrder[rank])
+            for earlier in 0..<rank where ours[rank] < ours[earlier] || their[rank] < their[earlier] {
+                blockers[earlier] -= 1
+                if blockers[earlier] == 0 { Permutation.pushReady(earlier, onto: &ready) }
+            }
+        }
+        return Permutation(sources: merged)
+    }
+
+    /// Adds a rank to a binary min-heap.
+    private static func pushReady(_ rank: Int, onto heap: inout [Int]) {
+        heap.append(rank)
+        var child: Int = heap.count - 1
+        while child > 0 {
+            let parent: Int = (child - 1) / 2
+            guard heap[child] < heap[parent] else { break }
+            heap.swapAt(child, parent)
+            child = parent
+        }
+    }
+
+    /// Removes and returns the smallest rank in a binary min-heap.
+    private static func popReady(from heap: inout [Int]) -> Int {
+        let smallest: Int = heap[0]
+        let last: Int = heap.removeLast()
+        guard !heap.isEmpty else { return smallest }
+        heap[0] = last
+        var parent: Int = 0
+        while true {
+            let left: Int = 2 * parent + 1
+            guard left < heap.count else { break }
+            let right: Int = left + 1
+            let child: Int = right < heap.count && heap[right] < heap[left] ? right : left
+            guard heap[child] < heap[parent] else { break }
+            heap.swapAt(child, parent)
+            parent = child
+        }
+        return smallest
     }
 
     /// The position each offset is shown at, the inverse of the sources.

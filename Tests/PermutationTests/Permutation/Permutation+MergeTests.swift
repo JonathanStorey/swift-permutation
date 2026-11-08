@@ -127,7 +127,7 @@ import Testing
             let base: Permutation = Permutation(shuffles: count, using: &generator)
             let ours: Permutation = Permutation(shuffles: count, using: &generator)
             let theirs: Permutation = Permutation(shuffles: count, using: &generator)
-            for preference in [Permutation.MergePreference.ours, .theirs] {
+            for preference in [Permutation.MergePreference.ours, .theirs, .both] {
                 let merged: Permutation = ours.merging(with: theirs, from: base, favoring: preference)
                 #expect(merged.minimumCount <= count)
                 #expect(merged.sources(count: count).sorted() == Array(0..<count))
@@ -150,5 +150,49 @@ import Testing
                 #expect(ours.merging(with: theirs, favoring: .ours) == strict)
             }
         }
+    }
+
+    @Test func favoringBothKeepsEveryReorderAndGivesUpTheFewestBasePairs() {
+        var generator: SeededGenerator = SeededGenerator(state: 53)
+        for _ in 0..<150 {
+            let count: Int = Int.random(in: 0...6, using: &generator)
+            let base: Permutation = Permutation(shuffles: count, using: &generator)
+            let ours: Permutation = Permutation(shuffles: count, using: &generator)
+            let theirs: Permutation = Permutation(shuffles: count, using: &generator)
+            let reordered: Set<[Int]> = reorderedPairs(ours, from: base, count: count).union(reorderedPairs(theirs, from: base, count: count))
+            let keepers: [Permutation] = Permutation.permutations(count: count).filter { reorderedPairs($0, from: base, count: count).isSuperset(of: reordered) }
+            let fewest: Int = keepers.map { reorderedPairs($0, from: base, count: count).count }.min()!
+            let best: [Permutation] = keepers.filter { reorderedPairs($0, from: base, count: count).count == fewest }
+            let merged: Permutation = ours.merging(with: theirs, from: base, favoring: .both)
+            #expect(best == [merged])
+            #expect(theirs.merging(with: ours, from: base, favoring: .both) == merged)
+        }
+    }
+
+    @Test func favoringBothSettlesTheLoopKeepingBothEdits() {
+        let ours: Permutation = Permutation(sources: [1, 0, 2])
+        let theirs: Permutation = Permutation(sources: [0, 2, 1])
+        #expect(ours.merging(with: theirs, favoring: .both) == Permutation(sources: [2, 1, 0]))
+        #expect(ours.merging(with: theirs, from: Permutation(), favoring: .both) == Permutation(sources: [2, 1, 0]))
+    }
+
+    @Test func favoringBothKeepsTwoDragsOfDifferentElements() {
+        let ours: Permutation = Permutation(sources: [5, 0, 1, 2, 3, 4])
+        let theirs: Permutation = Permutation(sources: [1, 2, 3, 4, 5, 0])
+        #expect(ours.merging(with: theirs, favoring: .both) == Permutation(sources: [5, 1, 2, 3, 4, 0]))
+    }
+
+    /// The pairs of offsets, earlier in base first, that the permutation shows in the opposite order from base.
+    private func reorderedPairs(_ permutation: Permutation, from base: Permutation, count: Int) -> Set<[Int]> {
+        let baseOrder: [Int] = base.sources(count: count)
+        var positions: [Int] = [Int](repeating: 0, count: count)
+        for (position, offset) in permutation.sources(count: count).enumerated() { positions[offset] = position }
+        var pairs: Set<[Int]> = []
+        for later in 0..<count {
+            for earlier in 0..<later where positions[baseOrder[later]] < positions[baseOrder[earlier]] {
+                pairs.insert([baseOrder[earlier], baseOrder[later]])
+            }
+        }
+        return pairs
     }
 }
