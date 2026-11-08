@@ -13,6 +13,13 @@ import sys
 SIZES = [16, 1024, 16384, 262144]
 
 PAIRS = [
+    ("Arrangement vs Array", "Arrangement<Record>", "Array<Record>", [
+        "sort(by:)",
+        "shuffle()",
+        "reverse()",
+        "rotate by a third",
+        "move first to last",
+    ]),
     ("PermutableSet vs swift-collections OrderedSet", "PermutableSet<Int>", "OrderedSet<Int>", [
         "init from array",
         "append one at a time",
@@ -22,6 +29,8 @@ PAIRS = [
         "sort",
         "shuffle",
         "reverse",
+        "rotate by a third",
+        "move first to last",
         "union half-overlapping",
         "intersection half-overlapping",
         "subtracting half-overlapping",
@@ -37,6 +46,8 @@ PAIRS = [
         "reverse()",
         "shuffle()",
         "sort(by:)",
+        "rotate by a third",
+        "move first to last",
     ]),
     ("PermutableDictionary vs swift-collections OrderedDictionary", "PermutableDictionary<Int, Int>", "OrderedDictionary<Int, Int>", [
         "init from keys and values",

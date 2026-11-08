@@ -179,6 +179,26 @@ extension Benchmark {
             }
         }
 
+        add(title: "IdentifiedSet<Record> rotate by a third", input: [Record].self) { input in
+            return { timer in
+                var set: IdentifiedSet<Record> = IdentifiedSet(input)
+                set.reserveCapacity(input.count)
+                timer.measure { set.rotate(toStartAt: set.count / 3) }
+                blackHole(set)
+            }
+        }
+
+        add(title: "IdentifiedSet<Record> move first to last", input: [Record].self) { input in
+            return { timer in
+                var set: IdentifiedSet<Record> = IdentifiedSet(input)
+                set.reserveCapacity(input.count)
+                timer.measure {
+                    if !set.isEmpty { set.move(from: 0, to: set.count - 1) }
+                }
+                blackHole(set)
+            }
+        }
+
         add(title: "IdentifiedSet<Record> apply(_:) random permutation", input: [Record].self) { input in
             let permutation: Permutation = Permutation(shuffles: input.count)
             return { timer in

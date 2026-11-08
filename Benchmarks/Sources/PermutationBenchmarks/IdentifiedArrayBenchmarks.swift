@@ -3,6 +3,7 @@
 // dependencies: [Collections/IdentifiedSet.swift, Collections/PermutableCollection.swift, Record.swift]
 
 import CollectionsBenchmark
+import Foundation
 import IdentifiedCollections
 import Permutation
 
@@ -92,6 +93,24 @@ extension Benchmark {
             return { timer in
                 var array: IdentifiedArrayOf<Record> = IdentifiedArray(uniqueElements: input)
                 timer.measure { array.reverse() }
+                blackHole(array)
+            }
+        }
+
+        add(title: "IdentifiedArray<Record> rotate by a third", input: [Record].self) { input in
+            return { timer in
+                var array: IdentifiedArrayOf<Record> = IdentifiedArray(uniqueElements: input)
+                timer.measure { array.move(fromOffsets: IndexSet(integersIn: 0..<(array.count / 3)), toOffset: array.count) }
+                blackHole(array)
+            }
+        }
+
+        add(title: "IdentifiedArray<Record> move first to last", input: [Record].self) { input in
+            return { timer in
+                var array: IdentifiedArrayOf<Record> = IdentifiedArray(uniqueElements: input)
+                timer.measure {
+                    if !array.isEmpty { array.move(fromOffsets: IndexSet(integer: 0), toOffset: array.count) }
+                }
                 blackHole(array)
             }
         }

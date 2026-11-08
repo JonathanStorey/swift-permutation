@@ -170,6 +170,47 @@ extension Benchmark {
             }
         }
 
+        add(title: "PermutableSet<Int> rotate by a third", input: [Int].self) { input in
+            return { timer in
+                var set: PermutableSet<Int> = PermutableSet(input)
+                set.reserveCapacity(input.count)
+                timer.measure { set.rotate(toStartAt: set.count / 3) }
+                blackHole(set)
+            }
+        }
+        add(title: "OrderedSet<Int> rotate by a third", input: [Int].self) { input in
+            return { timer in
+                var set: OrderedSet<Int> = OrderedSet(input)
+                set.reserveCapacity(input.count)
+                timer.measure {
+                    let pivot: Int = set.count / 3
+                    set = OrderedSet(uncheckedUniqueElements: set.elements[pivot...] + set.elements[..<pivot])
+                }
+                blackHole(set)
+            }
+        }
+
+        add(title: "PermutableSet<Int> move first to last", input: [Int].self) { input in
+            return { timer in
+                var set: PermutableSet<Int> = PermutableSet(input)
+                set.reserveCapacity(input.count)
+                timer.measure {
+                    if !set.isEmpty { set.move(from: 0, to: set.count - 1) }
+                }
+                blackHole(set)
+            }
+        }
+        add(title: "OrderedSet<Int> move first to last", input: [Int].self) { input in
+            return { timer in
+                var set: OrderedSet<Int> = OrderedSet(input)
+                set.reserveCapacity(input.count)
+                timer.measure {
+                    if !set.isEmpty { set.append(set.remove(at: 0)) }
+                }
+                blackHole(set)
+            }
+        }
+
         // MARK: Set operations
 
         add(title: "PermutableSet<Int> union half-overlapping", input: [Int].self) { input in
