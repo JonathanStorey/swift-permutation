@@ -78,4 +78,77 @@ import Testing
             #expect(theirs.merging(with: ours) == theirs.mergingSparse(with: ours))
         }
     }
+
+    @Test func relativeOrderMergeKeepsEveryReorderAndGivesUpTheFewestBasePairs() {
+        var generator: SeededGenerator = SeededGenerator(state: 53)
+        for _ in 0..<150 {
+            let count: Int = Int.random(in: 0...6, using: &generator)
+            let base: Permutation = Permutation(shuffles: count, using: &generator)
+            let ours: Permutation = Permutation(shuffles: count, using: &generator)
+            let theirs: Permutation = Permutation(shuffles: count, using: &generator)
+            let reordered: Set<[Int]> = reorderedPairs(ours, from: base, count: count).union(reorderedPairs(theirs, from: base, count: count))
+            let keepers: [Permutation] = Permutation.permutations(count: count).filter { reorderedPairs($0, from: base, count: count).isSuperset(of: reordered) }
+            let fewest: Int = keepers.map { reorderedPairs($0, from: base, count: count).count }.min()!
+            let best: [Permutation] = keepers.filter { reorderedPairs($0, from: base, count: count).count == fewest }
+            let merged: Permutation = ours.merging(with: theirs, from: base, by: .relativeOrder)
+            #expect(best == [merged])
+            #expect(theirs.merging(with: ours, from: base, by: .relativeOrder) == merged)
+        }
+    }
+
+    @Test func relativeOrderMergeWithUnchangedSideReturnsTheOtherSide() {
+        var generator: SeededGenerator = SeededGenerator(state: 43)
+        for _ in 0..<100 {
+            let count: Int = Int.random(in: 0...12, using: &generator)
+            let base: Permutation = Permutation(shuffles: count, using: &generator)
+            let ours: Permutation = Permutation(shuffles: count, using: &generator)
+            #expect(base.merging(with: ours, from: base, by: .relativeOrder) == ours)
+            #expect(ours.merging(with: base, from: base, by: .relativeOrder) == ours)
+            #expect(ours.merging(with: ours, from: base, by: .relativeOrder) == ours)
+        }
+    }
+
+    @Test func relativeOrderMergeSettlesTheLoopKeepingBothEdits() {
+        let ours: Permutation = Permutation(sources: [1, 0, 2])
+        let theirs: Permutation = Permutation(sources: [0, 2, 1])
+        #expect(ours.merging(with: theirs, from: Permutation()) == nil)
+        #expect(ours.merging(with: theirs, by: .relativeOrder) == Permutation(sources: [2, 1, 0]))
+    }
+
+    @Test func relativeOrderMergeKeepsTwoDragsOfDifferentElements() {
+        let ours: Permutation = Permutation(sources: [5, 0, 1, 2, 3, 4])
+        let theirs: Permutation = Permutation(sources: [1, 2, 3, 4, 5, 0])
+        #expect(ours.merging(with: theirs) == nil)
+        #expect(ours.merging(with: theirs, by: .relativeOrder) == Permutation(sources: [5, 1, 2, 3, 4, 0]))
+    }
+
+    @Test func relativeOrderMergeOfTheSameElementDraggedTwiceKeepsTheFurtherMove() {
+        let ours: Permutation = Permutation(sources: [3, 0, 1, 2])
+        let theirs: Permutation = Permutation(sources: [0, 3, 1, 2])
+        #expect(ours.merging(with: theirs, by: .relativeOrder) == ours)
+    }
+
+    @Test func twoWayRelativeOrderMergeIsTheThreeWayMergeFromTheIdentity() {
+        var generator: SeededGenerator = SeededGenerator(state: 47)
+        for _ in 0..<200 {
+            let count: Int = Int.random(in: 0...10, using: &generator)
+            let ours: Permutation = Permutation(shuffles: count, using: &generator)
+            let theirs: Permutation = Permutation(shuffles: count, using: &generator)
+            #expect(ours.merging(with: theirs, by: .relativeOrder) == ours.merging(with: theirs, from: Permutation(), by: .relativeOrder))
+        }
+    }
+
+    /// The pairs of offsets, earlier in base first, that the permutation shows in the opposite order from base.
+    private func reorderedPairs(_ permutation: Permutation, from base: Permutation, count: Int) -> Set<[Int]> {
+        let baseOrder: [Int] = base.sources(count: count)
+        var positions: [Int] = [Int](repeating: 0, count: count)
+        for (position, offset) in permutation.sources(count: count).enumerated() { positions[offset] = position }
+        var pairs: Set<[Int]> = []
+        for later in 0..<count {
+            for earlier in 0..<later where positions[baseOrder[later]] < positions[baseOrder[earlier]] {
+                pairs.insert([baseOrder[earlier], baseOrder[later]])
+            }
+        }
+        return pairs
+    }
 }
