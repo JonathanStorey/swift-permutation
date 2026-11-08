@@ -43,12 +43,14 @@ enum SecretSanta {
         // A single chain is an n-cycle: (n − 1)! of them among the D(n) derangements.
         var cycles: Double = 1
         for k in 1..<n { cycles *= Double(k) }
-        let exact: Double = cycles / Derangements.count(n)
+        let exact: Double = cycles / HatCheckProblem.derangements(n)
         let simulated: Double = Double(oneChain) / Double(trials)
         print("6. Secret Santa: \(n) friends, \(trials) fair draws")
         print("   one draw: " + chain(in: example).joined(separator: " → ") + " → \(names[0])")
         print("   simulated chance of one chain through everyone: \(format(simulated))")
         print("   exact (n − 1)! / D(n): \(format(exact))    e/n: \(format(2.718281828459045 / Double(n)))")
+        // Redrawing the whole hat until nobody holds their own name takes n!/D(n) draws on average, which tends to e.
+        print("   expected hat draws until nobody holds their own name, n! / D(n): \(format(cycles * Double(n) / HatCheckProblem.derangements(n)))    e: \(format(2.718281828459045))")
         precondition(abs(simulated - exact) < 0.005)
     }
 }

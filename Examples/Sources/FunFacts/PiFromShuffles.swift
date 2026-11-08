@@ -26,7 +26,7 @@ enum PiFromShuffles {
         var exact: Double = 1
         for k in 1...n { exact *= Double(2 * k - 1) / Double(2 * k) }
         let estimate: Double = 1 / ((Double(n) + 0.25) * share * share)
-        print("7. Pi from shuffles: \(trials) shuffles of \(cards) cards")
+        print("7. Wallis's product: \(trials) shuffles of \(cards) cards")
         print("   share whose cycles are all even: \(format(share)), exact C(\(cards), \(n)) / 4^\(n): \(format(exact))")
         print("   estimate of π: \(format(estimate)), from the exact share \(format(1 / ((Double(n) + 0.25) * exact * exact))), π = \(format(Double.pi))")
         precondition(abs(share - exact) < 0.002 && abs(estimate - Double.pi) < 0.05)

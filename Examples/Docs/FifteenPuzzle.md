@@ -10,7 +10,7 @@ Every permutation is either **even** or **odd**, depending on whether it takes a
 
 Treat the blank as a 16th tile. Each slide swaps the blank with a neighbor, so every move flips the parity of the arrangement. Each move also changes the blank's taxicab distance from the bottom-right corner by exactly one. The two parities therefore flip together, and a board can only be solved when **the arrangement's parity matches the parity of the blank's distance from home**.
 
-Loyd's board has the blank at home (distance 0, even) but the tiles one swap from solved (odd). It can never be solved. The same rule splits all 16! arrangements into two equal halves, and every board in the solvable half can in fact be solved.
+William Johnson and William Story published the proof in 1879, in the second volume of the *American Journal of Mathematics*. Loyd's board has the blank at home (distance 0, even) but the tiles one swap from solved (odd). It can never be solved. The same rule splits all 16! arrangements into two equal halves, and every board in the solvable half can in fact be solved.
 
 ## In this package
 

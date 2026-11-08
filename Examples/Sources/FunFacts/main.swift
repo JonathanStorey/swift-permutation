@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Examples/Sources/FunFacts/main.swift
-// dependencies: [Derangements.swift, FaroShuffles.swift, FifteenPuzzle.swift, HundredPrisoners.swift, PiFromShuffles.swift, SecretSanta.swift, UlamsProblem.swift]
+// dependencies: [HatCheckProblem.swift, FaroShuffles.swift, FifteenPuzzle.swift, HundredPrisoners.swift, PiFromShuffles.swift, SecretSanta.swift, UlamsProblem.swift]
 
 import Foundation
 
@@ -9,7 +9,7 @@ func format(_ value: Double, digits: Int = 4) -> String {
     String(format: "%.\(digits)f", value)
 }
 
-Derangements.run()
+HatCheckProblem.run()
 print()
 HundredPrisoners.run()
 print()
