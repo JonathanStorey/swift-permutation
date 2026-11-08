@@ -56,11 +56,11 @@ extension Benchmark {
             }
         }
 
-        add(title: "Permutation forEachMove random", input: [Int].self) { input in
+        add(title: "Permutation moves random", input: [Int].self) { input in
             let permutation: Permutation = Permutation.random(count: input.count)
             return { timer in
                 var total: Int = 0
-                timer.measure { permutation.forEachMove { from, to in total &+= from &+ to } }
+                timer.measure { for move in permutation.moves { total &+= move.from &+ move.to } }
                 blackHole(total)
             }
         }
