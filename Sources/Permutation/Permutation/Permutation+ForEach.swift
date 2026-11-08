@@ -2,7 +2,7 @@
 // path: Permutation/Permutation+ForEach.swift
 // dependencies: [Permutation/Permutation+Cycles.swift, Permutation/Permutation+Sources.swift, Permutation/Permutation.swift]
 
-// Breaks a permutation, or a collection's orders, into steps, one call per step, so every walk reads `forEach(.kind) { step in ... }`. `forEach(.cycle)` hands out the same `[Int]` cycles as `for cycle in permutation.cycles`.
+// Breaks a permutation into steps, one call per step, so every walk reads `forEach(.kind) { step in ... }`. `forEach(.cycle)` hands out the same `[Int]` cycles as `for cycle in permutation.cycles`.
 //
 // - `Operation` carries no data. Its type parameter names the step the closure receives, and each kind is a static member constrained to that step, so `.cycle` can only meet a closure that takes an `[Int]`.
 // - Each step type has its own `forEach` overload that calls its walk directly, so choosing the walk costs nothing at run time.
@@ -10,7 +10,7 @@
 
 extension Permutation {
 
-    /// A way to walk a permutation or a collection step by step with `forEach(_:_:)`, typed by the step each call receives.
+    /// A way to walk a permutation step by step with `forEach(_:_:)`, typed by the step each call receives.
     public struct Operation<Step>: Sendable {
 
         @usableFromInline init() {}
@@ -79,12 +79,6 @@ public extension Permutation.Operation where Step == [Int] {
 
     /// Each cycle, starting with its largest offset.
     static var cycle: Self { Self() }
-}
-
-public extension Permutation.Operation where Step: PermutableCollection {
-
-    /// Each of the `count!` orders of a collection's elements.
-    static var permutation: Self { Self() }
 }
 
 extension Permutation {
