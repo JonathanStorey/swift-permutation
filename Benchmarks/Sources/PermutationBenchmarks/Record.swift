@@ -20,3 +20,23 @@ struct Record: Identifiable {
         payload = SIMD8(repeating: Int64(rank))
     }
 }
+
+/// Records are equal when their ids are, as an app model's identity usually is, so sets and dictionaries hash them by id.
+extension Record: Hashable {
+
+    static func == (lhs: Record, rhs: Record) -> Bool {
+        lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+}
+
+/// Records sort by rank, so `sort()` works on every collection that holds them.
+extension Record: Comparable {
+
+    static func < (lhs: Record, rhs: Record) -> Bool {
+        lhs.rank < rhs.rank
+    }
+}

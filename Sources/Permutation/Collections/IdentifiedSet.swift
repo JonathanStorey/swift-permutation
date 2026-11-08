@@ -90,13 +90,16 @@ extension IdentifiedSet: RandomAccessCollection {
             self.count = count
             self.isInStorageOrder = isInStorageOrder
             position = 0
+            precondition(count <= (isInStorageOrder ? elements.count : sources.count), "The count must fit the storage it reads.")
         }
 
         @inlinable public mutating func next() -> Element? {
             let current: Int = position
             guard current < count else { return nil }
             position = current + 1
-            return isInStorageOrder ? elements[current] : elements[Int(sources[current])]
+            // The initializer checked that `count` fits the array each branch reads, so neither read needs a second bounds check.
+            if isInStorageOrder { return elements.withUnsafeBufferPointer { $0[current] } }
+            return elements[Int(sources.withUnsafeBufferPointer { $0[current] })]
         }
     }
 }

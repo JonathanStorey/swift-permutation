@@ -20,7 +20,7 @@ PAIRS = [
         "rotate by a third",
         "move first to last",
     ]),
-    ("PermutableSet vs swift-collections OrderedSet", "PermutableSet<Int>", "OrderedSet<Int>", [
+    ("PermutableSet vs swift-collections OrderedSet", "PermutableSet<Record>", "OrderedSet<Record>", [
         "init from array",
         "append one at a time",
         "successful contains",
@@ -49,7 +49,7 @@ PAIRS = [
         "rotate by a third",
         "move first to last",
     ]),
-    ("PermutableDictionary vs swift-collections OrderedDictionary", "PermutableDictionary<Int, Int>", "OrderedDictionary<Int, Int>", [
+    ("PermutableDictionary vs swift-collections OrderedDictionary", "PermutableDictionary<Int, Record>", "OrderedDictionary<Int, Record>", [
         "init from keys and values",
         "subscript insert one at a time",
         "subscript lookup",

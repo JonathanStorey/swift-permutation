@@ -48,8 +48,8 @@ HUES = [
 # Each pair: the package's collection, the collection it replaces, and their task title prefixes.
 PAIRS = [
     ("Arrangement", "Array", "Arrangement<Record>", "Array<Record>"),
-    ("PermutableSet", "OrderedSet", "PermutableSet<Int>", "OrderedSet<Int>"),
-    ("PermutableDictionary", "OrderedDictionary", "PermutableDictionary<Int, Int>", "OrderedDictionary<Int, Int>"),
+    ("PermutableSet", "OrderedSet", "PermutableSet<Record>", "OrderedSet<Record>"),
+    ("PermutableDictionary", "OrderedDictionary", "PermutableDictionary<Int, Record>", "OrderedDictionary<Int, Record>"),
     ("IdentifiedSet", "IdentifiedArray", "IdentifiedSet<Record>", "IdentifiedArray<Record>"),
 ]
 
@@ -194,8 +194,8 @@ def operation_chart(results, stem, heading, tasks, directory):
 def set_operations_chart(results, directory):
     panels = []
     for title in ("union", "intersection", "subtracting"):
-        ours = series(results, f"PermutableSet<Int> {title} half-overlapping")
-        theirs = series(results, f"OrderedSet<Int> {title} half-overlapping")
+        ours = series(results, f"PermutableSet<Record> {title} half-overlapping")
+        theirs = series(results, f"OrderedSet<Record> {title} half-overlapping")
         if ours and theirs:
             panels.append((f"{title}, half overlapping", ours, theirs))
     if panels:
