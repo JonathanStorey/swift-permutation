@@ -15,7 +15,7 @@ import Testing
     @Test func cyclesSplitTheLineAtEachLargestOffset() {
         let cycles: Permutation.Cycles = Permutation(cycle: [2, 0, 1, 5, 3, 7, 6, 4]).cycles
         #expect(Array(cycles) == [[2, 0, 1], [5, 3], [7, 6, 4]])
-        #expect(cycles[cycles.index(after: cycles.startIndex)][0] == 5)
+        #expect(Array(cycles.dropFirst()) == [[5, 3], [7, 6, 4]])
         #expect(cycles.count == 3)
         #expect(cycles.movedCount == 8)
         #expect(Permutation().cycles.isEmpty)

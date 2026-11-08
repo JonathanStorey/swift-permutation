@@ -5,7 +5,13 @@
 extension Permutation {
 
     /// The offset that the element at `offset` moves to: the next offset in its cycle, wrapping from the last back to the largest. An offset outside every cycle stays where it is.
-    public subscript(offset: Int) -> Int {
+    ///
+    /// ```swift
+    /// let rotation: Permutation = Permutation(cycles: [[2, 0, 1]])
+    /// rotation[destinationOf: 2]   // 0
+    /// rotation[destinationOf: 7]   // 7, outside every cycle
+    /// ```
+    public subscript(destinationOf offset: Int) -> Int {
         precondition(offset >= 0, "An offset cannot be negative.")
         var rootPosition: Int = -1
         var root: Int = -1
