@@ -180,13 +180,13 @@ Every collection in this package stores its elements in an array that reordering
 
 | Reorder at 16,384 elements | ``Arrangement`` vs `Array` | ``PermutableSet`` vs `OrderedSet` | ``IdentifiedSet`` vs `IdentifiedArray` | ``PermutableDictionary`` vs `OrderedDictionary` |
 | --- | ---: | ---: | ---: | ---: |
-| Sort | 2.0× faster | 2.4× faster | 11× faster | 14× faster |
-| Shuffle | 1.5× faster | 2.6× faster | 2.5× faster | 2.1× faster |
-| Reverse | 17× faster | 67× faster | 75× faster | 75× faster |
-| Rotate | 1.6× slower | 19× faster | 81× faster | 13× faster |
-| Move one element | 12× faster | 13× faster | 971× faster | 26× faster |
-| Move every tenth element | 12× faster | 29× faster | 281× faster | 21× faster |
-| Partition, stable here only | 1.2× faster | 3.0× faster | 2.9× faster | 2.3× faster |
+| Sort | 1.7× faster | 2.0× faster | 10× faster | 11× faster |
+| Shuffle | 1.3× faster | 2.2× faster | 2.3× faster | 1.8× faster |
+| Reverse | 17× faster | 64× faster | 71× faster | 69× faster |
+| Rotate | 3.5× faster | 100× faster | 422× faster | 72× faster |
+| Move one element | 13× faster | 13× faster | 901× faster | 25× faster |
+| Move every tenth element | 9.3× faster | 24× faster | 259× faster | 18× faster |
+| Partition, stable here only | 1.1× faster | 3.1× faster | 3.0× faster | 2.3× faster |
 
 Some reorders skip the elements entirely and work on the permutation's cycles. Repeating a shuffle 1,000 times on an `Array` of 16,384 records takes 444 ms. Raising the shuffle to the 1,000th power with ``Permutation/raised(to:)`` and applying it once takes 163 µs, about 2,700× faster.
 
