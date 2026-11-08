@@ -4,11 +4,11 @@
     @DocumentationExtension(mergeBehavior: override)
 }
 
-An ordered dictionary whose entries can be reordered without moving a key or a value in memory, and whose values can be handed around without touching the keys.
+An ordered dictionary whose entries can be reordered without moving a key or a value in memory, and whose values can be reassigned among keys that stay in place.
 
 ## Overview
 
-A permutable dictionary keeps its entries in an order you control, with O(1) lookup, insertion and removal by key. Its ``keys`` are an ``Arrangement``, and every reorder moves whole entries, whether you sort the dictionary, its keys or its values, so a key never loses its value by accident.
+A permutable dictionary keeps its entries in an order you control, with O(1) lookup, insertion and removal by key. Its ``keys`` are an ``Arrangement``. Every reorder moves whole entries, whether you sort the dictionary, its keys or its values, so each key stays paired with its value.
 
 ```swift
 var scores: PermutableDictionary<String, Int> = ["ann": 3, "bob": 9, "cy": 5]
@@ -18,9 +18,9 @@ scores.sort { $0.value > $1.value }  // any order: ["bob": 9, "cy": 5, "ann": 3]
 scores["dee", default: 0] += 1       // edits in place, appending when new
 ```
 
-### Three ways to change a dictionary
+### Reordering, reassigning and editing
 
-Each kind of change has its own door, so none happens by accident:
+A permutable dictionary distinguishes three kinds of change, each with its own API:
 
 - **Reordering** the dictionary, its ``keys`` or its ``values`` moves whole entries. Sorting the values keeps tied keys in their current order.
 - **Reassigning** with ``reassignValues(_:)`` hands the values around while every key stays put.
@@ -31,7 +31,7 @@ var santas = PermutableDictionary(uniqueKeys: friends, values: friends)
 santas.reassignValues(shuffling: .derangement)  // keys stay put: a fair Secret Santa
 ```
 
-Neither reordering nor reassigning copies a key or a value, because both live in storage that reordering never touches, and both hand back the ``Permutation/Permutation`` they applied, so either kind of change can be undone.
+Neither reordering nor reassigning copies a key or a value, because both live in storage that reordering never touches. Both return the ``Permutation/Permutation`` they applied, so you can undo either kind of change by applying its inverse.
 
 ## Topics
 

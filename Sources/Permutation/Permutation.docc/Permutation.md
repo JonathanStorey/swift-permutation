@@ -8,7 +8,7 @@ A reorder held as a value: where each element of a collection goes.
 
 ## Overview
 
-Every reorder in this package, whether a sort, a shuffle, a reverse or a move, hands back a `Permutation` describing what it did. Because the reorder is an ordinary value, you can keep it in a property, compare it, save it to disk or send it over the network, and act on it after the fact.
+Every reorder in this package, whether a sort, a shuffle, a reverse or a move, hands back a `Permutation` describing what it did. `Permutation` is a value type that conforms to `Hashable`, `Codable` and `Sendable`, so you can store it in a property, compare it, encode it to disk or send it over the network, and act on it after the fact.
 
 ```swift
 var tasks: IdentifiedSet<Task> = loadTasks()

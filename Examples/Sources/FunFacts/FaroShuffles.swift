@@ -27,7 +27,7 @@ enum FaroShuffles {
             cards.shuffle(.outFaro)
             shuffles += 1
             if shuffles == 4 { print("   after 4 out-faros the top cards read \(cards.prefix(4).joined(separator: " "))") }
-        } while !cards.isInOriginalOrder
+        } while !cards.permutation.cycles.isEmpty
         print("   shuffling an Arrangement by hand restores the deck after \(shuffles) out-faros")
         precondition(shuffles == outFaro.cycles.order)
     }

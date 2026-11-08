@@ -54,7 +54,7 @@ Then add `.product(name: "Permutation", package: "swift-permutation")` to your t
 
 ### `Permutation`
 
-This is the record of the reordering. Where the standard library performs a reorder and forgets it, a `Permutation` holds it as an ordinary value you can keep in a property, compare, save to disk or send over the network.
+This is the record of the reordering. Where the standard library performs a reorder and forgets it, a `Permutation` holds it as a `Hashable`, `Codable` value type you can store in a property, compare, save to disk or send over the network.
 
 It is stored in **Foata's single-line notation**: the cycles written one after another, each starting at its largest offset, in increasing order of those offsets. Offsets it doesn't mention stay put, so a single `Permutation` applies to any collection that is long enough.
 
@@ -94,7 +94,7 @@ It has two requirements, `apply(_:)` and `swapAt(_:_:)`, and in return supplies 
 | `swap(_:_:)` | a single transposition |
 | `stablePartition(by:)` | the partition index |
 
-Every one of these still works in place, so nothing is copied, but unlike the standard library's versions, each one hands back what it did. A type that is also a `MutableCollection` keeps the standard library's in-place `sort` and `reverse`, and gets the permutation only by asking for one: `let ranking: Permutation = tiles.sort()`.
+Every one of these still works in place, so nothing is copied, but unlike the standard library's versions, each one hands back what it did. When a type is also a `MutableCollection`, a call to `sort` or `reverse` that discards its result uses the standard library's in-place implementation. A call whose result is used as a `Permutation`, such as `let ranking: Permutation = tiles.sort()`, computes the permutation and applies it through `apply(_:)` instead.
 
 To reorder without mutating, build the permutation first and apply it wherever you like. The original stays as it is:
 
@@ -123,7 +123,7 @@ var photos: Arrangement<Photo> = Arrangement(album)  // large images, never copi
 photos.sort { $0.date < $1.date }
 photos.shuffle()
 photos.permutation                  // every reorder so far, folded into one
-photos.isInOriginalOrder            // false
+photos.permutation.cycles.isEmpty   // false: the reorders haven't cancelled out
 photos.permutation = Permutation()  // back to the original order in one step
 ```
 
@@ -183,7 +183,7 @@ Full reference: [PermutableSet](Sources/Permutation/Permutation.docc/PermutableS
 
 ### `PermutableDictionary`
 
-An ordered dictionary with O(1) lookup, insertion and removal by key, whose keys are an `Arrangement`. Every reorder moves whole entries, whether you sort the dictionary, its `keys` or its `values`, so a key never loses its value by accident. Handing values around while the keys stay put is a separate, deliberately named operation:
+An ordered dictionary with O(1) lookup, insertion and removal by key, whose keys are an `Arrangement`. Every reorder moves whole entries, whether you sort the dictionary, its `keys` or its `values`, so each key stays paired with its value. Reassigning values among keys that stay in place is a separate operation, `reassignValues`:
 
 ```swift
 var scores: PermutableDictionary<String, Int> = ["ann": 3, "bob": 9, "cy": 5]

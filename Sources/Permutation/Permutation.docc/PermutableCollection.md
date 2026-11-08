@@ -26,11 +26,21 @@ songs.apply(moved.inverted)  // undo the drag
 
 Implement ``swapAt(_:_:)`` so that it keeps every index valid. The default ``apply(_:)`` is built from it with the fewest possible swaps. A type that can move a whole cycle at once, such as one that reorders an index of its elements rather than the elements themselves, overrides ``apply(_:)`` as well, and every other reorder becomes as cheap as that one method. Because every reorder passes through ``apply(_:)``, overriding it also lets a type observe each one.
 
-### Mutable collections
+### Conforming types that are also mutable collections
 
-A conforming type that is also a `MutableCollection` keeps the standard library's in-place `sort()` and `reverse()`, which build no permutation. To get the permutation, ask for one by type, as in `let solved: Permutation = board.sort()`.
+When a type conforms to both `PermutableCollection` and `MutableCollection`, each protocol provides ``sort()->_``, ``sort(by:)->_`` and ``reverse()->_``. Swift selects the implementation from the type of the result:
 
-`Array` doesn't conform, but `apply(_:)` and `applying(_:)` work on any `MutableCollection` or `RangeReplaceableCollection`, so a permutation made from one collection reorders a plain array beside it.
+- When you discard the result, the call uses the standard library's in-place implementation from `MutableCollection`, which doesn't produce a permutation.
+- When you use the result as a ``Permutation/Permutation``, the call uses the `PermutableCollection` implementation. It computes the permutation, applies it through ``apply(_:)``, and returns it.
+
+```swift
+board.sort()                            // MutableCollection's in-place sort
+let solved: Permutation = board.sort()  // computes the permutation, then applies it through apply(_:)
+```
+
+Because the second form reorders through ``apply(_:)``, a type that customizes ``apply(_:)`` observes the reorder, and its cost is that of computing and applying a permutation rather than that of the standard library's sort.
+
+`Array` doesn't conform to `PermutableCollection`, but `apply(_:)` and `applying(_:)` work on any `MutableCollection` or `RangeReplaceableCollection`, so a permutation computed from one collection can reorder a plain array beside it.
 
 ## Topics
 

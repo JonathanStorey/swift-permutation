@@ -18,7 +18,7 @@ import Testing
         #expect(Array(arrangement) == ["c", "a", "b", "a"])
         #expect(arrangement.count == 4)
         #expect(arrangement[1] == "a")
-        #expect(arrangement.isInOriginalOrder)
+        #expect(arrangement.permutation.cycles.isEmpty)
         #expect(arrangement.permutation.cycle.isEmpty)
     }
 
@@ -28,9 +28,9 @@ import Testing
         #expect(Array(arrangement) == Array((10..<20).reversed()))
         #expect(arrangement.elements == Array(10..<20))
         #expect(arrangement.permutation == permutation)
-        #expect(!arrangement.isInOriginalOrder)
+        #expect(!arrangement.permutation.cycles.isEmpty)
         arrangement.reverse()
-        #expect(arrangement.isInOriginalOrder)
+        #expect(arrangement.permutation.cycles.isEmpty)
     }
 
     @Test func permutationFoldsEveryReorderSinceCreation() {
@@ -61,7 +61,7 @@ import Testing
         repeat {
             deck.shuffle(.outFaro)
             shuffles += 1
-        } while !deck.isInOriginalOrder
+        } while !deck.permutation.cycles.isEmpty
         #expect(shuffles == 8)
     }
 
@@ -92,7 +92,7 @@ import Testing
         let decoded: Arrangement<String> = try JSONDecoder().decode(Arrangement<String>.self, from: data)
         #expect(decoded == arrangement)
         #expect(decoded.permutation == arrangement.permutation)
-        #expect(!decoded.isInOriginalOrder)
+        #expect(!decoded.permutation.cycles.isEmpty)
         #expect(arrangement.description == "[\"y\", \"z\", \"x\"]")
     }
 
@@ -112,7 +112,7 @@ import Testing
         #expect(Array(arrangement) == Array(0..<30).applying(target))
         #expect(arrangement.elements == Array(0..<30))
         arrangement.permutation = Permutation()
-        #expect(arrangement.isInOriginalOrder)
+        #expect(arrangement.permutation.cycles.isEmpty)
         #expect(Array(arrangement) == Array(0..<30))
     }
 

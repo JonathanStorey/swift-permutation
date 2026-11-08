@@ -18,6 +18,24 @@ tags.subtract(["ios"])               // ["swift", "math", "cs"]
 let alphabetical: Permutation = tags.sort()
 ```
 
+### Replacing an equal element
+
+``replace(_:)`` swaps in an element that is equal to one already present, keeping its position. This matters only when equal elements can still be told apart, such as a type whose `==` compares an identifier but not its other properties:
+
+```swift
+struct Tag: Hashable {
+    let name: String
+    var color: String
+    static func == (lhs: Tag, rhs: Tag) -> Bool { lhs.name == rhs.name }
+    func hash(into hasher: inout Hasher) { hasher.combine(name) }
+}
+
+var tags: PermutableSet<Tag> = [Tag(name: "swift", color: "orange")]
+tags.replace(Tag(name: "swift", color: "red"))  // equal by name: takes the old tag's place and returns it
+tags.replace(Tag(name: "ios", color: "blue"))   // nil: no equal tag, so nothing changes
+tags.update(orAppend: Tag(name: "ios", color: "blue"))  // replaces when equal, otherwise appends
+```
+
 ### Set operations with a clear order
 
 A permutable set offers only the set operations whose result has a clear order. The elements kept from the receiver stay in its order, and new elements follow in the order of the argument. Each operation accepts any sequence, so you can combine a permutable set with an array or a `Set`.

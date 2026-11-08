@@ -4,7 +4,7 @@
 
 /// An ordered dictionary whose entries, and whose values alone, can be reordered without moving a key or a value in memory.
 ///
-/// Keys and values each sit in an array that reordering never touches. `Offsets` keeps the order of the entries and a hash index from each key to where it is stored, and a second table records which stored value each key owns. That gives three ways to change the dictionary, each through its own door:
+/// Keys and values each sit in an array that reordering never touches. `Offsets` keeps the order of the entries and a hash index from each key to where it is stored, and a second table records which stored value each key owns. That gives three kinds of change, each with its own API:
 ///
 /// - Reordering the dictionary, its `keys` or its `values` moves whole entries. `dictionary.keys.sort()` sorts by key, `dictionary.values.sort()` sorts by value, keeping tied keys in their current order, and `dictionary.shuffle()` shuffles the entries. Every key keeps its value.
 /// - `reassignValues` hands the values around while every key stays put. `dictionary.reassignValues(shuffling: .derangement)` gives every key a value that belonged to another key.

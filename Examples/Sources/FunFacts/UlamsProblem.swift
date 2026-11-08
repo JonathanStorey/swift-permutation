@@ -20,7 +20,7 @@ enum UlamsProblem {
                 hand.shuffle(using: &generator)
                 // Sorting returns the permutation it applied, and its moves replay it with the fewest single-card moves, leaving a longest increasing subsequence in place.
                 let sorting: Permutation = hand.sort()
-                precondition(hand.isInOriginalOrder)
+                precondition(hand.permutation.cycles.isEmpty)
                 var moves: Int = 0
                 for _ in sorting.moves { moves += 1 }
                 total += n - moves
