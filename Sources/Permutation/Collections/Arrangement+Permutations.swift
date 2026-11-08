@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Collections/Arrangement+Permutations.swift
-// dependencies: [Collections/Arrangement.swift, Permutation/Permutation+Rank.swift, Permutation/Permutation+Strideable.swift, Permutation/Permutation.swift]
+// dependencies: [Collections/Arrangement.swift, Permutation/Permutation+Permutations.swift, Permutation/Permutation.swift]
 
 // Every order of an arrangement's elements, in rank order, as a lazy sequence that a loop can leave with `break`.
 //
@@ -33,33 +33,24 @@ public extension Arrangement {
             Iterator(base: base)
         }
 
-        /// Steps a Foata word through every order of the elements and shows the elements in each one.
+        /// Shows the elements in each permutation of their count, in rank order.
         public struct Iterator: IteratorProtocol {
 
             /// The arrangement in the order last returned.
             @usableFromInline var current: Arrangement
 
-            /// The Foata word of the order last returned, over every offset below the count.
-            @usableFromInline var word: [Int]
-
-            /// Whether the original order has been returned yet.
-            @usableFromInline var hasStarted: Bool = false
+            /// The permutations of the count, in rank order.
+            @usableFromInline var orders: Permutation.Permutations.Iterator
 
             @inlinable init(base: Arrangement) {
                 current = base
-                word = Array(0..<base.count)
+                orders = Permutation.permutations(count: base.count).makeIterator()
             }
 
             /// The next order in rank order, or nil once all `count!` have been returned.
             @inlinable public mutating func next() -> Arrangement? {
-                guard hasStarted else {
-                    hasStarted = true
-                    current.permutation = Permutation()
-                    return current
-                }
-                Permutation.stepForward(&word)
-                guard word.count <= current.count else { return nil }
-                current.permutation = Permutation(foataWord: word)
+                guard let permutation: Permutation = orders.next() else { return nil }
+                current.permutation = permutation
                 return current
             }
         }
