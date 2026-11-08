@@ -13,36 +13,36 @@ extension Benchmark {
         // MARK: Building and combining
 
         add(title: "Permutation inverted", input: [Int].self) { input in
-            let permutation: Permutation = Permutation(shuffles: input.count)
+            let permutation: Permutation = Permutation.random(count: input.count)
             return { timer in
                 timer.measure { blackHole(permutation.inverted) }
             }
         }
 
         add(title: "Permutation followed(by:)", input: [Int].self) { input in
-            let first: Permutation = Permutation(shuffles: input.count)
-            let second: Permutation = Permutation(shuffles: input.count)
+            let first: Permutation = Permutation.random(count: input.count)
+            let second: Permutation = Permutation.random(count: input.count)
             return { timer in
                 timer.measure { blackHole(first.followed(by: second)) }
             }
         }
 
         add(title: "Permutation merging(with:) identical", input: [Int].self) { input in
-            let permutation: Permutation = Permutation(shuffles: input.count)
+            let permutation: Permutation = Permutation.random(count: input.count)
             return { timer in
                 timer.measure { blackHole(permutation.merging(with: permutation)) }
             }
         }
 
         add(title: "Permutation raised(to: 3)", input: [Int].self) { input in
-            let permutation: Permutation = Permutation(shuffles: input.count)
+            let permutation: Permutation = Permutation.random(count: input.count)
             return { timer in
                 timer.measure { blackHole(permutation.raised(to: 3)) }
             }
         }
 
         add(title: "Permutation insert(at:) middle", input: [Int].self) { input in
-            let permutation: Permutation = Permutation(shuffles: input.count)
+            let permutation: Permutation = Permutation.random(count: input.count)
             return { timer in
                 var copy: Permutation = permutation
                 timer.measure { copy.insert(at: input.count / 2) }
@@ -50,14 +50,14 @@ extension Benchmark {
             }
         }
 
-        add(title: "Permutation init(shuffles:) riffle", input: [Int].self) { input in
+        add(title: "Permutation riffle(count:)", input: [Int].self) { input in
             return { timer in
-                timer.measure { blackHole(Permutation(shuffles: input.count, .riffle)) }
+                timer.measure { blackHole(Permutation.riffle(count: input.count)) }
             }
         }
 
         add(title: "Permutation forEachMove random", input: [Int].self) { input in
-            let permutation: Permutation = Permutation(shuffles: input.count)
+            let permutation: Permutation = Permutation.random(count: input.count)
             return { timer in
                 var total: Int = 0
                 timer.measure { permutation.forEachMove { from, to in total &+= from &+ to } }
@@ -68,7 +68,7 @@ extension Benchmark {
         // MARK: Applying
 
         add(title: "Array<Int> apply(_:) random permutation", input: [Int].self) { input in
-            let permutation: Permutation = Permutation(shuffles: input.count)
+            let permutation: Permutation = Permutation.random(count: input.count)
             return { timer in
                 var array: [Int] = input
                 array.reserveCapacity(input.count)

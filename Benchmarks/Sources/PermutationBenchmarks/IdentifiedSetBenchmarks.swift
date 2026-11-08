@@ -200,7 +200,7 @@ extension Benchmark {
         }
 
         add(title: "IdentifiedSet<Record> apply(_:) random permutation", input: [Record].self) { input in
-            let permutation: Permutation = Permutation(shuffles: input.count)
+            let permutation: Permutation = Permutation.random(count: input.count)
             return { timer in
                 var set: IdentifiedSet<Record> = IdentifiedSet(input)
                 set.reserveCapacity(input.count)
