@@ -75,7 +75,7 @@ let far: Permutation = Permutation(rank: 1_000_000_000)  // jump straight to any
 let merged: Permutation? = mine.merging(with: theirs, from: base)  // three-way merge of reorders
 ```
 
-Because the reorder is an object, you can do things with it after the fact. `inverted` is a one-line undo, and `followed(by:)` folds a string of edits into one. `moves` replays any permutation as the fewest single-element moves, which is what a list animation or a remote sync wants, and `swaps` replays it as the fewest exchanges. `insert(at:)`, `remove(at:)` and `replaceSubrange(_:withCount:)` keep a stored permutation valid while the collection it describes grows and shrinks.
+Because the reorder is an object, you can do things with it after the fact. `inverted` is a one-line undo, and `followed(by:)` folds a string of edits into one. `moves` replays any permutation as the fewest single-element moves, which is what a list animation or a remote sync wants, and `swaps` replays it as the fewest exchanges. Going the other way, `Permutation(new.difference(from: old))` reads a pure reorder back out of a `CollectionDifference`. `insert(at:)`, `remove(at:)` and `replaceSubrange(_:withCount:)` keep a stored permutation valid while the collection it describes grows and shrinks.
 
 ### `PermutableCollection`
 
