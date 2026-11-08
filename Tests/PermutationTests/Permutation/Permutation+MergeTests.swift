@@ -78,4 +78,62 @@ import Testing
             #expect(theirs.merging(with: ours) == theirs.mergingSparse(with: ours))
         }
     }
+
+    @Test func favoringMergeMatchesTheStrictMergeWheneverItSucceeds() {
+        var generator: SeededGenerator = SeededGenerator(state: 41)
+        for _ in 0..<300 {
+            let count: Int = Int.random(in: 0...10, using: &generator)
+            let base: Permutation = Permutation(shuffles: count, using: &generator)
+            let whole: [[Int]] = Permutation(shuffles: count, using: &generator).cycleArrays
+            let ours: Permutation = base.followed(by: Permutation(cycles: whole.filter { _ in Bool.random(using: &generator) }))
+            let theirs: Permutation = base.followed(by: Permutation(cycles: whole.filter { _ in Bool.random(using: &generator) }))
+            guard let strict: Permutation = ours.merging(with: theirs, from: base) else { continue }
+            #expect(ours.merging(with: theirs, from: base, favoring: .ours) == strict)
+            #expect(ours.merging(with: theirs, from: base, favoring: .theirs) == strict)
+        }
+    }
+
+    @Test func favoringMergeKeepsTwoDragsOfDifferentElements() {
+        let base: Permutation = Permutation()
+        let ours: Permutation = Permutation(sources: [5, 0, 1, 2, 3, 4])
+        let theirs: Permutation = Permutation(sources: [1, 2, 3, 4, 5, 0])
+        #expect(ours.merging(with: theirs, from: base) == nil)
+        let expected: Permutation = Permutation(sources: [5, 1, 2, 3, 4, 0])
+        #expect(ours.merging(with: theirs, from: base, favoring: .ours) == expected)
+        #expect(ours.merging(with: theirs, from: base, favoring: .theirs) == expected)
+    }
+
+    @Test func favoringMergeOfTheSameElementDraggedTwiceKeepsTheFurtherMove() {
+        let base: Permutation = Permutation()
+        let ours: Permutation = Permutation(sources: [3, 0, 1, 2])
+        let theirs: Permutation = Permutation(sources: [0, 3, 1, 2])
+        #expect(ours.merging(with: theirs, from: base, favoring: .ours) == ours)
+        #expect(ours.merging(with: theirs, from: base, favoring: .theirs) == ours)
+    }
+
+    @Test func favoringMergeSettlesALoopOnAValidOrder() {
+        let base: Permutation = Permutation()
+        let ours: Permutation = Permutation(sources: [1, 0, 2])
+        let theirs: Permutation = Permutation(sources: [0, 2, 1])
+        #expect(ours.merging(with: theirs, from: base) == nil)
+        #expect(ours.merging(with: theirs, from: base, favoring: .ours) == Permutation(sources: [2, 1, 0]))
+        #expect(ours.merging(with: theirs, from: base, favoring: .theirs) == ours)
+    }
+
+    @Test func favoringMergeAlwaysReturnsAPermutationOfTheSameOffsets() {
+        var generator: SeededGenerator = SeededGenerator(state: 43)
+        for _ in 0..<300 {
+            let count: Int = Int.random(in: 0...12, using: &generator)
+            let base: Permutation = Permutation(shuffles: count, using: &generator)
+            let ours: Permutation = Permutation(shuffles: count, using: &generator)
+            let theirs: Permutation = Permutation(shuffles: count, using: &generator)
+            for preference in [Permutation.MergePreference.ours, .theirs] {
+                let merged: Permutation = ours.merging(with: theirs, from: base, favoring: preference)
+                #expect(merged.minimumCount <= count)
+                #expect(merged.sources(count: count).sorted() == Array(0..<count))
+                #expect(base.merging(with: theirs, from: base, favoring: preference) == theirs)
+                #expect(ours.merging(with: base, from: base, favoring: preference) == ours)
+            }
+        }
+    }
 }

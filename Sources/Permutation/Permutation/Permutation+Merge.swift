@@ -61,3 +61,75 @@ extension Permutation {
         return merged
     }
 }
+
+extension Permutation {
+
+    /// The side whose order a three-way merge leans toward when the two sides' reorders cannot all be kept.
+    public enum MergePreference: Hashable, Sendable {
+
+        /// Lean toward this permutation, the one `merging` is called on.
+        case ours
+
+        /// Lean toward the permutation passed as `with`.
+        case theirs
+    }
+
+    /// Returns the three-way merge of this permutation and theirs, both descended from base, and never fails.
+    ///
+    /// When no cycle from one side shares an offset with a different cycle from the other, this is the same permutation the strict merge returns, so every swap and cycle from both sides survives. Otherwise the offsets are merged by relative order: each pair of offsets keeps the order either side changed it to since base, or base's order when neither touched it. Two sides can never disagree about a single pair, since a pair has only one way to change, so they conflict only when the kept pairs chase each other in a loop. Then the merge settles on an order that starts from the preferred side's and still keeps most of what both sides did.
+    ///
+    /// All three permutations must describe the same elements at the same offsets, so apply every insertion and removal from either side to all three before merging.
+    public func merging(with theirs: Permutation, from base: Permutation, favoring preference: MergePreference) -> Permutation {
+        if let merged: Permutation = merging(with: theirs, from: base) { return merged }
+        let count: Int = Swift.max(minimumCount, theirs.minimumCount, base.minimumCount)
+        let basePositions: [Int] = Permutation.positions(of: base.sources(count: count))
+        let ourPositions: [Int] = Permutation.positions(of: sources(count: count))
+        let theirPositions: [Int] = Permutation.positions(of: theirs.sources(count: count))
+        let order: [Int] = preference == .ours ? sources(count: count) : theirs.sources(count: count)
+        let merged: [Int] = Permutation.mergeSorted(order) { first, second in
+            let isInBaseOrder: Bool = basePositions[first] < basePositions[second]
+            let isChanged: Bool = (ourPositions[first] < ourPositions[second]) != isInBaseOrder
+                || (theirPositions[first] < theirPositions[second]) != isInBaseOrder
+            return isChanged != isInBaseOrder
+        }
+        return Permutation(sources: merged)
+    }
+
+    /// The position each offset is shown at, the inverse of the sources.
+    private static func positions(of sources: [Int]) -> [Int] {
+        var positions: [Int] = [Int](repeating: 0, count: sources.count)
+        for (position, offset) in sources.enumerated() {
+            positions[offset] = position
+        }
+        return positions
+    }
+
+    /// Sorts the offsets with a stable bottom-up merge sort, which always returns every offset once even when the comparison loops, and leaves offsets the comparison cannot separate in their given order.
+    private static func mergeSorted(_ offsets: [Int], by isBefore: (Int, Int) -> Bool) -> [Int] {
+        var current: [Int] = offsets
+        var next: [Int] = offsets
+        var width: Int = 1
+        while width < current.count {
+            var start: Int = 0
+            while start < current.count {
+                let middle: Int = Swift.min(start + width, current.count)
+                let end: Int = Swift.min(start + 2 * width, current.count)
+                var left: Int = start
+                var right: Int = middle
+                for slot in start..<end {
+                    if left < middle && (right == end || !isBefore(current[right], current[left])) {
+                        next[slot] = current[left]
+                        left += 1
+                    } else {
+                        next[slot] = current[right]
+                        right += 1
+                    }
+                }
+                start = end
+            }
+            swap(&current, &next)
+            width *= 2
+        }
+        return current
+    }
+}
