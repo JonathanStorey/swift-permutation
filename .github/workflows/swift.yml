@@ -21,7 +21,7 @@ jobs:
         run: swift build
       - name: Test
         run: swift test
-      - name: Run the fun facts
+      - name: Run the classic problems
         working-directory: Examples
         run: swift run -c release FunFacts
 

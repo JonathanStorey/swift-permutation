@@ -190,17 +190,17 @@ Some reorders skip the elements entirely and work on the permutation's cycles. R
 
 Each figure is the median of 201 runs at 16,384 elements, in a release build on Apple silicon. ``Arrangement`` and ``IdentifiedSet`` hold a typical app model with a UUID id, an integer sort key and 64 bytes of other fields, and ``PermutableSet`` holds `Int` values. `OrderedSet` comes from swift-collections and `IdentifiedArray` from Point-Free's swift-identified-collections. The [benchmark results](https://github.com/JonathanStorey/swift-permutation/blob/main/Benchmarks/RESULTS.md) have the full tables, charts and the steps to reproduce them.
 
-### Results from combinatorics and probability
+### Classic problems in combinatorics and probability
 
-The package's types make classic results about permutations a few lines of code each. The Examples package runs each one and explains the mathematics behind it.
+The package's types solve famous problems about permutations in a few lines of code each. The Examples package runs every one and explains the mathematics behind it. Three of them are about Euler's number, e.
 
-- [Derangements](https://github.com/JonathanStorey/swift-permutation/blob/main/Examples/Docs/Derangements.md): When `n` coats are returned at random, the probability that no one receives their own tends to 1/e, about 36.8%, and barely changes between 10 guests and a million.
-- [The 100 prisoners problem](https://github.com/JonathanStorey/swift-permutation/blob/main/Examples/Docs/HundredPrisoners.md): A strategy that follows cycles frees all 100 prisoners 31% of the time, when random guessing succeeds with probability about 10⁻³⁰.
-- [Perfect shuffles](https://github.com/JonathanStorey/swift-permutation/blob/main/Examples/Docs/FaroShuffles.md): Eight out-faro shuffles restore a 52-card deck and in-faro shuffles need 52, each the least common multiple of the shuffle's cycle lengths.
+- [The hat-check problem](https://github.com/JonathanStorey/swift-permutation/blob/main/Examples/Docs/HatCheckProblem.md): When `n` hats are handed back at random, the probability that nobody gets their own is the series 1 − 1/1! + 1/2! − … ± 1/n!, the Taylor series for 1/e cut off after `n` terms. It is 36.8% for 10 guests and for a million. The number of matches follows a Poisson law with mean exactly 1, and redrawing until nobody matches takes e tries on average.
+- [The 100 prisoners problem](https://github.com/JonathanStorey/swift-permutation/blob/main/Examples/Docs/HundredPrisoners.md): A strategy that follows cycles frees all 100 prisoners 31% of the time, 1 − ln 2 in the limit, when random guessing succeeds with probability about 10⁻³⁰.
+- [The perfect shuffle problem](https://github.com/JonathanStorey/swift-permutation/blob/main/Examples/Docs/FaroShuffles.md): Eight out-faro shuffles restore a 52-card deck and in-faro shuffles need 52, each the least common multiple of the shuffle's cycle lengths.
 - [The 15 puzzle](https://github.com/JonathanStorey/swift-permutation/blob/main/Examples/Docs/FifteenPuzzle.md): Every slide changes the parity of the arrangement, so half of all starting positions, including Sam Loyd's 14–15 swap, can't be solved.
 - [Ulam's problem](https://github.com/JonathanStorey/swift-permutation/blob/main/Examples/Docs/UlamsProblem.md): The longest increasing run in a random permutation of `n` elements has length about 2√n, and its complement is the fewest moves that sort a list, which ``Permutation/moves`` uses.
-- [Secret Santa](https://github.com/JonathanStorey/swift-permutation/blob/main/Examples/Docs/SecretSanta.md): A uniformly random derangement forms a single cycle through everyone with probability about e/n.
-- [Pi from shuffles](https://github.com/JonathanStorey/swift-permutation/blob/main/Examples/Docs/PiFromShuffles.md): The probability that every cycle of a random permutation has even length equals the probability of an even split in coin flips, and Wallis's product turns it into an estimate of π.
+- [Secret Santa](https://github.com/JonathanStorey/swift-permutation/blob/main/Examples/Docs/SecretSanta.md): Redrawing names until nobody holds their own takes e draws on average, and the accepted draw forms a single chain through everyone with probability about e/n.
+- [Wallis's product](https://github.com/JonathanStorey/swift-permutation/blob/main/Examples/Docs/PiFromShuffles.md): The probability that every cycle of a random permutation has even length equals the probability of an even split in coin flips, and Wallis's product turns it into an estimate of π.
 
 ## Topics
 

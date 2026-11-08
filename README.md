@@ -32,7 +32,7 @@ The package provides four collections: `Arrangement`, `IdentifiedSet`, `Permutab
 - [Documentation](#documentation)
 - [Performance](#performance)
 - [Development](#development)
-- [Seven fun facts about permutations](#seven-fun-facts-about-permutations)
+- [Seven classic problems about permutations](#seven-classic-problems-about-permutations)
 
 ## Requirements
 
@@ -237,24 +237,24 @@ python3 Scripts/charts.py results.json Charts
 python3 Scripts/tables.py results.json
 ```
 
-The [Examples](Examples) package holds the fun facts below:
+The [Examples](Examples) package runs the classic problems below:
 
 ```sh
 cd Examples
 swift run -c release FunFacts
 ```
 
-## Seven fun facts about permutations
+## Seven classic problems about permutations
 
-Each one is a few lines of code in the [Examples](Examples) package, with a page explaining the mathematics.
+Each is a famous question with a surprising answer, solved in a few lines of code in the [Examples](Examples) package, with a page explaining the mathematics. Three of them turn out to be about Euler's number, e.
 
-1. **Nobody gets their own coat, 36.8% of the time.** Hand back n coats at random, and the chance that nobody gets their own tends to 1/e. It barely changes between 10 guests and a million. → [Derangements](Examples/Docs/Derangements.md)
-2. **100 prisoners beat (1/2)^100 by following cycles.** If each prisoner may open only half the drawers, a strategy built on cycle structure frees all of them 31% of the time, while guessing succeeds with probability about 10^−30. → [The 100 prisoners problem](Examples/Docs/HundredPrisoners.md)
-3. **Eight perfect shuffles restore a deck.** Eight out-faro shuffles put 52 cards back in order, but in-faros need 52. Both numbers are the least common multiple of a cycle structure. → [Eight perfect shuffles](Examples/Docs/FaroShuffles.md)
-4. **Half of all 15 puzzles are impossible.** Every slide flips the parity of the arrangement, so Sam Loyd's famous 14–15 swap can never be solved. → [The 15 puzzle](Examples/Docs/FifteenPuzzle.md)
-5. **A shuffled deck hides an increasing run of about 2√n cards.** Ulam's problem links patience sorting to random matrix theory, and it also gives the fewest moves that sort a list, which `moves` uses. → [Ulam's problem](Examples/Docs/UlamsProblem.md)
-6. **A fair Secret Santa forms one big chain only e/n of the time.** Follow the gifts from person to person, and with ten friends the chain closes before reaching everyone almost three times in four. → [Secret Santa](Examples/Docs/SecretSanta.md)
-7. **Shuffled cards know π.** The chance that every cycle of a shuffled 20-card deck has even length is the same as getting 10 heads in 20 coin flips, and Wallis's product turns it into π. A million shuffles give 3.14. → [Pi from shuffles](Examples/Docs/PiFromShuffles.md)
+1. **The hat-check problem.** n hats are handed back at random. How likely is it that nobody gets their own? Montmort asked in 1708, and the answer is the series for 1/e itself, 1 − 1/1! + 1/2! − 1/3! + …, cut off after n terms. It is 36.8% for 10 guests and still 36.8% for a million. Euler's number runs all through it: the number of people who do get their own hat follows a Poisson law with mean exactly 1, and redrawing until nobody matches takes e tries on average. → [The hat-check problem](Examples/Docs/HatCheckProblem.md)
+2. **The 100 prisoners problem.** Each of 100 prisoners may open half of 100 drawers to find their own number, and all go free only if everyone succeeds. Guessing wins with probability (1/2)^100, about 10^−30. Following the cycles of the drawer permutation wins 31% of the time, 1 − ln 2 in the limit, where ln is the logarithm to base e. → [The 100 prisoners problem](Examples/Docs/HundredPrisoners.md)
+3. **The perfect shuffle problem.** How many perfect shuffles restore a 52-card deck? Eight out-faros do it, but in-faros need 52. Both numbers are the least common multiple of the shuffle's cycle lengths. → [The perfect shuffle problem](Examples/Docs/FaroShuffles.md)
+4. **The 15 puzzle.** Can every scrambled board be solved? No. Every slide flips the parity of the arrangement, so exactly half of all positions, including Sam Loyd's famous 14–15 swap, are impossible. → [The 15 puzzle](Examples/Docs/FifteenPuzzle.md)
+5. **Ulam's problem.** How long is the longest increasing run hidden in a shuffled deck? About 2√n, with fluctuations from random matrix theory. Its complement is the fewest moves that sort a list, which `moves` uses. → [Ulam's problem](Examples/Docs/UlamsProblem.md)
+6. **Secret Santa.** Friends redraw from the hat until nobody holds their own name. That takes e ≈ 2.7 draws on average, and even then the gifts form one unbroken chain through everyone only e/n of the time. → [Secret Santa](Examples/Docs/SecretSanta.md)
+7. **Wallis's product.** The chance that every cycle of a shuffled 20-card deck has even length equals the chance of 10 heads in 20 coin flips, and Wallis's 1656 product turns it into π. A million shuffles give 3.14. → [Wallis's product from shuffled cards](Examples/Docs/PiFromShuffles.md)
 
 ## License
 
