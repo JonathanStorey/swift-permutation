@@ -138,6 +138,38 @@ import Testing
         }
     }
 
+    @Test func relativeOrderMergeMatchesTheQuadraticTopologicalSort() {
+        var generator: SeededGenerator = SeededGenerator(state: 59)
+        for _ in 0..<60 {
+            let count: Int = Int.random(in: 0...200, using: &generator)
+            let base: Permutation = Permutation(shuffles: count, using: &generator)
+            let ours: Permutation = Permutation(shuffles: count, using: &generator)
+            let theirs: Permutation = Permutation(shuffles: count, using: &generator)
+            #expect(ours.merging(with: theirs, from: base, by: .relativeOrder) == quadraticJoin(ours, theirs, from: base, count: count))
+        }
+    }
+
+    /// The relative-order merge by counting every reordered pair, placing the earliest offset in base that nothing still holds back.
+    private func quadraticJoin(_ ours: Permutation, _ theirs: Permutation, from base: Permutation, count: Int) -> Permutation {
+        let baseOrder: [Int] = base.sources(count: count)
+        var ourPositions: [Int] = [Int](repeating: 0, count: count)
+        var theirPositions: [Int] = [Int](repeating: 0, count: count)
+        for (position, offset) in ours.sources(count: count).enumerated() { ourPositions[offset] = position }
+        for (position, offset) in theirs.sources(count: count).enumerated() { theirPositions[offset] = position }
+        let our: [Int] = baseOrder.map { ourPositions[$0] }
+        let their: [Int] = baseOrder.map { theirPositions[$0] }
+        var isPlaced: [Bool] = [Bool](repeating: false, count: count)
+        var merged: [Int] = []
+        while merged.count < count {
+            let rank: Int = (0..<count).first { rank in
+                !isPlaced[rank] && !((rank + 1)..<count).contains { later in !isPlaced[later] && (our[later] < our[rank] || their[later] < their[rank]) }
+            }!
+            isPlaced[rank] = true
+            merged.append(baseOrder[rank])
+        }
+        return Permutation(sources: merged)
+    }
+
     /// The pairs of offsets, earlier in base first, that the permutation shows in the opposite order from base.
     private func reorderedPairs(_ permutation: Permutation, from base: Permutation, count: Int) -> Set<[Int]> {
         let baseOrder: [Int] = base.sources(count: count)
