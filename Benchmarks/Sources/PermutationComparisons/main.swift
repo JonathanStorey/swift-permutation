@@ -96,31 +96,4 @@ for size in sizes {
     }
 }
 
-print("")
-print("Median time per operation on `Record` values (UUID id, 64-byte payload), with each array time compared to the Arrangement time.")
-print("")
-print("| Operation | Count | Arrangement | Array |")
-print("|---|---:|---:|---:|")
-for size in [16_384, 100_000] {
-    var generator: SeededGenerator = SeededGenerator(state: 42)
-    let records: [Record] = (0..<size).map(Record.init(rank:)).shuffled(using: &generator)
-    let iterations: Int = max(11, 2_000_000 / size)
-    let comparisons: [(String, (inout Arrangement<Record>) -> Void, (inout [Record]) -> Void)] = [
-        ("sort(by:)", { $0.sort { $0.rank < $1.rank } }, { $0.sort { $0.rank < $1.rank } }),
-        ("shuffle()", { var g: SeededGenerator = SeededGenerator(state: 7); $0.shuffle(using: &g) }, { var g: SeededGenerator = SeededGenerator(state: 7); $0.shuffle(using: &g) }),
-        ("reverse()", { $0.reverse() }, { $0.reverse() }),
-        ("apply(_:) undo of a sort", { arrangement in let p: Permutation = arrangement.sort { $0.rank < $1.rank }; arrangement.apply(p.inverted) }, { array in let p: Permutation = Permutation(sorting: array.map(\.rank)); array.apply(p); array.apply(p.inverted) }),
-    ]
-    for (operation, arranged, array) in comparisons {
-        var expected: Arrangement<Record> = Arrangement(records)
-        arranged(&expected)
-        var actual: [Record] = records
-        array(&actual)
-        precondition(actual.map(\.id) == expected.map(\.id), "\(operation) on an array gave a different order.")
-        let arrangement: Double = microseconds(median(iterations: iterations, make: { Arrangement(records) }, arranged))
-        let plain: Double = microseconds(median(iterations: iterations, make: { records.map { $0 } }, array))
-        print("| `\(operation)` | \(size) | \(rounded(arrangement)) µs | \(cell(plain, against: arrangement)) |")
-    }
-}
-
 printReorderTable()

@@ -42,10 +42,3 @@ jobs:
             --output-path .build/docs \
             --warnings-as-errors
 
-  comparisons:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run the comparisons
-        working-directory: Benchmarks
-        run: swift run -c release PermutationComparisons

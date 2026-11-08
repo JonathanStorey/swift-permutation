@@ -95,18 +95,21 @@ Measured on 2026-11-06 on a GitHub `macos-latest` runner (Apple silicon), Swift 
 | shuffle values among keys (about even) | PermutableDictionary | 57 ns | 56 ns | 59 ns | 61 ns |
 | | OrderedDictionary | 50 ns | 52 ns | 56 ns | 64 ns |
 
-### Arrangement vs Array
+### Reorders across all three collections
 
-Measured with `swift run -c release PermutationComparisons`, which reports the median of repeated runs of the whole operation rather than time per element. Both hold `Record` values, and both receive the same random generator for shuffles.
+Measured with `swift run -c release PermutationComparisons`, which reports the median of 201 runs of the whole operation at 16,384 elements rather than time per element. `Arrangement` and `IdentifiedSet` hold `Record` values, `PermutableSet` holds `Int` values, and each pair receives the same random generator for shuffles. Every competitor uses its own API where it has one. `Array` and `OrderedSet` have no rotate, so they rebuild from two slices, and `OrderedSet` moves an element by removing and appending it. `IdentifiedArray` moves and rotates through `move(fromOffsets:toOffset:)`.
 
-| Operation | Count | Arrangement | Array |
-| --- | ---: | ---: | ---: |
-| `sort(by:)` | 16,384 | 1.9 ms | 42.6 ms (21.9× slower) |
-| `shuffle()` | 16,384 | 127 µs | 320 µs (2.5× slower) |
-| `reverse()` | 16,384 | 48 µs | 133 µs (2.8× slower) |
-| `sort(by:)` | 100,000 | 17.7 ms | 323.8 ms (18.3× slower) |
-| `shuffle()` | 100,000 | 1.3 ms | 4.1 ms (3.3× slower) |
-| `reverse()` | 100,000 | 292 µs | 813 µs (2.8× slower) |
+| Reorder | Arrangement | Array | PermutableSet | OrderedSet | IdentifiedSet | IdentifiedArray |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Sort | 2.5 ms | 4.8 ms (1.9×) | 1.5 ms | 1.8 ms (1.2×) | 3.1 ms | 34.3 ms (11×) |
+| Shuffle | 305 µs | 413 µs (1.4×) | 201 µs | 506 µs (2.5×) | 180 µs | 1.6 ms (9.0×) |
+| Reverse | 103 µs | 337 µs (3.3×) | 62 µs | 713 µs (11×) | 58 µs | 697 µs (12×) |
+| Move first to last | 57 µs | 64 µs (1.1×) | 53 µs | 16 µs (0.3×) | 51 µs | 2.8 ms (56×) |
+| Rotate by a third | 50 µs | 70 µs (1.4×) | 53 µs | 490 µs (9.3×) | 77 µs | 5.4 ms (70×) |
+
+Each ratio is the competitor's time divided by the permutable collection's time, so a ratio above 1 means the permutable collection is faster. `OrderedSet` wins the single move because removing and appending one `Int` is a memmove plus a cheap index adjustment, while `PermutableSet` builds the move's permutation over the whole window before applying it.
+
+The same run also times one result of the cycle arithmetic directly. Applying a shuffle 1,000 times to an `Array` of 16,384 records takes 567 ms. Raising the shuffle to the 1,000th power with `raised(to:)` and applying it once to an `Arrangement` takes 196 µs, about 2,900× faster, because the power splits each cycle in one pass whatever the exponent.
 
 In the removal rows, "1%" means 1% of the elements are removed one at a time in random order. Each removal in `OrderedSet` and `IdentifiedArray` shifts every later element. In `PermutableSet` and `IdentifiedSet`, the last stored element fills the hole and only a 4-byte offset shifts.
 

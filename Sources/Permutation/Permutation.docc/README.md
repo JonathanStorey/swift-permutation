@@ -176,15 +176,19 @@ extension Playlist: PermutableCollection {
 
 ### Performance
 
-Every collection in this package stores its elements in an array that reordering never changes, and reorders a table of 4-byte offsets instead. A sort, shuffle or reverse therefore moves offsets rather than elements, and leaves the hash index untouched, so the speedups grow with the size of the elements.
+Every collection in this package stores its elements in an array that reordering never changes, and reorders a table of 4-byte offsets instead. A sort, shuffle, reverse or rotate therefore moves offsets rather than elements, and leaves the hash index untouched, so the speedups grow with the size of the elements.
 
 | Reorder | ``Arrangement`` vs `Array` | ``PermutableSet`` vs `OrderedSet` | ``IdentifiedSet`` vs `IdentifiedArray` |
 | --- | ---: | ---: | ---: |
-| Sort | 21.9× faster | 1.1× faster | 9.8× faster |
-| Shuffle | 2.5× faster | 1.3× faster | 2.3× faster |
-| Reverse | 2.8× faster | 8.2× faster | 13× faster |
+| Sort | 1.9× faster | 1.2× faster | 11× faster |
+| Shuffle | 1.4× faster | 2.5× faster | 9× faster |
+| Reverse | 3.3× faster | 11× faster | 12× faster |
+| Rotate | 1.4× faster | 9.3× faster | 70× faster |
+| Move one element | 1.1× faster | 3.2× slower | 56× faster |
 
-Each figure compares 16,384 elements in a release build on Apple silicon. ``Arrangement`` and ``IdentifiedSet`` hold a typical app model with a UUID id, an integer sort key and 64 bytes of other fields, and ``PermutableSet`` holds `Int` values. `OrderedSet` comes from swift-collections and `IdentifiedArray` from Point-Free's swift-identified-collections. The [benchmark results](https://github.com/JonathanStorey/swift-permutation/blob/main/Benchmarks/RESULTS.md) have the full tables, charts and the steps to reproduce them.
+Some reorders skip the elements entirely and work on the permutation's cycles. Repeating a shuffle 1,000 times on an `Array` of 16,384 records takes 567 ms. Raising the shuffle to the 1,000th power with ``Permutation/raised(to:)`` and applying it once takes 196 µs, about 2,900× faster.
+
+Each figure is the median of 201 runs at 16,384 elements, in a release build on Apple silicon. ``Arrangement`` and ``IdentifiedSet`` hold a typical app model with a UUID id, an integer sort key and 64 bytes of other fields, and ``PermutableSet`` holds `Int` values. `OrderedSet` comes from swift-collections and `IdentifiedArray` from Point-Free's swift-identified-collections. The [benchmark results](https://github.com/JonathanStorey/swift-permutation/blob/main/Benchmarks/RESULTS.md) have the full tables, charts and the steps to reproduce them.
 
 ### Results from combinatorics and probability
 
