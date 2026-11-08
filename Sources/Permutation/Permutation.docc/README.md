@@ -180,13 +180,13 @@ Every collection in this package stores its elements in an array that reordering
 
 | Reorder | ``Arrangement`` vs `Array` | ``PermutableSet`` vs `OrderedSet` | ``IdentifiedSet`` vs `IdentifiedArray` |
 | --- | ---: | ---: | ---: |
-| Sort | 1.9× faster | 1.2× faster | 11× faster |
-| Shuffle | 1.4× faster | 2.5× faster | 9× faster |
-| Reverse | 3.3× faster | 11× faster | 12× faster |
-| Rotate | 1.4× faster | 9.3× faster | 70× faster |
-| Move one element | 1.1× faster | 3.2× slower | 56× faster |
+| Sort | 1.6× faster | 1.1× faster | 9.2× faster |
+| Shuffle | 2.3× faster | 3.9× faster | 11× faster |
+| Reverse | 2.8× faster | 9.8× faster | 15× faster |
+| Rotate | 1.3× faster | 11× faster | 110× faster |
+| Move one element | 2.0× faster | 2.4× slower | 187× faster |
 
-Some reorders skip the elements entirely and work on the permutation's cycles. Repeating a shuffle 1,000 times on an `Array` of 16,384 records takes 567 ms. Raising the shuffle to the 1,000th power with ``Permutation/raised(to:)`` and applying it once takes 196 µs, about 2,900× faster.
+Some reorders skip the elements entirely and work on the permutation's cycles. Repeating a shuffle 1,000 times on an `Array` of 16,384 records takes 444 ms. Raising the shuffle to the 1,000th power with ``Permutation/raised(to:)`` and applying it once takes 163 µs, about 2,700× faster.
 
 Each figure is the median of 201 runs at 16,384 elements, in a release build on Apple silicon. ``Arrangement`` and ``IdentifiedSet`` hold a typical app model with a UUID id, an integer sort key and 64 bytes of other fields, and ``PermutableSet`` holds `Int` values. `OrderedSet` comes from swift-collections and `IdentifiedArray` from Point-Free's swift-identified-collections. The [benchmark results](https://github.com/JonathanStorey/swift-permutation/blob/main/Benchmarks/RESULTS.md) have the full tables, charts and the steps to reproduce them.
 
