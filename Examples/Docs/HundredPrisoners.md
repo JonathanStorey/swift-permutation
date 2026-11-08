@@ -20,4 +20,4 @@ The prisoners' choices are no longer independent. They all live or die by the sa
 
 ## In this package
 
-`Permutation.cycles` reads the cycles straight off the Foata line in one pass, as slices with nothing copied, since every cycle starts at a new left-to-right maximum. The example draws 100,000 rooms and frees the prisoners when `cycleLengths.max()` is at most 50.
+`Permutation.cycles` reads the cycles straight off the Foata line in one pass, since every cycle starts at a new left-to-right maximum. The example draws 100,000 rooms and frees the prisoners when `cycleLengths.max()` is at most 50.

@@ -1,10 +1,10 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Permutation/Permutation+ForEach.swift
-// dependencies: [Permutation/Permutation+Sources.swift, Permutation/Permutation.swift]
+// dependencies: [Permutation/Permutation+Cycles.swift, Permutation/Permutation+Sources.swift, Permutation/Permutation.swift]
 
-// Breaks a permutation, or a collection's orders, into steps, one call per step, so every walk reads `forEach(.kind) { step in ... }`. Cycles need no walk of their own: `for cycle in permutation.cycles` reads them as slices of the line.
+// Breaks a permutation, or a collection's orders, into steps, one call per step, so every walk reads `forEach(.kind) { step in ... }`. `forEach(.cycle)` hands out the same `[Int]` cycles as `for cycle in permutation.cycles`.
 //
-// - `Operation` carries no data. Its type parameter names the step the closure receives, and each kind is a static member constrained to that step, so `.move` can only meet a closure that takes a `Move`.
+// - `Operation` carries no data. Its type parameter names the step the closure receives, and each kind is a static member constrained to that step, so `.cycle` can only meet a closure that takes an `[Int]`.
 // - Each step type has its own `forEach` overload that calls its walk directly, so choosing the walk costs nothing at run time.
 // - The walks themselves are the internal `forEachSwap` and `forEachMove`, which `apply` and its relatives keep calling directly.
 
@@ -56,6 +56,11 @@ extension Permutation {
         try forEachMove { try body(Move(from: $0, to: $1)) }
     }
 
+    /// Calls the closure with each cycle, starting with its largest offset, where the element at each offset moves to the next and the last moves to the first. Fixed points are left out.
+    @inlinable public func forEach(_ operation: Operation<[Int]>, _ body: ([Int]) throws -> Void) rethrows {
+        for cycle in cycles { try body(cycle) }
+    }
+
 }
 
 public extension Permutation.Operation where Step == Permutation.Swap {
@@ -68,6 +73,12 @@ public extension Permutation.Operation where Step == Permutation.Move {
 
     /// Each single-element move, the fewest that produce the permutation.
     static var move: Self { Self() }
+}
+
+public extension Permutation.Operation where Step == [Int] {
+
+    /// Each cycle, starting with its largest offset.
+    static var cycle: Self { Self() }
 }
 
 public extension Permutation.Operation where Step: PermutableCollection {

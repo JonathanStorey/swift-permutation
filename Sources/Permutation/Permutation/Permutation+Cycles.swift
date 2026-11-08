@@ -4,7 +4,8 @@
 
 // A permutation's cycles, read straight off the Foata line it stores, along with the properties that depend only on them.
 //
-// - Each cycle is a slice of the line, from one left-to-right maximum up to the next, so reading the cycles copies nothing.
+// - Each cycle runs from one left-to-right maximum of the line up to the next. Each index holds a cycle's bounds, so finding the cycles reads the line once, and only reading a cycle out as an `[Int]` copies it.
+// - Code inside the package reads `slices` instead, which copies nothing.
 // - Fixed points are not cycles here. A permutation that moves nothing has no cycles at all.
 // - The order, parity and involution test depend only on cycle lengths, so they are read in one pass over the line.
 
@@ -18,7 +19,7 @@ extension Permutation {
 
     /// The cycles of a permutation, each starting with its largest offset, in increasing order of those offsets. The element at each offset moves to the next offset in its cycle, and the last moves to the first. Fixed points are left out.
     ///
-    /// Each cycle is an `ArraySlice<Int>` of the stored line and keeps the line's indices, so read it with `first`, `last` and iteration, or wrap it in `Array` before indexing from zero.
+    /// Each cycle is an `[Int]` indexed from zero, copied out of the stored line as it is read.
     public struct Cycles: Hashable, Sendable {
 
         /// The Foata line the cycles are read from.
@@ -67,9 +68,14 @@ extension Permutation.Cycles: Collection {
         line.isEmpty
     }
 
-    /// The cycle at the position, as a slice of the line.
-    @inlinable public subscript(position: Index) -> ArraySlice<Int> {
-        line[position.start..<position.end]
+    /// The cycle at the position, copied out of the line.
+    @inlinable public subscript(position: Index) -> [Int] {
+        Array(line[position.start..<position.end])
+    }
+
+    /// Each cycle as a slice of the line, which copies nothing. A slice keeps the line's indices.
+    @usableFromInline var slices: LazyMapSequence<DefaultIndices<Permutation.Cycles>, ArraySlice<Int>> {
+        indices.lazy.map { line[$0.start..<$0.end] }
     }
 
     /// The next cycle's position, found by reading to the end of that cycle, so walking every cycle reads the line once.
@@ -94,11 +100,11 @@ extension Permutation.Cycles {
     }
 
     /// The cycle that holds the offset, or nil when the permutation leaves it in place.
-    public func cycle(containing offset: Int) -> ArraySlice<Int>? {
+    public func cycle(containing offset: Int) -> [Int]? {
         var start: Int = 0
         for position in line.indices {
             if line[position] > line[start] { start = position }
-            if line[position] == offset { return line[start..<end(ofCycleAt: start)] }
+            if line[position] == offset { return Array(line[start..<end(ofCycleAt: start)]) }
         }
         return nil
     }
@@ -108,13 +114,14 @@ extension Permutation.Cycles {
     /// The order of a permutation of `n` offsets can exceed `Int.max` once `n` reaches the thousands, and reading it then traps the same way integer overflow does.
     public var order: Int {
         var order: Int = 1
-        for cycle in self {
+        for position in indices {
+            let length: Int = position.end - position.start
             var divisor: Int = order
-            var remainder: Int = cycle.count
+            var remainder: Int = length
             while remainder != 0 {
                 (divisor, remainder) = (remainder, divisor % remainder)
             }
-            order = (order / divisor) * cycle.count
+            order = (order / divisor) * length
         }
         return order
     }
@@ -145,6 +152,6 @@ extension Permutation.Cycles: CustomStringConvertible {
     /// The cycles in standard notation, such as `(2 0)(5 3 4)`, or `()` for the identity.
     public var description: String {
         guard !isEmpty else { return "()" }
-        return map { "(" + $0.map(String.init).joined(separator: " ") + ")" }.joined()
+        return slices.map { "(" + $0.map(String.init).joined(separator: " ") + ")" }.joined()
     }
 }

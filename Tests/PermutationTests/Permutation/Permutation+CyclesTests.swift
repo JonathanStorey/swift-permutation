@@ -14,7 +14,8 @@ import Testing
 
     @Test func cyclesSplitTheLineAtEachLargestOffset() {
         let cycles: Permutation.Cycles = Permutation(cycle: [2, 0, 1, 5, 3, 7, 6, 4]).cycles
-        #expect(cycles.map(Array.init) == [[2, 0, 1], [5, 3], [7, 6, 4]])
+        #expect(Array(cycles) == [[2, 0, 1], [5, 3], [7, 6, 4]])
+        #expect(cycles[cycles.index(after: cycles.startIndex)][0] == 5)
         #expect(cycles.count == 3)
         #expect(cycles.movedCount == 8)
         #expect(Permutation().cycles.isEmpty)
@@ -22,7 +23,7 @@ import Testing
         for permutation in randomPermutations(seed: 11) {
             #expect(permutation.cycles.map(\.count).reduce(0, +) == permutation.cycles.movedCount)
             #expect(permutation.cycles.allSatisfy { $0.count > 1 })
-            #expect(Permutation(cycles: permutation.cycles.map(Array.init)) == permutation)
+            #expect(Permutation(cycles: Array(permutation.cycles)) == permutation)
         }
     }
 
@@ -33,9 +34,9 @@ import Testing
 
     @Test func cycleContainingFindsTheOffsetsCycle() {
         let cycles: Permutation.Cycles = Permutation(cycle: [2, 0, 5, 3, 4]).cycles
-        #expect(cycles.cycle(containing: 0).map(Array.init) == [2, 0])
-        #expect(cycles.cycle(containing: 4).map(Array.init) == [5, 3, 4])
-        #expect(cycles.cycle(containing: 5).map(Array.init) == [5, 3, 4])
+        #expect(cycles.cycle(containing: 0) == [2, 0])
+        #expect(cycles.cycle(containing: 4) == [5, 3, 4])
+        #expect(cycles.cycle(containing: 5) == [5, 3, 4])
         #expect(cycles.cycle(containing: 1) == nil)
         #expect(cycles.cycle(containing: 9) == nil)
     }
