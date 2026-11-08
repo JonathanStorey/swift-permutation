@@ -5,6 +5,7 @@
 // A permutation as the fewest single-element moves that produce it, which is what a list animation or a remote sync wants.
 //
 // - The elements on a longest increasing subsequence of the final order stay put and every other element moves exactly once, so the number of moves is the minimum.
+// - `init(moving:to:count:)` builds the single cycle one move makes, which is how a collection's `move` records itself.
 // - Finding that subsequence needs the whole final order, so `moves` works out every move when iteration starts, in O(n log n), and then hands them out one at a time.
 
 extension Permutation {
@@ -21,6 +22,18 @@ extension Permutation {
         @inlinable public init(from: Int, to: Int) {
             self.from = from
             self.to = to
+        }
+    }
+
+    /// Creates the single cycle that moves the element at `source` to `destination` within `0..<count`, shifting the elements between them one step toward `source`.
+    @inlinable init(moving source: Int, to destination: Int, count: Int) {
+        precondition((0..<count).contains(source) && (0..<count).contains(destination), "Both offsets must be within the collection.")
+        if source < destination {
+            self.init(cycle: Array((source...destination).reversed()))
+        } else if source > destination {
+            self.init(cycle: [source] + Array(destination..<source))
+        } else {
+            self.init(cycle: [])
         }
     }
 

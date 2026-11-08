@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Permutation/Permutation+SwapsAndMovesTests.swift
-// dependencies: [Collections/PermutableCollection.swift, Permutation/Permutation+Moves.swift, Permutation/Permutation+Swaps.swift, Permutation/Permutation+Move.swift, Permutation/Permutation+Reverse.swift, Permutation/Permutation+Rotate.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation+Sources.swift, Permutation/Permutation.swift, Support/Deck.swift, Support/SeededGenerator.swift]
+// dependencies: [Collections/PermutableCollection.swift, Permutation/Permutation+Moves.swift, Permutation/Permutation+Swaps.swift, Permutation/Permutation+Reverse.swift, Permutation/Permutation+Rotate.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation+Sources.swift, Permutation/Permutation.swift, Support/Deck.swift, Support/SeededGenerator.swift]
 
 import Testing
 @testable import Permutation
