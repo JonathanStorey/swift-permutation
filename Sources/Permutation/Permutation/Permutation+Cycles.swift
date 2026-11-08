@@ -17,6 +17,8 @@ extension Permutation {
     }
 
     /// The cycles of a permutation, each starting with its largest offset, in increasing order of those offsets. The element at each offset moves to the next offset in its cycle, and the last moves to the first. Fixed points are left out.
+    ///
+    /// Each cycle is an `ArraySlice<Int>` of the stored line and keeps the line's indices, so read it with `first`, `last` and iteration, or wrap it in `Array` before indexing from zero.
     public struct Cycles: Hashable, Sendable {
 
         /// The Foata line the cycles are read from.
