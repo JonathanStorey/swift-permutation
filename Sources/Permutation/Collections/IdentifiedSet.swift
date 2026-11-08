@@ -319,12 +319,17 @@ extension IdentifiedSet {
         var isMoved: [Bool] = [Bool](repeating: false, count: elements.count)
         var movedCount: Int = 0
         var target: Int = endIndex
+        var lastMoved: Int = 0
         for (position, offset) in offsets.enumerated() {
             if isMovedOffset[offset] {
                 isMoved[position] = true
                 movedCount += 1
+                lastMoved = position
             }
             if offset == destinationOffset { target = position }
+        }
+        if movedCount == 1 {
+            return move(from: lastMoved, to: target > lastMoved ? target - 1 : target)
         }
         return move(marked: isMoved, count: movedCount, toOffset: target)
     }

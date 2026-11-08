@@ -46,17 +46,26 @@ public extension PermutableCollection {
         apply(returning: Permutation(moving: distance(from: startIndex, to: source), to: distance(from: startIndex, to: destination), count: count))
     }
 
-    /// Moves the elements at the given offsets to just before the element at the destination offset, keeping their relative order, and returns the permutation applied.
+    /// Moves the elements at the given offsets to just before the element at the destination offset, keeping their relative order, and returns the permutation applied. A single offset, as a one-row drag in SwiftUI gives, takes the same path as `move(from:to:)`.
     @inlinable @discardableResult mutating func move(fromOffsets source: some Sequence<Int>, toOffset destination: Int) -> Permutation {
         precondition((0...count).contains(destination), "Every offset must be within the collection.")
+        var remaining = source.makeIterator()
+        guard let first: Int = remaining.next() else { return Permutation(cycle: []) }
+        precondition((0..<count).contains(first), "Every offset must be within the collection.")
+        guard let second: Int = remaining.next() else {
+            return move(from: index(startIndex, offsetBy: first), to: index(startIndex, offsetBy: destination > first ? destination - 1 : destination))
+        }
         var isMoved: [Bool] = [Bool](repeating: false, count: count)
-        var movedCount: Int = 0
-        for offset in source {
+        isMoved[first] = true
+        var movedCount: Int = 1
+        var next: Int? = second
+        while let offset: Int = next {
             precondition(isMoved.indices.contains(offset), "Every offset must be within the collection.")
             if !isMoved[offset] {
                 isMoved[offset] = true
                 movedCount += 1
             }
+            next = remaining.next()
         }
         return move(marked: isMoved, count: movedCount, toOffset: destination)
     }

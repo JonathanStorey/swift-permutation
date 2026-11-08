@@ -95,3 +95,5 @@ for size in sizes {
         print("| `\(comparison.operation)` | \(size) | \(rounded(identified)) µs | \(cell(array, against: identified)) | \(cell(indexed, against: identified)) |")
     }
 }
+
+printReorderTable()

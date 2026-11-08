@@ -29,9 +29,18 @@ extension Permutation {
     @inlinable init(moving source: Int, to destination: Int, count: Int) {
         precondition((0..<count).contains(source) && (0..<count).contains(destination), "Both offsets must be within the collection.")
         if source < destination {
-            self.init(cycle: Array((source...destination).reversed()))
+            let length: Int = destination - source + 1
+            self.init(cycle: [Int](unsafeUninitializedCapacity: length) { buffer, initialized in
+                for position in 0..<length { buffer[position] = destination - position }
+                initialized = length
+            })
         } else if source > destination {
-            self.init(cycle: [source] + Array(destination..<source))
+            let length: Int = source - destination + 1
+            self.init(cycle: [Int](unsafeUninitializedCapacity: length) { buffer, initialized in
+                buffer[0] = source
+                for position in 1..<length { buffer[position] = destination + position - 1 }
+                initialized = length
+            })
         } else {
             self.init(cycle: [])
         }
