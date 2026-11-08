@@ -27,13 +27,13 @@ extension Permutation {
     }
 
     /// Creates a uniformly random permutation of `0..<count` by shuffling the Foata line directly.
-    @inlinable public init(shuffles count: Int) {
+    @inlinable init(shuffles count: Int) {
         var generator: SystemRandomNumberGenerator = SystemRandomNumberGenerator()
         self.init(shuffles: count, using: &generator)
     }
 
     /// Creates a uniformly random permutation of `0..<count` by shuffling the Foata line directly, using the given generator as a source for randomness.
-    @inlinable public init<R: RandomNumberGenerator>(shuffles count: Int, using generator: inout R) {
+    @inlinable init<R: RandomNumberGenerator>(shuffles count: Int, using generator: inout R) {
         precondition(count >= 0, "The count must not be negative.")
         var line: [Int] = Array(0..<count)
         line.shuffle(using: &generator)
@@ -53,15 +53,65 @@ extension Permutation {
     }
 
     /// Creates a permutation of `0..<count` shuffled in the given style.
-    public init(shuffles count: Int, _ style: Shuffle) {
+    @usableFromInline init(shuffles count: Int, _ style: Shuffle) {
         var generator: SystemRandomNumberGenerator = SystemRandomNumberGenerator()
         self.init(shuffles: count, style, using: &generator)
     }
 
     /// Creates a permutation of `0..<count` shuffled in the given style, using the given generator as a source for randomness in the random styles.
-    public init<R: RandomNumberGenerator>(shuffles count: Int, _ style: Shuffle, using generator: inout R) {
+    @usableFromInline init<R: RandomNumberGenerator>(shuffles count: Int, _ style: Shuffle, using generator: inout R) {
         precondition(count >= 0, "The count must not be negative.")
         self = Permutation.shuffling(count, style, using: &generator)
+    }
+
+    /// A uniformly random permutation of `0..<count`.
+    public static func random(count: Int) -> Permutation {
+        Permutation(shuffles: count)
+    }
+
+    /// A uniformly random permutation of `0..<count`, using the given generator as a source for randomness.
+    public static func random<R: RandomNumberGenerator>(count: Int, using generator: inout R) -> Permutation {
+        Permutation(shuffles: count, using: &generator)
+    }
+
+    /// A random single cycle through every offset of `0..<count`, each equally likely, so no offset stays in place.
+    public static func cyclic(count: Int) -> Permutation {
+        Permutation(shuffles: count, .cyclic)
+    }
+
+    /// A random single cycle through every offset of `0..<count`, using the given generator as a source for randomness.
+    public static func cyclic<R: RandomNumberGenerator>(count: Int, using generator: inout R) -> Permutation {
+        Permutation(shuffles: count, .cyclic, using: &generator)
+    }
+
+    /// A uniformly random permutation of `0..<count` that leaves no offset in place. A single offset cannot be deranged.
+    public static func derangement(count: Int) -> Permutation {
+        Permutation(shuffles: count, .derangement)
+    }
+
+    /// A uniformly random derangement of `0..<count`, using the given generator as a source for randomness.
+    public static func derangement<R: RandomNumberGenerator>(count: Int, using generator: inout R) -> Permutation {
+        Permutation(shuffles: count, .derangement, using: &generator)
+    }
+
+    /// One random riffle of `0..<count` in the Gilbert–Shannon–Reeds model.
+    public static func riffle(count: Int) -> Permutation {
+        Permutation(shuffles: count, .riffle)
+    }
+
+    /// One random riffle of `0..<count` in the Gilbert–Shannon–Reeds model, using the given generator as a source for randomness.
+    public static func riffle<R: RandomNumberGenerator>(count: Int, using generator: inout R) -> Permutation {
+        Permutation(shuffles: count, .riffle, using: &generator)
+    }
+
+    /// The perfect riffle of `0..<count` that keeps the first and last offsets in place.
+    public static func outFaro(count: Int) -> Permutation {
+        Permutation(shuffles: count, .outFaro)
+    }
+
+    /// The perfect riffle of `0..<count` that moves the first and last offsets inward.
+    public static func inFaro(count: Int) -> Permutation {
+        Permutation(shuffles: count, .inFaro)
     }
 
     /// Creates the perfect riffle that interleaves the first `half` offsets with the rest, sending the first packet to every other offset starting at `firstStep`.

@@ -28,7 +28,7 @@ enum Derangements {
         var everyoneMoved: Int = 0
         for _ in 0..<trials {
             // The Foata line lists exactly the moved offsets, so a derangement is a line that holds every offset.
-            if Permutation(shuffles: guests, using: &generator).cycles.movedCount == guests { everyoneMoved += 1 }
+            if Permutation.random(count: guests, using: &generator).cycles.movedCount == guests { everyoneMoved += 1 }
         }
         var factorial: Double = 1
         for k in 1...guests { factorial *= Double(k) }
