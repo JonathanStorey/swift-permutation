@@ -134,10 +134,11 @@ for _ in 0..<6 {                  // 3! orders
 }
 ```
 
-`forEach(.permutation)` walks the same `n!` orders in place, one swap apart, and puts the elements back when it finishes:
+`permutations` walks the same `n!` orders lazily, one swap apart, without touching the collection, so a search can stop with `break` or `first(where:)`:
 
 ```swift
-hand.forEach(.permutation) { print(Array($0)) }  // all 6 orders, starting with the current one
+for order in hand.permutations { print(order) }     // all 6 orders, starting with the current one
+let found = hand.permutations.first { $0.first == "c" }  // stops at the first match
 ```
 
 ### `IdentifiedSet`
