@@ -69,7 +69,7 @@ A permutation is stored in Foata's single-line notation: its cycles written one 
 
 ## Topics
 
-### Creating a Permutation
+### Creating a permutation
 
 - ``init()``
 - ``init(cycles:)``
@@ -78,7 +78,7 @@ A permutation is stored in Foata's single-line notation: its cycles written one 
 - ``init(reversing:)``
 - ``init(_:)``
 
-### Creating a Shuffle
+### Creating a shuffle
 
 - ``random(count:)``
 - ``random(count:using:)``
@@ -96,7 +96,7 @@ A permutation is stored in Foata's single-line notation: its cycles written one 
 - ``shuffled(_:)``
 - ``shuffled(_:using:)``
 
-### Inspecting a Permutation
+### Inspecting a permutation
 
 - ``subscript(_:)``
 - ``minimumCount``
@@ -104,7 +104,7 @@ A permutation is stored in Foata's single-line notation: its cycles written one 
 - ``Cycles``
 - ``Parity``
 
-### Combining Permutations
+### Combining permutations
 
 - ``inverted``
 - ``followed(by:)``
@@ -112,7 +112,7 @@ A permutation is stored in Foata's single-line notation: its cycles written one 
 - ``raised(to:)``
 - ``swapping(_:_:)``
 
-### Replaying a Permutation
+### Replaying a permutation
 
 - ``moves``
 - ``Move``
@@ -121,7 +121,7 @@ A permutation is stored in Foata's single-line notation: its cycles written one 
 - ``Swap``
 - ``Swaps``
 
-### Merging Permutations
+### Merging permutations
 
 - ``merging(with:)``
 - ``merging(with:from:)``
@@ -129,7 +129,7 @@ A permutation is stored in Foata's single-line notation: its cycles written one 
 - ``merging(with:from:by:)``
 - ``MergeStrategy``
 
-### Following a Changing Collection
+### Following a changing collection
 
 - ``insert(at:)``
 - ``insert(count:at:)``
@@ -137,7 +137,7 @@ A permutation is stored in Foata's single-line notation: its cycles written one 
 - ``removeSubrange(_:)``
 - ``replaceSubrange(_:withCount:)``
 
-### Ranking and Stepping
+### Ranking and stepping
 
 - ``rank``
 - ``init(rank:)``
@@ -148,7 +148,7 @@ A permutation is stored in Foata's single-line notation: its cycles written one 
 - ``permutations(count:)``
 - ``Permutations``
 
-### Describing a Permutation
+### Describing a permutation
 
 - ``description``
 - ``debugDescription``

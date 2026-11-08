@@ -44,7 +44,7 @@ Because the second form reorders through ``apply(_:)``, a type that customizes `
 
 ## Topics
 
-### Applying a Permutation
+### Applying a permutation
 
 - ``apply(_:)``
 - ``applying(_:)-3o9uc``
@@ -61,7 +61,7 @@ Because the second form reorders through ``apply(_:)``, a type that customizes `
 - ``shuffle(_:)``
 - ``shuffle(_:using:)``
 
-### Moving Elements
+### Moving elements
 
 - ``move(from:to:)``
 - ``move(fromOffsets:toOffset:)``

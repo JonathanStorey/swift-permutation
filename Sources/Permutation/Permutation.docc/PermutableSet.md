@@ -44,17 +44,17 @@ A permutable set offers only the set operations whose result has a clear order. 
 
 ## Topics
 
-### Creating a Permutable Set
+### Creating a permutable set
 
 - ``init()``
 - ``init(_:)``
 - ``init(arrayLiteral:)``
 
-### Testing Membership
+### Testing membership
 
 - ``contains(_:)``
 
-### Adding Elements
+### Adding elements
 
 - ``append(_:)``
 - ``append(contentsOf:)``
@@ -62,7 +62,7 @@ A permutable set offers only the set operations whose result has a clear order. 
 - ``insert(contentsOf:at:)``
 - ``reserveCapacity(_:)``
 
-### Replacing and Updating
+### Replacing and updating
 
 - ``replace(_:)``
 - ``replace(at:with:)``
@@ -71,7 +71,7 @@ A permutable set offers only the set operations whose result has a clear order. 
 - ``update(orInsert:at:)-2cnh4``
 - ``update(orInsert:at:)-8klv4``
 
-### Removing Elements
+### Removing elements
 
 - ``remove(_:)``
 - ``remove(at:)``
@@ -80,7 +80,7 @@ A permutable set offers only the set operations whose result has a clear order. 
 - ``removeAll()``
 - ``filter(_:)``
 
-### Combining Sets
+### Combining sets
 
 - ``union(_:)``
 - ``formUnion(_:)``
@@ -91,7 +91,7 @@ A permutable set offers only the set operations whose result has a clear order. 
 - ``symmetricDifference(_:)``
 - ``formSymmetricDifference(_:)``
 
-### Comparing Sets
+### Comparing sets
 
 - ``isSubset(of:)``
 - ``isStrictSubset(of:)``
@@ -104,7 +104,7 @@ A permutable set offers only the set operations whose result has a clear order. 
 - ``apply(_:)``
 - ``swapAt(_:_:)``
 
-### Accessing Elements
+### Accessing elements
 
 - ``subscript(_:)``
 - ``startIndex``
@@ -112,7 +112,7 @@ A permutable set offers only the set operations whose result has a clear order. 
 - ``makeIterator()``
 - ``Iterator``
 
-### Encoding and Decoding
+### Encoding and decoding
 
 - ``encode(to:)``
 - ``init(from:)``

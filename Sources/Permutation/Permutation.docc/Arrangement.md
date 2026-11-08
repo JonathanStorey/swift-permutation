@@ -60,7 +60,7 @@ A ``PermutableDictionary`` hands out its keys as an arrangement, so sorting or s
 
 ## Topics
 
-### Creating an Arrangement
+### Creating an arrangement
 
 - ``init()``
 - ``init(_:)``
@@ -71,16 +71,16 @@ A ``PermutableDictionary`` hands out its keys as an arrangement, so sorting or s
 - ``apply(_:)``
 - ``swapAt(_:_:)``
 
-### Tracking the Reorder History
+### Tracking the reorder history
 
 - ``permutation``
 
-### Walking Every Order
+### Walking every order
 
 - ``permutations``
 - ``Permutations``
 
-### Accessing Elements
+### Accessing elements
 
 - ``subscript(_:)``
 - ``startIndex``
@@ -88,7 +88,7 @@ A ``PermutableDictionary`` hands out its keys as an arrangement, so sorting or s
 - ``makeIterator()``
 - ``Iterator``
 
-### Encoding and Decoding
+### Encoding and decoding
 
 - ``encode(to:)``
 - ``init(from:)``

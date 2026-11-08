@@ -35,14 +35,14 @@ Neither reordering nor reassigning copies a key or a value, because both live in
 
 ## Topics
 
-### Creating a Permutable Dictionary
+### Creating a permutable dictionary
 
 - ``init()``
 - ``init(uniqueKeysWithValues:)``
 - ``init(uniqueKeys:values:)``
 - ``init(dictionaryLiteral:)``
 
-### Accessing Keys and Values
+### Accessing keys and values
 
 - ``subscript(_:)->Value?``
 - ``subscript(_:default:)``
@@ -54,13 +54,13 @@ Neither reordering nor reassigning copies a key or a value, because both live in
 - ``Values``
 - ``Element``
 
-### Adding and Updating
+### Adding and updating
 
 - ``updateValue(_:forKey:)``
 - ``updateValue(_:forKey:insertingAt:)``
 - ``reserveCapacity(_:)``
 
-### Removing Entries
+### Removing entries
 
 - ``removeValue(forKey:)``
 - ``remove(atOffsets:)``
@@ -68,16 +68,16 @@ Neither reordering nor reassigning copies a key or a value, because both live in
 - ``removeAll()``
 - ``filter(_:)``
 
-### Transforming Values
+### Transforming values
 
 - ``mapValues(_:)``
 
-### Reordering Entries
+### Reordering entries
 
 - ``apply(_:)``
 - ``swapAt(_:_:)``
 
-### Reassigning Values
+### Reassigning values
 
 - ``reassignValues(_:)``
 - ``reassignValues(shuffling:)``
@@ -90,7 +90,7 @@ Neither reordering nor reassigning copies a key or a value, because both live in
 - ``makeIterator()``
 - ``Iterator``
 
-### Encoding and Decoding
+### Encoding and decoding
 
 - ``encode(to:)``
 - ``init(from:)``

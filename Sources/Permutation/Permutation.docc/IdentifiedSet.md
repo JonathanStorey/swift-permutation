@@ -37,21 +37,21 @@ An identified set is an ``UpsertableCollection``. ``append(_:)`` and ``insert(_:
 
 ## Topics
 
-### Creating an Identified Set
+### Creating an identified set
 
 - ``init()``
 - ``init(_:uniquingIDsWith:)``
 - ``init(arrayLiteral:)``
 - ``Uniquing``
 
-### Finding Elements by ID
+### Finding elements by ID
 
 - ``subscript(id:)``
 - ``contains(id:)``
 - ``firstIndex(id:)``
 - ``ids``
 
-### Adding Elements
+### Adding elements
 
 - ``append(_:)``
 - ``append(contentsOf:)``
@@ -59,7 +59,7 @@ An identified set is an ``UpsertableCollection``. ``append(_:)`` and ``insert(_:
 - ``insert(contentsOf:at:)``
 - ``reserveCapacity(_:)``
 
-### Replacing and Updating
+### Replacing and updating
 
 - ``replace(_:)``
 - ``replace(at:with:)``
@@ -68,7 +68,7 @@ An identified set is an ``UpsertableCollection``. ``append(_:)`` and ``insert(_:
 - ``update(orInsert:at:)-68jh5``
 - ``update(orInsert:at:)-qat7``
 
-### Removing Elements
+### Removing elements
 
 - ``remove(id:)``
 - ``remove(ids:)``
@@ -83,7 +83,7 @@ An identified set is an ``UpsertableCollection``. ``append(_:)`` and ``insert(_:
 - ``apply(_:)``
 - ``swapAt(_:_:)``
 
-### Accessing Elements
+### Accessing elements
 
 - ``subscript(_:)``
 - ``startIndex``
@@ -91,7 +91,7 @@ An identified set is an ``UpsertableCollection``. ``append(_:)`` and ``insert(_:
 - ``makeIterator()``
 - ``Iterator``
 
-### Encoding and Decoding
+### Encoding and decoding
 
 - ``encode(to:)``
 - ``init(from:)``
