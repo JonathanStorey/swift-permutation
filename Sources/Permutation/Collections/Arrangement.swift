@@ -165,20 +165,31 @@ extension Arrangement: CustomStringConvertible {
 
 extension Arrangement: Encodable where Element: Encodable {
 
-    /// Encodes the elements as a plain array in the order shown.
+    /// Encodes the elements in their original order alongside the permutation that takes them to the order shown, so decoding restores the history as well as the order.
     public func encode(to encoder: any Encoder) throws {
-        var container: any UnkeyedEncodingContainer = encoder.unkeyedContainer()
-        for element in self { try container.encode(element) }
+        var container: KeyedEncodingContainer<ArrangementCodingKeys> = encoder.container(keyedBy: ArrangementCodingKeys.self)
+        try container.encode(elements, forKey: .elements)
+        try container.encode(permutation, forKey: .permutation)
     }
 }
 
 extension Arrangement: Decodable where Element: Decodable {
 
-    /// Decodes a plain array of elements, which becomes the original order.
+    /// Decodes the elements in their original order and the permutation that reorders them, throwing when the permutation reaches past the elements.
     public init(from decoder: any Decoder) throws {
-        var container: any UnkeyedDecodingContainer = try decoder.unkeyedContainer()
-        var elements: [Element] = []
-        while !container.isAtEnd { elements.append(try container.decode(Element.self)) }
+        let container: KeyedDecodingContainer<ArrangementCodingKeys> = try decoder.container(keyedBy: ArrangementCodingKeys.self)
+        let elements: [Element] = try container.decode([Element].self, forKey: .elements)
+        let permutation: Permutation = try container.decode(Permutation.self, forKey: .permutation)
+        guard permutation.minimumCount <= elements.count else {
+            throw DecodingError.dataCorruptedError(forKey: .permutation, in: container, debugDescription: "The permutation moves an offset past the elements.")
+        }
         self.init(elements)
+        self.permutation = permutation
     }
+}
+
+/// The keys an arrangement encodes under.
+@usableFromInline enum ArrangementCodingKeys: String, CodingKey {
+    case elements
+    case permutation
 }
