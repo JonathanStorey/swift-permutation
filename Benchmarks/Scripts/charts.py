@@ -33,6 +33,9 @@ MUTED = "#59636e"
 GRID = "#d8dee4"
 SUMMARY_SIZE = 16384
 
+# Below 16 elements a single call's fixed cost swamps the time per element, so the lines start there.
+SMALLEST = 16
+
 # One hue per pair, in the order of PAIRS: a dark shade for the package's collection, a light one for the other.
 HUES = [
     ("#1a7f37", "#8fd19e"),
@@ -72,10 +75,10 @@ def seconds(sample):
 
 
 def series(results, title):
-    """Time per element at each measured size, from the fastest run at that size."""
+    """Time per element at each measured power-of-two size from SMALLEST up, from the fastest run at that size."""
     points = {}
     for size, samples in results.get(title, {}).items():
-        if samples and int(size) > 0:
+        if samples and int(size) >= SMALLEST and int(size) & (int(size) - 1) == 0:
             points[int(size)] = min(seconds(sample) for sample in samples) / int(size)
     return dict(sorted(points.items()))
 
@@ -147,7 +150,7 @@ def figure_for(panels, heading, path, legend_names):
               Line2D([0], [0], color=RED, linewidth=2, linestyle=(0, (5, 3)), label=legend_names[1])]
     figure.legend(handles=legend, loc="upper right", ncol=2, frameon=False, fontsize=10)
     figure.suptitle(heading, x=0.01, ha="left", fontsize=13, color=INK, fontweight="bold")
-    figure.text(0.01, 0.005, "Time per element, log scales. Lower is better.", fontsize=8, color=MUTED)
+    figure.text(0.01, 0.005, "Time per element from 16 elements up, log scales. Lower is better.", fontsize=8, color=MUTED)
     figure.tight_layout(rect=(0, 0.02, 1, 0.93))
     figure.savefig(path, dpi=160, facecolor="white")
     plt.close(figure)
@@ -181,8 +184,8 @@ def operation_chart(results, stem, heading, tasks, directory):
         return
     axes.legend(handles=handles, loc="upper left", bbox_to_anchor=(1.01, 1), frameon=False, fontsize=9)
     axes.set_title(heading, loc="left", fontsize=13, color=INK, fontweight="bold", pad=10)
-    figure.text(0.01, 0.01, "Time per element, log scales. Lower is better. Solid lines are this package's collections, "
-                "dashed lines the collections they replace.", fontsize=8, color=MUTED)
+    figure.text(0.01, 0.01, "Time per element from 16 elements up, log scales. Lower is better. Solid lines are this package's "
+                "collections, dashed lines the collections they replace.", fontsize=8, color=MUTED)
     figure.tight_layout(rect=(0, 0.03, 1, 1))
     figure.savefig(os.path.join(directory, f"{stem}.png"), dpi=160, facecolor="white")
     plt.close(figure)
