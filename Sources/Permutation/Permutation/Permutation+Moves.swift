@@ -31,7 +31,10 @@ extension Permutation {
         if source < destination {
             self.init(cycle: Array((source...destination).reversed()))
         } else if source > destination {
-            self.init(cycle: [source] + Array(destination..<source))
+            var cycle: [Int] = [source]
+            cycle.reserveCapacity(source - destination + 1)
+            cycle.append(contentsOf: destination..<source)
+            self.init(cycle: cycle)
         } else {
             self.init(cycle: [])
         }

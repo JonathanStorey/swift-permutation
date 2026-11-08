@@ -107,6 +107,7 @@ extension Offsets: PermutableCollection {
     @inlinable mutating func apply(_ permutation: Permutation) {
         guard !permutation.cycle.isEmpty else { return }
         materialize()
+        if applyAsShift(permutation.cycle) { return }
         storedSources.withUnsafeMutableBufferPointer { buffer in
             let count: Int = buffer.count
             var start: Int = -1
@@ -125,6 +126,41 @@ extension Offsets: PermutableCollection {
             }
             buffer[start] = carried
         }
+    }
+
+    /// Applies a cycle that moves one element across a run of positions, the shape `move(from:to:)` and its inverse produce, with one block copy of the offsets in between instead of a walk through the cycle. Returns false, having changed nothing, for any other shape, which a general permutation reveals within its first few offsets.
+    ///
+    /// The line `[top, top - 1, …, bottom]` moves the element at `bottom` to `top` and every other one down a place. The line `[top, bottom, bottom + 1, …, top - 1]` moves the element at `top` to `bottom` and every other one up a place.
+    @inlinable mutating func applyAsShift(_ cycle: [Int]) -> Bool {
+        let length: Int = cycle.count
+        guard length > 2 else { return false }
+        let top: Int = cycle[0]
+        let bottom: Int = top - (length - 1)
+        guard bottom >= 0 else { return false }
+        let movesUp: Bool
+        if cycle[1] == top - 1 {
+            for position in 2..<length where cycle[position] != top - position { return false }
+            movesUp = false
+        } else if cycle[1] == bottom {
+            for position in 2..<length where cycle[position] != bottom + position - 1 { return false }
+            movesUp = true
+        } else {
+            return false
+        }
+        precondition(top < storedSources.count, "Every offset in the cycle must be within the collection.")
+        storedSources.withUnsafeMutableBufferPointer { buffer in
+            let base: UnsafeMutablePointer<Int32> = buffer.baseAddress!
+            if movesUp {
+                let moved: Int32 = base[top]
+                (base + bottom + 1).update(from: base + bottom, count: length - 1)
+                base[bottom] = moved
+            } else {
+                let moved: Int32 = base[bottom]
+                (base + bottom).update(from: base + bottom + 1, count: length - 1)
+                base[top] = moved
+            }
+        }
+        return true
     }
 
     /// Shows every storage offset at its own position again, leaving the table untouched.
