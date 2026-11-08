@@ -2,11 +2,11 @@
 // path: Permutation/Permutation+ForEach.swift
 // dependencies: [Permutation/Permutation+Sources.swift, Permutation/Permutation.swift]
 
-// Breaks a permutation, or a collection's orders, into steps, one call per step, so every walk reads `forEach(.kind) { step in ... }`.
+// Breaks a permutation, or a collection's orders, into steps, one call per step, so every walk reads `forEach(.kind) { step in ... }`. Cycles need no walk of their own: `for cycle in permutation.cycles` reads them as slices of the line.
 //
-// - `Operation` carries no data. Its type parameter names the step the closure receives, and each kind is a static member constrained to that step, so `.cycle` can only meet a closure that takes a cycle.
+// - `Operation` carries no data. Its type parameter names the step the closure receives, and each kind is a static member constrained to that step, so `.move` can only meet a closure that takes a `Move`.
 // - Each step type has its own `forEach` overload that calls its walk directly, so choosing the walk costs nothing at run time.
-// - The walks themselves are the internal `forEachSwap`, `forEachMove` and `forEachCycle`, which `apply` and its relatives keep calling directly.
+// - The walks themselves are the internal `forEachSwap` and `forEachMove`, which `apply` and its relatives keep calling directly.
 
 extension Permutation {
 
@@ -56,12 +56,6 @@ extension Permutation {
         try forEachMove { try body(Move(from: $0, to: $1)) }
     }
 
-    /// Calls the closure with each cycle, starting with its largest offset, where the element at each offset moves to the next and the last moves to the first.
-    ///
-    /// Each cycle is a slice of the stored line, so the walk copies nothing. A slice keeps the indices of the line it came from, so read it with `first`, `last` and iteration rather than from index zero.
-    @inlinable public func forEach(_ operation: Operation<ArraySlice<Int>>, _ body: (ArraySlice<Int>) throws -> Void) rethrows {
-        try forEachCycle(body)
-    }
 }
 
 public extension Permutation.Operation where Step == Permutation.Swap {
@@ -76,12 +70,6 @@ public extension Permutation.Operation where Step == Permutation.Move {
     static var move: Self { Self() }
 }
 
-public extension Permutation.Operation where Step == ArraySlice<Int> {
-
-    /// Each cycle, starting with its largest offset.
-    static var cycle: Self { Self() }
-}
-
 public extension Permutation.Operation where Step: PermutableCollection {
 
     /// Each of the `count!` orders of a collection's elements.
@@ -89,17 +77,6 @@ public extension Permutation.Operation where Step: PermutableCollection {
 }
 
 extension Permutation {
-
-    /// Calls the closure with each cycle in order as a slice of the stored line, each starting with its largest offset. A new cycle starts wherever an offset is larger than the current cycle's first.
-    @inlinable func forEachCycle(_ body: (ArraySlice<Int>) throws -> Void) rethrows {
-        guard !cycle.isEmpty else { return }
-        var start: Int = 0
-        for position in 1..<cycle.count where cycle[position] > cycle[start] {
-            try body(cycle[start..<position])
-            start = position
-        }
-        try body(cycle[start...])
-    }
 
     /// Calls the closure with the fewest single-element moves that produce this permutation, each a removal at `from` followed by an insertion at `to`, valid in the order given.
     ///

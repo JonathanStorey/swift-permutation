@@ -5,8 +5,8 @@
 /// A reordering stored as cycles in Foata's single-line notation, leaving offsets outside the cycles in place so it applies to any collection long enough.
 public struct Permutation: Hashable, Sendable {
 
-    /// The cycles written one after another, each starting with its largest offset, in increasing order of those starting offsets.
-    public let cycle: [Int]
+    /// The cycles written one after another, each starting with its largest offset, in increasing order of those starting offsets. Read it through `cycles`.
+    @usableFromInline let cycle: [Int]
 
     /// Two permutations are equal when they move every offset to the same place, which in Foata form means the same line. Written out so that `Strideable`'s default, which goes through `distance(to:)`, never stands in.
     @inlinable public static func == (lhs: Permutation, rhs: Permutation) -> Bool {
@@ -23,8 +23,17 @@ public struct Permutation: Hashable, Sendable {
         self.cycle = cycle
     }
 
-    /// Creates a permutation from cycles in any order and any rotation, rooting each at its largest offset, dropping fixed points, and ordering them by that offset.
-    init(cycles: [[Int]]) {
+    /// Creates a permutation from cycles in any order and any rotation, where the element at each offset moves to the next offset in its cycle and the last moves to the first. Cycles of one offset are fixed points and are dropped.
+    ///
+    /// The cycles must not share an offset, and no offset can be negative.
+    public init(cycles: [[Int]]) {
+        var seen: Set<Int> = []
+        for cycle in cycles {
+            for offset in cycle {
+                precondition(offset >= 0, "An offset cannot be negative.")
+                precondition(seen.insert(offset).inserted, "Cycles must not share an offset.")
+            }
+        }
         var rooted: [[Int]] = []
         for cycle in cycles where cycle.count > 1 {
             let root: Int = cycle.indices.max { cycle[$0] < cycle[$1] }!
@@ -53,8 +62,8 @@ public struct Permutation: Hashable, Sendable {
         (cycle.max() ?? -1) + 1
     }
 
-    /// The cycles split out of the line, each starting with its largest offset.
-    var cycles: [[Int]] {
+    /// The cycles split out of the line as arrays, each starting with its largest offset.
+    var cycleArrays: [[Int]] {
         var cycles: [[Int]] = []
         for offset in cycle {
             if let start: Int = cycles.last?.first, offset < start {

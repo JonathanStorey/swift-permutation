@@ -14,12 +14,12 @@ enum FaroShuffles {
         let outFaro: Permutation = Permutation(shuffles: deck, .outFaro)
         let inFaro: Permutation = Permutation(shuffles: deck, .inFaro)
         print("3. Perfect shuffles of a \(deck)-card deck")
-        print("   out-faros to restore the deck: \(outFaro.order), cycle lengths \(outFaro.cycleLengths)")
-        print("   in-faros to restore the deck: \(inFaro.order), cycle lengths \(inFaro.cycleLengths)")
+        print("   out-faros to restore the deck: \(outFaro.cycles.order), cycle lengths \(outFaro.cycles.map(\.count))")
+        print("   in-faros to restore the deck: \(inFaro.cycles.order), cycle lengths \(inFaro.cycles.map(\.count))")
         // The order is the least common multiple of the cycle lengths, read off the Foata line without shuffling once.
-        precondition(outFaro.order == 8 && inFaro.order == 52)
+        precondition(outFaro.cycles.order == 8 && inFaro.cycles.order == 52)
         // Eight applications compose back to the identity.
-        precondition(outFaro.raised(to: 8).cycle.isEmpty)
+        precondition(outFaro.raised(to: 8).cycles.isEmpty)
         // Shuffling a real deck agrees: an arrangement knows when its cards are back where they started.
         var cards: Arrangement<String> = Arrangement(Self.cards)
         var shuffles: Int = 0
@@ -29,7 +29,7 @@ enum FaroShuffles {
             if shuffles == 4 { print("   after 4 out-faros the top cards read \(cards.prefix(4).joined(separator: " "))") }
         } while !cards.isInOriginalOrder
         print("   shuffling an Arrangement by hand restores the deck after \(shuffles) out-faros")
-        precondition(shuffles == outFaro.order)
+        precondition(shuffles == outFaro.cycles.order)
     }
 
     /// A standard deck in new-deck order: spades, hearts, clubs and diamonds, each from ace to king.

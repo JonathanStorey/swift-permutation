@@ -18,7 +18,7 @@ enum HundredPrisoners {
             // Prisoner k opens drawer k, then the drawer named inside, and so on, walking k's cycle.
             // Everyone succeeds exactly when no cycle is longer than the 50 drawers each may open.
             let drawers: Permutation = Permutation(shuffles: prisoners, using: &generator)
-            if (drawers.cycleLengths.max() ?? 0) <= prisoners / 2 { freed += 1 }
+            if (drawers.cycles.map(\.count).max() ?? 0) <= prisoners / 2 { freed += 1 }
         }
         var exact: Double = 1
         for length in (prisoners / 2 + 1)...prisoners { exact -= 1 / Double(length) }

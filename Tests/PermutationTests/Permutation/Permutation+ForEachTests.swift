@@ -27,13 +27,13 @@ import Testing
 
     @Test func forEachCycleSplitsTheLineAtEachNewLargestOffset() {
         var cycles: [[Int]] = []
-        Permutation(cycle: [2, 0, 5, 3, 4, 7, 6]).forEach(.cycle) { cycles.append(Array($0)) }
+        for cycle in Permutation(cycle: [2, 0, 5, 3, 4, 7, 6]).cycles { cycles.append(Array(cycle)) }
         #expect(cycles == [[2, 0], [5, 3, 4], [7, 6]])
     }
 
     @Test func forEachCycleOfEmptyPermutationCallsNothing() {
         var calls: Int = 0
-        Permutation(shuffles: 0).forEach(.cycle) { _ in calls += 1 }
+        for _ in Permutation(shuffles: 0).cycles { calls += 1 }
         #expect(calls == 0)
     }
 
@@ -44,7 +44,7 @@ import Testing
         var deck: Deck = Deck(cards: original)
         deck.apply(permutation)
         var rotated: [String] = original
-        permutation.forEach(.cycle) { slice in
+        for slice in permutation.cycles {
             let cycle: [Int] = Array(slice)
             let last: String = rotated[cycle[cycle.count - 1]]
             for position in stride(from: cycle.count - 1, to: 0, by: -1) {
