@@ -57,6 +57,17 @@ extension Offsets {
         try storedSources.sort { try areInIncreasingOrder(Int($0), Int($1)) }
     }
 
+    /// Rewrites the offsets so the one at each position comes from the given source position.
+    @inlinable mutating func reorderOffsets(bySources sources: [Int]) {
+        precondition(sources.count == count, "There must be one source for each offset.")
+        guard count > 1 else { return }
+        materialize()
+        let current: [Int32] = storedSources
+        for (position, source) in sources.enumerated() {
+            storedSources[position] = current[source]
+        }
+    }
+
     /// Moves the offsets at the given positions to just before `destination`, keeping their relative order, by rewriting only the window between the first moved position or the destination and the last moved position or the destination.
     @inlinable mutating func moveOffsets(from source: some Sequence<Int>, to destination: Int) {
         precondition((0...count).contains(destination), "Every offset must be within the collection.")

@@ -44,12 +44,10 @@ public extension Arrangement {
         offsets.shuffleOffsets(using: &generator)
     }
 
-    /// Sorts the order by sorting the offsets, comparing the stored elements they show without copying any. Ask for a `Permutation` result to get the one applied.
+    /// Sorts the order by sorting positions into a contiguous copy of the elements in their current order, then rewriting the offsets once. Ask for a `Permutation` result to get the one applied.
     @inlinable mutating func sort(by areInIncreasingOrder: (Element, Element) throws -> Bool) rethrows {
-        let stored: [Element] = elements
-        try stored.withUnsafeBufferPointer { stored in
-            try offsets.sortOffsets { try areInIncreasingOrder(stored[$0], stored[$1]) }
-        }
+        let shown: [Element] = Array(self)
+        try offsets.reorderOffsets(bySources: shown.indices.sorted { try areInIncreasingOrder(shown[$0], shown[$1]) })
     }
 
     /// Moves the elements that satisfy the predicate after those that do not, keeping the relative order within each group, by partitioning the offsets. Returns the index of the first moved element.
@@ -63,7 +61,7 @@ public extension Arrangement {
 
 public extension Arrangement where Element: Comparable {
 
-    /// Sorts the order in ascending order by sorting the offsets. Ask for a `Permutation` result to get the one applied.
+    /// Sorts the order in ascending order. Ask for a `Permutation` result to get the one applied.
     @inlinable mutating func sort() {
         sort(by: <)
     }
@@ -102,12 +100,10 @@ public extension PermutableSet {
         offsets.shuffleOffsets(using: &generator)
     }
 
-    /// Sorts the order by sorting the offsets, comparing the stored elements they show without copying any. Ask for a `Permutation` result to get the one applied.
+    /// Sorts the order by sorting positions into a contiguous copy of the elements in their current order, then rewriting the offsets once. Ask for a `Permutation` result to get the one applied.
     @inlinable mutating func sort(by areInIncreasingOrder: (Element, Element) throws -> Bool) rethrows {
-        let stored: [Element] = elements
-        try stored.withUnsafeBufferPointer { stored in
-            try offsets.sortOffsets { try areInIncreasingOrder(stored[$0], stored[$1]) }
-        }
+        let shown: [Element] = Array(self)
+        try offsets.reorderOffsets(bySources: shown.indices.sorted { try areInIncreasingOrder(shown[$0], shown[$1]) })
     }
 
     /// Moves the elements that satisfy the predicate after those that do not, keeping the relative order within each group, by partitioning the offsets. Returns the index of the first moved element.
@@ -121,7 +117,7 @@ public extension PermutableSet {
 
 public extension PermutableSet where Element: Comparable {
 
-    /// Sorts the order in ascending order by sorting the offsets. Ask for a `Permutation` result to get the one applied.
+    /// Sorts the order in ascending order. Ask for a `Permutation` result to get the one applied.
     @inlinable mutating func sort() {
         sort(by: <)
     }
@@ -160,12 +156,10 @@ public extension IdentifiedSet {
         offsets.shuffleOffsets(using: &generator)
     }
 
-    /// Sorts the order by sorting the offsets, comparing the stored elements they show without copying any. Ask for a `Permutation` result to get the one applied.
+    /// Sorts the order by sorting positions into a contiguous copy of the elements in their current order, then rewriting the offsets once. Ask for a `Permutation` result to get the one applied.
     @inlinable mutating func sort(by areInIncreasingOrder: (Element, Element) throws -> Bool) rethrows {
-        let stored: [Element] = elements
-        try stored.withUnsafeBufferPointer { stored in
-            try offsets.sortOffsets { try areInIncreasingOrder(stored[$0], stored[$1]) }
-        }
+        let shown: [Element] = Array(self)
+        try offsets.reorderOffsets(bySources: shown.indices.sorted { try areInIncreasingOrder(shown[$0], shown[$1]) })
     }
 
     /// Moves the elements that satisfy the predicate after those that do not, keeping the relative order within each group, by partitioning the offsets. Returns the index of the first moved element.
@@ -179,7 +173,7 @@ public extension IdentifiedSet {
 
 public extension IdentifiedSet where Element: Comparable {
 
-    /// Sorts the order in ascending order by sorting the offsets. Ask for a `Permutation` result to get the one applied.
+    /// Sorts the order in ascending order. Ask for a `Permutation` result to get the one applied.
     @inlinable mutating func sort() {
         sort(by: <)
     }
