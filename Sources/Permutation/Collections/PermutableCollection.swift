@@ -6,7 +6,7 @@
 ///
 /// A conforming type implements `swapAt(_:_:)`, the smallest reorder any collection can offer. The default `apply(_:)` is built from it, so the swaps must keep every index valid. A type that can move a whole cycle at once, such as one that reorders an index rather than its elements, overrides `apply(_:)` as well.
 ///
-/// A type that is also a `MutableCollection` keeps the standard library's in-place `sort` and `reverse`, and its unstable `partition` sits beside `stablePartition`, and gets the permutation they applied only by asking for one, as in `let permutation: Permutation = tiles.sort()`.
+/// When a conforming type is also a `MutableCollection`, a call to `sort` or `reverse` that discards its result uses the standard library's in-place implementation, which produces no permutation. A call whose result is used as a `Permutation`, as in `let permutation: Permutation = tiles.sort()`, computes the permutation and applies it through `apply(_:)` instead. The standard library's unstable `partition` remains available beside `stablePartition`.
 public protocol PermutableCollection: Collection {
 
     /// Moves the element at each offset in each cycle to the next offset in that cycle, wrapping from the last offset to the first. Every other reorder calls this method.

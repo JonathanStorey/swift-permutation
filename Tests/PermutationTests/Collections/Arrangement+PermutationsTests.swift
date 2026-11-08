@@ -29,7 +29,7 @@ import Testing
         for (rank, order) in arrangement.permutations.enumerated() {
             #expect(order.permutation == Permutation(rank: Permutation.Rank(rank)))
         }
-        #expect(arrangement.permutations.first { _ in true }?.isInOriginalOrder == true)
+        #expect(arrangement.permutations.first { _ in true }?.permutation.cycles.isEmpty == true)
     }
 
     @Test func breakStopsAHugeWalkAtOnce() {

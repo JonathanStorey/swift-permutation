@@ -6,7 +6,7 @@
 ///
 /// An arrangement never adds, removes or edits an element. The elements stay where they were stored, and every reorder rewrites only the order shown, so sorting, shuffling or moving costs the same however large the elements are. The elements need not be hashable or even equatable.
 ///
-/// Because the stored order never changes, an arrangement always knows how far it has moved from it: `permutation` is everything applied since it was created, folded into one permutation, and `isInOriginalOrder` says whether the reorders have cancelled out.
+/// Because the stored order never changes, an arrangement always knows how far it has moved from it: `permutation` is everything applied since it was created, folded into one permutation, and its cycles are empty exactly when the reorders have cancelled out.
 ///
 /// A `PermutableDictionary` hands out its keys as an arrangement, so sorting or shuffling `dictionary.keys` reorders the entries.
 public struct Arrangement<Element> {
@@ -118,12 +118,6 @@ public extension Arrangement {
             offsets.resetToStorageOrder()
             offsets.apply(newValue)
         }
-    }
-
-    /// Whether the elements are back in the order the arrangement was created with, in O(n) at worst.
-    @inlinable var isInOriginalOrder: Bool {
-        if offsets.isInStorageOrder { return true }
-        return offsets.storedSources.indices.allSatisfy { offsets.storedSources[$0] == Int32(truncatingIfNeeded: $0) }
     }
 }
 

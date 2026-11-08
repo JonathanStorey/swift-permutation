@@ -18,6 +18,24 @@ tags.subtract(["ios"])               // ["swift", "math", "cs"]
 let alphabetical: Permutation = tags.sort()
 ```
 
+### Replacing an equal element
+
+``replace(_:)`` swaps in an element that is equal to one already present, keeping its position. This matters only when equal elements can still be told apart, such as a type whose `==` compares an identifier but not its other properties:
+
+```swift
+struct Tag: Hashable {
+    let name: String
+    var color: String
+    static func == (lhs: Tag, rhs: Tag) -> Bool { lhs.name == rhs.name }
+    func hash(into hasher: inout Hasher) { hasher.combine(name) }
+}
+
+var tags: PermutableSet<Tag> = [Tag(name: "swift", color: "orange")]
+tags.replace(Tag(name: "swift", color: "red"))  // equal by name: takes the old tag's place and returns it
+tags.replace(Tag(name: "ios", color: "blue"))   // nil: no equal tag, so nothing changes
+tags.update(orAppend: Tag(name: "ios", color: "blue"))  // replaces when equal, otherwise appends
+```
+
 ### Set operations with a clear order
 
 A permutable set offers only the set operations whose result has a clear order. The elements kept from the receiver stay in its order, and new elements follow in the order of the argument. Each operation accepts any sequence, so you can combine a permutable set with an array or a `Set`.
@@ -26,17 +44,17 @@ A permutable set offers only the set operations whose result has a clear order. 
 
 ## Topics
 
-### Creating a Permutable Set
+### Creating a permutable set
 
 - ``init()``
 - ``init(_:)``
 - ``init(arrayLiteral:)``
 
-### Testing Membership
+### Testing membership
 
 - ``contains(_:)``
 
-### Adding Elements
+### Adding elements
 
 - ``append(_:)``
 - ``append(contentsOf:)``
@@ -44,7 +62,7 @@ A permutable set offers only the set operations whose result has a clear order. 
 - ``insert(contentsOf:at:)``
 - ``reserveCapacity(_:)``
 
-### Replacing and Updating
+### Replacing and updating
 
 - ``replace(_:)``
 - ``replace(at:with:)``
@@ -53,7 +71,7 @@ A permutable set offers only the set operations whose result has a clear order. 
 - ``update(orInsert:at:)-2cnh4``
 - ``update(orInsert:at:)-8klv4``
 
-### Removing Elements
+### Removing elements
 
 - ``remove(_:)``
 - ``remove(at:)``
@@ -62,7 +80,7 @@ A permutable set offers only the set operations whose result has a clear order. 
 - ``removeAll()``
 - ``filter(_:)``
 
-### Combining Sets
+### Combining sets
 
 - ``union(_:)``
 - ``formUnion(_:)``
@@ -73,7 +91,7 @@ A permutable set offers only the set operations whose result has a clear order. 
 - ``symmetricDifference(_:)``
 - ``formSymmetricDifference(_:)``
 
-### Comparing Sets
+### Comparing sets
 
 - ``isSubset(of:)``
 - ``isStrictSubset(of:)``
@@ -86,7 +104,7 @@ A permutable set offers only the set operations whose result has a clear order. 
 - ``apply(_:)``
 - ``swapAt(_:_:)``
 
-### Accessing Elements
+### Accessing elements
 
 - ``subscript(_:)``
 - ``startIndex``
@@ -94,7 +112,7 @@ A permutable set offers only the set operations whose result has a clear order. 
 - ``makeIterator()``
 - ``Iterator``
 
-### Encoding and Decoding
+### Encoding and decoding
 
 - ``encode(to:)``
 - ``init(from:)``

@@ -31,14 +31,14 @@ Positions use the collection's own `Index`. The defaults count positions as offs
 
 ## Topics
 
-### Adding Elements
+### Adding elements
 
 - ``append(_:)``
 - ``append(contentsOf:)``
 - ``insert(_:at:)``
 - ``insert(contentsOf:at:)``
 
-### Replacing and Updating
+### Replacing and updating
 
 - ``replace(_:)``
 - ``update(orAppend:)-2f6hq``
@@ -46,7 +46,7 @@ Positions use the collection's own `Index`. The defaults count positions as offs
 - ``update(orInsert:at:)-7z57s``
 - ``update(orInsert:at:)-5q7o7``
 
-### Removing Elements
+### Removing elements
 
 - ``remove(at:)``
 - ``remove(atOffsets:)``
