@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Permutation/Permutation+RankTests.swift
-// dependencies: [Permutation/Permutation+Rank.swift, Support/SeededGenerator.swift]
+// dependencies: [Permutation/Permutation+Rank.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation+Strideable.swift, Support/SeededGenerator.swift]
 
 import Foundation
 import Testing
@@ -58,5 +58,27 @@ import Testing
         #expect(Array(stride(from: Permutation.Rank(3), through: 7, by: 2)) == [3, 5, 7])
         #expect(Permutation.Rank(10).distance(to: 4) == -6)
         #expect(Permutation.Rank(digits: Array(1...30)).advanced(by: 1) > Permutation.Rank(digits: Array(1...30)))
+    }
+
+    @Test func codeCountsTheStepsFromTheIdentity() {
+        var order: Permutation = Permutation()
+        for place in 0..<200 {
+            #expect(order.rank == Permutation.Rank(place))
+            #expect(Permutation(rank: Permutation.Rank(place)) == order)
+            order.advance(by: 1)
+        }
+    }
+
+    @Test func permutationsOfNTakeThePlacesBelowNFactorial() {
+        #expect(Permutation(rank: 23).minimumCount <= 4)
+        #expect(Permutation(rank: 24).minimumCount == 5)
+    }
+
+    @Test func roundTripsAtAnySize() {
+        var generator: SeededGenerator = SeededGenerator(state: 89)
+        for count in [2, 9, 30, 1_000] {
+            let permutation: Permutation = Permutation(shuffles: count, using: &generator)
+            #expect(Permutation(rank: permutation.rank) == permutation)
+        }
     }
 }

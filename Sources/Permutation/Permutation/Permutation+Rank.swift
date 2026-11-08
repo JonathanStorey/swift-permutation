@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Permutation/Permutation+Rank.swift
-// dependencies: []
+// dependencies: [Permutation/Permutation.swift]
 
 extension Permutation {
 
@@ -243,5 +243,119 @@ extension Permutation.Rank: Codable {
         var container: KeyedEncodingContainer<CodingKeys> = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(digits, forKey: .digits)
         if isNegative { try container.encode(isNegative, forKey: .isNegative) }
+    }
+}
+
+// MARK: - A permutation's rank
+
+// The rank is the Lehmer code of the Foata word: the digit worth `i!` counts the entries before position `i` that are larger than the entry there, so offsets that stay put add nothing and every permutation of the first `n` offsets has a rank below `n!`. Both directions count with a Fenwick tree in O(m log m), where m is `minimumCount`.
+
+extension Permutation {
+
+    /// This permutation's place in the order `advance(by:)` steps through, starting from the identity at zero.
+    public var rank: Permutation.Rank {
+        let count: Int = minimumCount
+        guard count > 1 else { return 0 }
+        let word: [Int] = foataWord(count: count)
+        var tree: [Int] = [Int](repeating: 0, count: count + 1)
+        var digits: [Int] = [Int](repeating: 0, count: count - 1)
+        for position in 0..<count {
+            var smaller: Int = 0
+            var node: Int = word[position]
+            while node > 0 {
+                smaller += tree[node]
+                node -= node & -node
+            }
+            if position > 0 { digits[position - 1] = position - smaller }
+            node = word[position] + 1
+            while node <= count {
+                tree[node] += 1
+                node += node & -node
+            }
+        }
+        return Permutation.Rank(unchecked: digits, isNegative: false)
+    }
+
+    /// Creates the permutation at the place the rank gives, filling the Foata word from its last position down: each takes the remaining offset with exactly its digit of larger offsets still remaining, found by descending a Fenwick tree. The rank must not be negative.
+    public init(rank code: Permutation.Rank) {
+        precondition(!code.isNegative, "No permutation comes before the identity.")
+        let count: Int = code.digits.count + 1
+        guard count > 1 else {
+            self.init(cycle: [])
+            return
+        }
+        var tree: [Int] = [Int](repeating: 0, count: count + 1)
+        for node in 1...count {
+            tree[node] += 1
+            let parent: Int = node + (node & -node)
+            if parent <= count { tree[parent] += tree[node] }
+        }
+        var highest: Int = 1
+        while highest * 2 <= count { highest *= 2 }
+        var word: [Int] = [Int](repeating: 0, count: count)
+        for position in stride(from: count - 1, through: 0, by: -1) {
+            let digit: Int = position > 0 ? code.digits[position - 1] : 0
+            var remaining: Int = position - digit + 1
+            var node: Int = 0
+            var step: Int = highest
+            while step > 0 {
+                let next: Int = node + step
+                if next <= count && tree[next] < remaining {
+                    node = next
+                    remaining -= tree[next]
+                }
+                step >>= 1
+            }
+            word[position] = node
+            var update: Int = node + 1
+            while update <= count {
+                tree[update] -= 1
+                update += update & -update
+            }
+        }
+        self.init(foataWord: word)
+    }
+
+    /// The line over `0..<count` with every fixed point written in as its own cycle, just before the first cycle whose largest offset is larger. The result lists every offset below `count` once.
+    @usableFromInline func foataWord(count: Int) -> [Int] {
+        var isMoved: [Bool] = [Bool](repeating: false, count: count)
+        for offset in cycle { isMoved[offset] = true }
+        var word: [Int] = []
+        word.reserveCapacity(count)
+        var candidate: Int = 0
+        var position: Int = 0
+        while position < cycle.count {
+            let root: Int = cycle[position]
+            while candidate < root {
+                if !isMoved[candidate] { word.append(candidate) }
+                candidate += 1
+            }
+            word.append(root)
+            position += 1
+            while position < cycle.count && cycle[position] < root {
+                word.append(cycle[position])
+                position += 1
+            }
+        }
+        while candidate < count {
+            if !isMoved[candidate] { word.append(candidate) }
+            candidate += 1
+        }
+        return word
+    }
+
+    /// Creates the permutation whose Foata word, fixed points included, is the word: each entry larger than every one before it starts a cycle, and cycles of one offset are dropped.
+    @usableFromInline init(foataWord word: [Int]) {
+        var line: [Int] = []
+        line.reserveCapacity(word.count)
+        var start: Int = 0
+        while start < word.count {
+            let root: Int = word[start]
+            var end: Int = start + 1
+            while end < word.count && word[end] < root { end += 1 }
+            if end - start > 1 { line.append(contentsOf: word[start..<end]) }
+            start = end
+        }
+        self.init(cycle: line)
     }
 }
