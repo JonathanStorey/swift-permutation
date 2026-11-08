@@ -2,9 +2,9 @@
 
 Reorder Swift collections and get back the reorder itself as a value you can undo, store, compose and merge.
 
-## Why permutations
+## Introduction
 
-A list is sorted by date, a playlist is shuffled or a user drags a row to a new spot. Each of those changes is a **permutation**, a rule to arrange the order of each element. Mathematicians treat a permutation as an object you can hold, reverse and combine. The Swift standard library has no such object. Without it, one can still perform a reorder, but once the shuffling is done, the record of what happened is gone.
+A list is sorted by date, a playlist is shuffled or a user drags a row to a new spot. Each of those changes is a **permutation**, a rule specifying the precise arrangement of each element. Mathematicians treat a permutation as an object you can hold, reverse and combine. The Swift standard library has no such object. Without it, one can still perform a reorder, but the record of what happened is gone.
 
 Most reordering in Swift is performed within a collection that conforms to `MutableCollection`. However, this ability to sort comes with the promise of "mutability", which allows any element of the collection to be overwritten at any time. While this works in many situations, there are collection types that can't safely make that promise of "mutability". For example, an ordered set can't hold the same element twice. In SwiftUI, a `List` also misbehaves if two elements share the same identifier.
 
