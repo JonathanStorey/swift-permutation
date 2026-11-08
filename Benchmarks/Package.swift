@@ -28,6 +28,8 @@ let package = Package(
             name: "PermutationComparisons",
             dependencies: [
                 .product(name: "Permutation", package: "swift-permutation"),
+                .product(name: "OrderedCollections", package: "swift-collections"),
+                .product(name: "IdentifiedCollections", package: "swift-identified-collections"),
             ]
         ),
     ]

@@ -122,3 +122,5 @@ for size in [16_384, 100_000] {
         print("| `\(operation)` | \(size) | \(rounded(arrangement)) µs | \(cell(plain, against: arrangement)) |")
     }
 }
+
+printReorderTable()
