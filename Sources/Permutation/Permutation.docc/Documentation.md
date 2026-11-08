@@ -4,7 +4,7 @@ Reorder collections and keep each reorder as a value you can undo, combine, repl
 
 ## Overview
 
-A sort, a shuffle or a drag-and-drop move is a *permutation*: a rule that says where each element of a collection goes. The standard library performs these reorders and discards the rule. This package keeps it. Every reorder returns a ``Permutation/Permutation``, a value type you can invert to undo the reorder, compose with other reorders, replay as the fewest moves for an animation or a sync, apply to a second collection, encode, and merge with a reorder made on another device.
+A sort, a shuffle or a drag-and-drop move is a *permutation*: a rule that says where each element of a collection goes. The standard library performs these reorders and discards the rule. This package keeps it. Every reorder returns a ``Permutation``, a value type you can invert to undo the reorder, compose with other reorders, replay as the fewest moves for an animation or a sync, apply to a second collection, encode, and merge with a reorder made on another device.
 
 Reordering rests on ``PermutableCollection``, a protocol that requires only that a collection can exchange two of its elements. `MutableCollection` requires a collection to accept any element at any position, a guarantee that sets, dictionaries and collections of identifiable elements can't make without risking duplicates. Because ``PermutableCollection`` never overwrites an element, those collections can sort, shuffle and move their elements in place.
 
