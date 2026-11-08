@@ -28,7 +28,7 @@ public extension Arrangement {
         offsets.reverseOffsets()
     }
 
-    /// Rotates the order so the element at the given position comes first, by reversing the offsets in two parts and then whole. Ask for a `Permutation` result to get the one applied.
+    /// Rotates the order so the element at the given position comes first, by copying its offsets into a new table in two blocks. Ask for a `Permutation` result to get the one applied.
     @inlinable mutating func rotate(toStartAt newStart: Int) {
         offsets.rotateOffsets(toStartAt: newStart)
     }
@@ -84,7 +84,7 @@ public extension PermutableSet {
         offsets.reverseOffsets()
     }
 
-    /// Rotates the order so the element at the given position comes first, by reversing the offsets in two parts and then whole. Ask for a `Permutation` result to get the one applied.
+    /// Rotates the order so the element at the given position comes first, by copying its offsets into a new table in two blocks. Ask for a `Permutation` result to get the one applied.
     @inlinable mutating func rotate(toStartAt newStart: Int) {
         offsets.rotateOffsets(toStartAt: newStart)
     }
@@ -140,7 +140,7 @@ public extension IdentifiedSet {
         offsets.reverseOffsets()
     }
 
-    /// Rotates the order so the element at the given position comes first, by reversing the offsets in two parts and then whole. Ask for a `Permutation` result to get the one applied.
+    /// Rotates the order so the element at the given position comes first, by copying its offsets into a new table in two blocks. Ask for a `Permutation` result to get the one applied.
     @inlinable mutating func rotate(toStartAt newStart: Int) {
         offsets.rotateOffsets(toStartAt: newStart)
     }
@@ -196,7 +196,7 @@ public extension PermutableDictionary {
         offsets.reverseOffsets()
     }
 
-    /// Rotates the order so the element at the given position comes first, by reversing the offsets in two parts and then whole. Ask for a `Permutation` result to get the one applied.
+    /// Rotates the order so the element at the given position comes first, by copying its offsets into a new table in two blocks. Ask for a `Permutation` result to get the one applied.
     @inlinable mutating func rotate(toStartAt newStart: Int) {
         offsets.rotateOffsets(toStartAt: newStart)
     }

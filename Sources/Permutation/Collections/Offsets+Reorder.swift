@@ -33,14 +33,32 @@ extension Offsets {
         storedSources.reverse()
     }
 
-    /// Rotates the offsets so the one at `newStart` comes first, by reversing both parts and then the whole.
+    /// Rotates the offsets so the one at `newStart` comes first, writing a new table with two block copies. Offsets still in storage order are written straight into rotated order in one pass.
     @inlinable mutating func rotateOffsets(toStartAt newStart: Int) {
         precondition((0...count).contains(newStart), "The new start must be within the collection.")
         guard newStart != 0 && newStart != count else { return }
-        materialize()
-        storedSources[..<newStart].reverse()
-        storedSources[newStart...].reverse()
-        storedSources.reverse()
+        let total: Int = count
+        let tail: Int = total - newStart
+        if isInStorageOrder {
+            storedSources = [Int32](unsafeUninitializedCapacity: total) { buffer, initialized in
+                for position in 0..<tail { buffer[position] = Int32(truncatingIfNeeded: newStart + position) }
+                for position in 0..<newStart { buffer[tail + position] = Int32(truncatingIfNeeded: position) }
+                initialized = total
+            }
+            identityCount = 0
+            isInStorageOrder = false
+            return
+        }
+        let current: [Int32] = storedSources
+        storedSources = [Int32](unsafeUninitializedCapacity: total) { buffer, initialized in
+            current.withUnsafeBufferPointer { old in
+                let source: UnsafePointer<Int32> = old.baseAddress!
+                let destination: UnsafeMutablePointer<Int32> = buffer.baseAddress!
+                destination.initialize(from: source + newStart, count: tail)
+                (destination + tail).initialize(from: source, count: newStart)
+            }
+            initialized = total
+        }
     }
 
     /// Shuffles the offsets, drawing from the generator exactly as `Array.shuffle(using:)` does, so the order matches an array shuffled with the same generator.
