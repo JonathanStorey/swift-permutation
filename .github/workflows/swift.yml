@@ -41,3 +41,9 @@ jobs:
             --additional-symbol-graph-dir .build/symbol-graphs \
             --output-path .build/docs \
             --warnings-as-errors
+      - name: Debug overloads
+        if: always()
+        run: |
+          xcrun docc convert Sources/Permutation/Permutation.docc --fallback-display-name Permutation --fallback-bundle-identifier io.github.jonathanstorey.permutation --additional-symbol-graph-dir .build/symbol-graphs --output-path .build/docs2 || true
+          cd .build/docs2/data/documentation/permutation
+          for f in $(ls -d */update\(or* */applying* | tr '\n' ' '); do echo "$f :: $(python3 -c "import json,sys;d=json.load(open('$f'));print(d['metadata'].get('roleHeading'),'|',' '.join(x.get('text','') for x in d.get('abstract',[]))[:90],'|',d.get('metadata',{}).get('extendedModule'),'|',[s.get('title') for s in d.get('relationshipsSections',[])])")"; done
