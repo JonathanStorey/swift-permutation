@@ -88,24 +88,25 @@ extension Permutation {
 
     /// Returns the order that keeps every pair either side reordered since base, and otherwise keeps base's order wherever it can.
     ///
-    /// A pair reordered since base always moves its later offset in base ahead of its earlier one, so a loop of reordered pairs would have to keep stepping backward through base and could never close. The reordered pairs from both sides together therefore always fit in one order. Placing offsets one at a time, each time taking the earliest in base that no unplaced reordered pair still holds back, gives the order that gives up the fewest base pairs. O(n²) time and O(n) space.
+    /// A pair reordered since base always moves its later offset in base ahead of its earlier one, so a loop of reordered pairs would have to keep stepping backward through base and could never close. The reordered pairs from both sides together therefore always fit in one order. Placing offsets one at a time, each time taking the earliest in base that no unplaced reordered pair still holds back, gives the order that gives up the fewest base pairs.
+    ///
+    /// Numbering each offset by its place in base, an offset is held back on one side exactly when an unplaced offset with a larger number comes before it there, so it is free on that side exactly when it is the largest unplaced number up to its place. A max tree over each side's order answers that in O(log n). Placing an offset can only free smaller offsets after it, each found by one descent of the tree, and an offset becomes free on a side only once, so the whole merge takes O(n log n).
     func joining(with theirs: Permutation, from base: Permutation) -> Permutation {
         if self == base { return theirs }
         if theirs == base || theirs == self { return self }
         let count: Int = Swift.max(minimumCount, theirs.minimumCount, base.minimumCount)
         let baseOrder: [Int] = base.sources(count: count)
-        let ourPositions: [Int] = Permutation.positions(of: sources(count: count))
-        let theirPositions: [Int] = Permutation.positions(of: theirs.sources(count: count))
-        let ours: [Int] = baseOrder.map { ourPositions[$0] }
-        let their: [Int] = baseOrder.map { theirPositions[$0] }
-        var blockers: [Int] = [Int](repeating: 0, count: count)
-        for later in 0..<count {
-            for earlier in 0..<later where ours[later] < ours[earlier] || their[later] < their[earlier] {
-                blockers[earlier] += 1
-            }
-        }
+        let rankOf: [Int] = Permutation.positions(of: baseOrder)
+        let ourOrder: [Int] = sources(count: count).map { rankOf[$0] }
+        let theirOrder: [Int] = theirs.sources(count: count).map { rankOf[$0] }
+        let ourPlaces: [Int] = Permutation.positions(of: ourOrder)
+        let theirPlaces: [Int] = Permutation.positions(of: theirOrder)
+        var ourTree: MaxTree = MaxTree(ourOrder)
+        var theirTree: MaxTree = MaxTree(theirOrder)
+        var isFreeInOurs: [Bool] = Permutation.runningMaxima(of: ourOrder)
+        var isFreeInTheirs: [Bool] = Permutation.runningMaxima(of: theirOrder)
         var ready: [Int] = []
-        for rank in 0..<count where blockers[rank] == 0 {
+        for rank in 0..<count where isFreeInOurs[rank] && isFreeInTheirs[rank] {
             Permutation.pushReady(rank, onto: &ready)
         }
         var merged: [Int] = []
@@ -113,12 +114,101 @@ extension Permutation {
         while !ready.isEmpty {
             let rank: Int = Permutation.popReady(from: &ready)
             merged.append(baseOrder[rank])
-            for earlier in 0..<rank where ours[rank] < ours[earlier] || their[rank] < their[earlier] {
-                blockers[earlier] -= 1
-                if blockers[earlier] == 0 { Permutation.pushReady(earlier, onto: &ready) }
-            }
+            Permutation.release(rank, at: ourPlaces[rank], in: &ourTree, order: ourOrder, isFree: &isFreeInOurs, isFreeElsewhere: isFreeInTheirs, ready: &ready)
+            Permutation.release(rank, at: theirPlaces[rank], in: &theirTree, order: theirOrder, isFree: &isFreeInTheirs, isFreeElsewhere: isFreeInOurs, ready: &ready)
         }
         return Permutation(sources: merged)
+    }
+
+    /// Whether each number is larger than every number before it in the order.
+    private static func runningMaxima(of order: [Int]) -> [Bool] {
+        var isRunningMaximum: [Bool] = [Bool](repeating: false, count: order.count)
+        var largest: Int = -1
+        for rank in order where rank > largest {
+            largest = rank
+            isRunningMaximum[rank] = true
+        }
+        return isRunningMaximum
+    }
+
+    /// Takes a placed number out of one side's tree and marks every smaller number after it that is now the largest up to its place, readying those already free on the other side.
+    private static func release(_ rank: Int, at place: Int, in tree: inout MaxTree, order: [Int], isFree: inout [Bool], isFreeElsewhere: [Bool], ready: inout [Int]) {
+        tree.remove(at: place)
+        var bound: Int = tree.largest(before: place)
+        var start: Int = place + 1
+        while let next: Int = tree.firstPlace(from: start, above: bound) {
+            let freed: Int = order[next]
+            guard freed < rank else { return }
+            isFree[freed] = true
+            if isFreeElsewhere[freed] { pushReady(freed, onto: &ready) }
+            bound = freed
+            start = next + 1
+        }
+    }
+
+    /// A segment tree holding the largest number still in each range of places, with -1 for a place whose number was removed.
+    private struct MaxTree {
+
+        private let leafCount: Int
+
+        private var nodes: [Int]
+
+        init(_ values: [Int]) {
+            var leafCount: Int = 1
+            while leafCount < values.count { leafCount *= 2 }
+            self.leafCount = leafCount
+            nodes = [Int](repeating: -1, count: 2 * leafCount)
+            for (place, value) in values.enumerated() {
+                nodes[leafCount + place] = value
+            }
+            for node in stride(from: leafCount - 1, to: 0, by: -1) {
+                nodes[node] = Swift.max(nodes[2 * node], nodes[2 * node + 1])
+            }
+        }
+
+        /// Removes the number at the place.
+        mutating func remove(at place: Int) {
+            var node: Int = leafCount + place
+            nodes[node] = -1
+            node /= 2
+            while node > 0 {
+                nodes[node] = Swift.max(nodes[2 * node], nodes[2 * node + 1])
+                node /= 2
+            }
+        }
+
+        /// The largest number left before the place, or -1 when none is.
+        func largest(before end: Int) -> Int {
+            var lower: Int = leafCount
+            var upper: Int = leafCount + end
+            var result: Int = -1
+            while lower < upper {
+                if lower & 1 == 1 {
+                    result = Swift.max(result, nodes[lower])
+                    lower += 1
+                }
+                if upper & 1 == 1 {
+                    upper -= 1
+                    result = Swift.max(result, nodes[upper])
+                }
+                lower /= 2
+                upper /= 2
+            }
+            return result
+        }
+
+        /// The first place at or after `start` holding a number larger than `bound`, or nil when none does.
+        func firstPlace(from start: Int, above bound: Int) -> Int? {
+            firstPlace(from: start, above: bound, node: 1, lower: 0, upper: leafCount)
+        }
+
+        private func firstPlace(from start: Int, above bound: Int, node: Int, lower: Int, upper: Int) -> Int? {
+            guard upper > start && nodes[node] > bound else { return nil }
+            guard upper - lower > 1 else { return lower }
+            let middle: Int = (lower + upper) / 2
+            return firstPlace(from: start, above: bound, node: 2 * node, lower: lower, upper: middle)
+                ?? firstPlace(from: start, above: bound, node: 2 * node + 1, lower: middle, upper: upper)
+        }
     }
 
     /// Adds a rank to a binary min-heap.

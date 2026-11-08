@@ -71,10 +71,11 @@ both.moves                  // the fewest single-row moves that replay it, for a
 both.swaps                  // the fewest exchanges that replay it
 both.cycles                 // printed in standard notation like (2 0)(5 3 4)
 both[0]                     // where the element at offset 0 went
-let merged: Permutation? = mine.merging(with: theirs, from: base)  // three-way merge of reorders
+let merged: Permutation? = mine.merging(with: theirs, from: base)  // three-way merge, nil on a conflict
+let synced: Permutation = mine.merging(with: theirs, from: base, by: .relativeOrder)  // never fails
 ```
 
-Because the reorder is an object, you can do things with it after the fact. `inverted` is a one-line undo, and `followed(by:)` folds a string of edits into one. `moves` replays any permutation as the fewest single-element moves, which is what a list animation or a remote sync wants, and `swaps` replays it as the fewest exchanges. Going the other way, `Permutation(new.difference(from: old))` reads a pure reorder back out of a `CollectionDifference`. `insert(at:)`, `remove(at:)` and `replaceSubrange(_:withCount:)` keep a stored permutation valid while the collection it describes grows and shrinks.
+Because the reorder is an object, you can do things with it after the fact. `inverted` is a one-line undo, and `followed(by:)` folds a string of edits into one. `moves` replays any permutation as the fewest single-element moves, which is what a list animation or a remote sync wants, and `swaps` replays it as the fewest exchanges. Going the other way, `Permutation(new.difference(from: old))` reads a pure reorder back out of a `CollectionDifference`. `insert(at:)`, `remove(at:)` and `replaceSubrange(_:withCount:)` keep a stored permutation valid while the collection it describes grows and shrinks, so a synced order can apply every insertion and removal to base, mine and theirs and then merge with `.relativeOrder`. That merge keeps every pair either side reordered and gives up only pairs neither side touched, in O(n log n).
 
 Full reference: [Permutation](Sources/Permutation/Permutation.docc/Permutation.md)
 
