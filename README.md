@@ -75,7 +75,7 @@ let far: Permutation = Permutation(rank: 1_000_000_000)  // jump straight to any
 let merged: Permutation? = mine.merging(with: theirs, from: base)  // three-way merge of reorders
 ```
 
-Because the reorder is an object, you can do things with it after the fact. `inverted` is a one-line undo, and `followed(by:)` folds a string of edits into one. `forEach(.move)` replays any permutation as the fewest single-element moves, which is what a list animation or a remote sync wants. `insert(at:)`, `remove(at:)` and `replaceSubrange(_:withCount:)` keep a stored permutation valid while the collection it describes grows and shrinks.
+Because the reorder is an object, you can do things with it after the fact. `inverted` is a one-line undo, and `followed(by:)` folds a string of edits into one. `moves` replays any permutation as the fewest single-element moves, which is what a list animation or a remote sync wants, and `swaps` replays it as the fewest exchanges. `insert(at:)`, `remove(at:)` and `replaceSubrange(_:withCount:)` keep a stored permutation valid while the collection it describes grows and shrinks.
 
 ### `PermutableCollection`
 
@@ -223,7 +223,7 @@ Each one is a few lines of code in the [Examples](Examples) package, with a page
 2. **100 prisoners beat (1/2)^100 by following cycles.** If each prisoner may open only half the drawers, a strategy built on cycle structure frees all of them 31% of the time, while guessing succeeds with probability about 10^−30. → [The 100 prisoners problem](Examples/Docs/HundredPrisoners.md)
 3. **Eight perfect shuffles restore a deck.** Eight out-faro shuffles put 52 cards back in order, but in-faros need 52. Both numbers are the least common multiple of a cycle structure. → [Eight perfect shuffles](Examples/Docs/FaroShuffles.md)
 4. **Half of all 15 puzzles are impossible.** Every slide flips the parity of the arrangement, so Sam Loyd's famous 14–15 swap can never be solved. → [The 15 puzzle](Examples/Docs/FifteenPuzzle.md)
-5. **A shuffled deck hides an increasing run of about 2√n cards.** Ulam's problem links patience sorting to random matrix theory, and it also gives the fewest moves that sort a list, which `forEach(.move)` uses. → [Ulam's problem](Examples/Docs/UlamsProblem.md)
+5. **A shuffled deck hides an increasing run of about 2√n cards.** Ulam's problem links patience sorting to random matrix theory, and it also gives the fewest moves that sort a list, which `moves` uses. → [Ulam's problem](Examples/Docs/UlamsProblem.md)
 6. **A fair Secret Santa forms one big chain only e/n of the time.** Follow the gifts from person to person, and with ten friends the chain closes before reaching everyone almost three times in four. → [Secret Santa](Examples/Docs/SecretSanta.md)
 7. **Shuffled cards know π.** The chance that every cycle of a shuffled 20-card deck has even length is the same as getting 10 heads in 20 coin flips, and Wallis's product turns it into π. A million shuffles give 3.14. → [Pi from shuffles](Examples/Docs/PiFromShuffles.md)
 

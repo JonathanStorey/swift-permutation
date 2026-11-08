@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Collections/Collection+Permutation.swift
-// dependencies: [Collections/PermutableCollection.swift, Permutation/Permutation+ForEach.swift, Permutation/Permutation.swift]
+// dependencies: [Collections/PermutableCollection.swift, Permutation/Permutation+Swaps.swift, Permutation/Permutation.swift]
 
 // Applying a permutation to the standard collection protocols, each in the cheapest way its protocol allows:
 //

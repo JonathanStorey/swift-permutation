@@ -1,35 +1,13 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
-// path: Permutation/Permutation+ForEach.swift
-// dependencies: [Permutation/Permutation+Cycles.swift, Permutation/Permutation+Sources.swift, Permutation/Permutation.swift]
+// path: Permutation/Permutation+Moves.swift
+// dependencies: [Permutation/Permutation+Sources.swift, Permutation/Permutation.swift]
 
-// Breaks a permutation into steps, one call per step, so every walk reads `forEach(.kind) { step in ... }`. `forEach(.cycle)` hands out the same `[Int]` cycles as `for cycle in permutation.cycles`.
+// A permutation as the fewest single-element moves that produce it, which is what a list animation or a remote sync wants.
 //
-// - `Operation` carries no data. Its type parameter names the step the closure receives, and each kind is a static member constrained to that step, so `.cycle` can only meet a closure that takes an `[Int]`.
-// - Each step type has its own `forEach` overload that calls its walk directly, so choosing the walk costs nothing at run time.
-// - The walks themselves are the internal `forEachSwap` and `forEachMove`, which `apply` and its relatives keep calling directly.
+// - The elements on a longest increasing subsequence of the final order stay put and every other element moves exactly once, so the number of moves is the minimum.
+// - Finding that subsequence needs the whole final order, so `moves` works out every move when iteration starts, in O(n log n), and then hands them out one at a time.
 
 extension Permutation {
-
-    /// A way to walk a permutation step by step with `forEach(_:_:)`, typed by the step each call receives.
-    public struct Operation<Step>: Sendable {
-
-        @usableFromInline init() {}
-    }
-
-    /// An exchange of the elements at two offsets.
-    public struct Swap: Hashable, Sendable {
-
-        /// The larger offset, which leads its cycle.
-        public let first: Int
-
-        /// The smaller offset.
-        public let second: Int
-
-        @inlinable public init(first: Int, second: Int) {
-            self.first = first
-            self.second = second
-        }
-    }
 
     /// A removal at one offset followed by an insertion at another.
     public struct Move: Hashable, Sendable {
@@ -46,39 +24,27 @@ extension Permutation {
         }
     }
 
-    /// Calls the closure with each exchange that produces this permutation when made in order, one fewer than the length of each cycle, in one pass over the stored line with no allocation.
-    @inlinable public func forEach(_ operation: Operation<Swap>, _ body: (Swap) throws -> Void) rethrows {
-        try forEachSwap { try body(Swap(first: $0, second: $1)) }
+    /// The fewest single-element moves that produce this permutation, valid in the order given. They are worked out together when iteration starts, in O(n log n) where n is `minimumCount`.
+    @inlinable public var moves: Moves {
+        Moves(permutation: self)
     }
 
-    /// Calls the closure with the fewest single-element moves that produce this permutation, valid in the order given, in O(n log n) where n is `minimumCount`.
-    @inlinable public func forEach(_ operation: Operation<Move>, _ body: (Move) throws -> Void) rethrows {
-        try forEachMove { try body(Move(from: $0, to: $1)) }
+    /// The moves that produce a permutation, from `Permutation.moves`.
+    public struct Moves: Sequence, Sendable {
+
+        @usableFromInline let permutation: Permutation
+
+        @inlinable init(permutation: Permutation) {
+            self.permutation = permutation
+        }
+
+        /// Works out every move, then hands them out in order.
+        @inlinable public func makeIterator() -> IndexingIterator<[Move]> {
+            var moves: [Move] = []
+            permutation.forEachMove { moves.append(Move(from: $0, to: $1)) }
+            return moves.makeIterator()
+        }
     }
-
-    /// Calls the closure with each cycle, starting with its largest offset, where the element at each offset moves to the next and the last moves to the first. Fixed points are left out.
-    @inlinable public func forEach(_ operation: Operation<[Int]>, _ body: ([Int]) throws -> Void) rethrows {
-        for cycle in cycles { try body(cycle) }
-    }
-
-}
-
-public extension Permutation.Operation where Step == Permutation.Swap {
-
-    /// Each exchange of two elements, in the order that produces the permutation.
-    static var swap: Self { Self() }
-}
-
-public extension Permutation.Operation where Step == Permutation.Move {
-
-    /// Each single-element move, the fewest that produce the permutation.
-    static var move: Self { Self() }
-}
-
-public extension Permutation.Operation where Step == [Int] {
-
-    /// Each cycle, starting with its largest offset.
-    static var cycle: Self { Self() }
 }
 
 extension Permutation {
@@ -181,20 +147,5 @@ extension Permutation {
             index -= index & -index
         }
         return total
-    }
-}
-
-extension Permutation {
-
-    /// Calls the closure with each pair of offsets to swap, in order, deriving them in one pass with no allocation.
-    @inlinable func forEachSwap(_ body: (Int, Int) throws -> Void) rethrows {
-        var start: Int = -1
-        for offset in cycle {
-            if offset > start {
-                start = offset
-            } else {
-                try body(start, offset)
-            }
-        }
     }
 }

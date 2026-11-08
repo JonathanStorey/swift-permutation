@@ -18,11 +18,11 @@ enum UlamsProblem {
             for _ in 0..<trials {
                 var hand: Arrangement<Int> = Arrangement(0..<n)
                 hand.shuffle(using: &generator)
-                // Sorting returns the permutation it applied, and forEach(.move) replays it with the fewest single-card moves, leaving a longest increasing subsequence in place.
+                // Sorting returns the permutation it applied, and its moves replay it with the fewest single-card moves, leaving a longest increasing subsequence in place.
                 let sorting: Permutation = hand.sort()
                 precondition(hand.isInOriginalOrder)
                 var moves: Int = 0
-                sorting.forEach(.move) { _ in moves += 1 }
+                for _ in sorting.moves { moves += 1 }
                 total += n - moves
             }
             let average: Double = Double(total) / Double(trials)

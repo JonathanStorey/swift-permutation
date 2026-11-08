@@ -1,6 +1,6 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
 // path: Permutation/Permutation+CyclesTests.swift
-// dependencies: [Permutation/Permutation+Composition.swift, Permutation/Permutation+Cycles.swift, Permutation/Permutation+Power.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation+Sources.swift, Permutation/Permutation.swift, Support/SeededGenerator.swift]
+// dependencies: [Permutation/Permutation+Composition.swift, Permutation/Permutation+Cycles.swift, Permutation/Permutation+Power.swift, Permutation/Permutation+Shuffle.swift, Permutation/Permutation+Sources.swift, Permutation/Permutation.swift, Support/Deck.swift, Support/SeededGenerator.swift]
 
 import Testing
 @testable import Permutation
@@ -79,5 +79,34 @@ import Testing
         for permutation in randomPermutations(seed: 14, maximumCount: 5) {
             #expect(permutation.cycles.isInvolution == permutation.followed(by: permutation).cycle.isEmpty)
         }
+    }
+
+    @Test func cyclesSplitsTheLineAtEachNewLargestOffset() {
+        var cycles: [[Int]] = []
+        for cycle in Permutation(cycle: [2, 0, 5, 3, 4, 7, 6]).cycles { cycles.append(cycle) }
+        #expect(cycles == [[2, 0], [5, 3, 4], [7, 6]])
+    }
+
+    @Test func cyclesOfEmptyPermutationCallsNothing() {
+        var calls: Int = 0
+        for _ in Permutation(shuffles: 0).cycles { calls += 1 }
+        #expect(calls == 0)
+    }
+
+    @Test func cyclesMovesEachElementToTheNextOffset() {
+        var generator: SeededGenerator = SeededGenerator(state: 7)
+        let original: [String] = (0..<40).map(String.init)
+        let permutation: Permutation = Permutation(shuffles: 40, using: &generator)
+        var deck: Deck = Deck(cards: original)
+        deck.apply(permutation)
+        var rotated: [String] = original
+        for cycle in permutation.cycles {
+            let last: String = rotated[cycle[cycle.count - 1]]
+            for position in stride(from: cycle.count - 1, to: 0, by: -1) {
+                rotated[cycle[position]] = rotated[cycle[position - 1]]
+            }
+            rotated[cycle[0]] = last
+        }
+        #expect(rotated == deck.cards)
     }
 }
