@@ -44,7 +44,7 @@ Neither reordering nor reassigning copies a key or a value, because both live in
 
 ### Accessing Keys and Values
 
-- ``subscript(_:)``
+- ``subscript(_:)->Value?``
 - ``subscript(_:default:)``
 - ``contains(key:)``
 - ``index(forKey:)``

@@ -41,8 +41,10 @@ Positions use the collection's own `Index`. The defaults count positions as offs
 ### Replacing and Updating
 
 - ``replace(_:)``
-- ``update(orAppend:)``
-- ``update(orInsert:at:)``
+- ``update(orAppend:)-2f6hq``
+- ``update(orAppend:)-57vho``
+- ``update(orInsert:at:)-7z57s``
+- ``update(orInsert:at:)-5q7o7``
 
 ### Removing Elements
 

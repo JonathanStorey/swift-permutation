@@ -37,14 +37,14 @@ A conforming type that is also a `MutableCollection` keeps the standard library'
 ### Applying a Permutation
 
 - ``apply(_:)``
-- ``applying(_:)``
+- ``applying(_:)-3o9uc``
 - ``swapAt(_:_:)``
 - ``swap(_:_:)``
 
 ### Sorting
 
-- ``sort()``
-- ``sort(by:)``
+- ``sort()->_``
+- ``sort(by:)->_``
 
 ### Shuffling
 
@@ -56,5 +56,5 @@ A conforming type that is also a `MutableCollection` keeps the standard library'
 - ``move(from:to:)``
 - ``move(fromOffsets:toOffset:)``
 - ``rotate(toStartAt:)``
-- ``reverse()``
+- ``reverse()->_``
 - ``stablePartition(by:)``

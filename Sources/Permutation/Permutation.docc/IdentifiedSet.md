@@ -33,7 +33,7 @@ List($roster.elements()) { $player in
 
 ### Adding and updating
 
-An identified set is an ``UpsertableCollection``. ``append(_:)`` and ``insert(_:at:)`` refuse an id already present, ``replace(_:)`` swaps in a new version of an element in place, and ``update(orAppend:)`` does whichever fits, so syncing a page of results from a server is one call. Creating a set from a sequence with repeated ids keeps the first by default. Pass ``Uniquing`` to keep the last or to combine them instead.
+An identified set is an ``UpsertableCollection``. ``append(_:)`` and ``insert(_:at:)`` refuse an id already present, ``replace(_:)`` swaps in a new version of an element in place, and `update(orAppend:)` does whichever fits for each element, so syncing a page of results from a server is one call. Creating a set from a sequence with repeated ids keeps the first by default. Pass ``Uniquing`` to keep the last or to combine them instead.
 
 ## Topics
 
@@ -63,8 +63,10 @@ An identified set is an ``UpsertableCollection``. ``append(_:)`` and ``insert(_:
 
 - ``replace(_:)``
 - ``replace(at:with:)``
-- ``update(orAppend:)``
-- ``update(orInsert:at:)``
+- ``update(orAppend:)-6j51e``
+- ``update(orAppend:)-vozz``
+- ``update(orInsert:at:)-68jh5``
+- ``update(orInsert:at:)-qat7``
 
 ### Removing Elements
 

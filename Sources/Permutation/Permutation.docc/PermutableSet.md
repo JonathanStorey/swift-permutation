@@ -48,8 +48,10 @@ A permutable set offers only the set operations whose result has a clear order. 
 
 - ``replace(_:)``
 - ``replace(at:with:)``
-- ``update(orAppend:)``
-- ``update(orInsert:at:)``
+- ``update(orAppend:)-1xy92``
+- ``update(orAppend:)-3hqnd``
+- ``update(orInsert:at:)-2cnh4``
+- ``update(orInsert:at:)-8klv4``
 
 ### Removing Elements
 
