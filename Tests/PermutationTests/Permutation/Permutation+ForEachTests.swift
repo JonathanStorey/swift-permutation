@@ -7,15 +7,33 @@ import Testing
 
 @Suite struct PermutationForEachTests {
 
+    @Test func forEachSwapReplaysThePermutation() {
+        var generator: SeededGenerator = SeededGenerator(state: 19)
+        for _ in 0..<100 {
+            let permutation: Permutation = Permutation(shuffles: 30, using: &generator)
+            var swapped: [Int] = Array(0..<30)
+            permutation.forEach(.swap) { swapped.swapAt($0.first, $0.second) }
+            var applied: [Int] = Array(0..<30)
+            applied.apply(permutation)
+            #expect(swapped == applied)
+        }
+    }
+
+    @Test func forEachSwapGivesOneFewerSwapThanEachCycleLength() {
+        var swaps: [Permutation.Swap] = []
+        Permutation(cycle: [2, 0, 5, 3, 4]).forEach(.swap) { swaps.append($0) }
+        #expect(swaps == [Permutation.Swap(first: 2, second: 0), Permutation.Swap(first: 5, second: 3), Permutation.Swap(first: 5, second: 4)])
+    }
+
     @Test func forEachCycleSplitsTheLineAtEachNewLargestOffset() {
         var cycles: [[Int]] = []
-        Permutation(cycle: [2, 0, 5, 3, 4, 7, 6]).forEachCycle { cycles.append($0) }
+        Permutation(cycle: [2, 0, 5, 3, 4, 7, 6]).forEach(.cycle) { cycles.append($0) }
         #expect(cycles == [[2, 0], [5, 3, 4], [7, 6]])
     }
 
     @Test func forEachCycleOfEmptyPermutationCallsNothing() {
         var calls: Int = 0
-        Permutation(shuffles: 0).forEachCycle { _ in calls += 1 }
+        Permutation(shuffles: 0).forEach(.cycle) { _ in calls += 1 }
         #expect(calls == 0)
     }
 
@@ -26,7 +44,7 @@ import Testing
         var deck: Deck = Deck(cards: original)
         deck.apply(permutation)
         var rotated: [String] = original
-        permutation.forEachCycle { cycle in
+        permutation.forEach(.cycle) { cycle in
             let last: String = rotated[cycle[cycle.count - 1]]
             for position in stride(from: cycle.count - 1, to: 0, by: -1) {
                 rotated[cycle[position]] = rotated[cycle[position - 1]]
@@ -44,20 +62,20 @@ import Testing
             var deck: Deck = Deck(cards: original)
             deck.apply(permutation)
             var moved: [String] = original
-            permutation.forEachMove { from, to in moved.insert(moved.remove(at: from), at: to) }
+            permutation.forEach(.move) { move in moved.insert(moved.remove(at: move.from), at: move.to) }
             #expect(moved == deck.cards)
         }
     }
 
     @Test func forEachMoveUsesOneMoveForARotation() {
         var moves: [(Int, Int)] = []
-        Permutation(rotating: 6, by: 1).forEachMove { moves.append(($0, $1)) }
+        Permutation(rotating: 6, by: 1).forEach(.move) { moves.append(($0.from, $0.to)) }
         #expect(moves.count == 1)
     }
 
     @Test func forEachMoveUsesOneMoveForASingleMove() {
         var moves: [(Int, Int)] = []
-        Permutation(moving: 1, to: 7, count: 10).forEachMove { moves.append(($0, $1)) }
+        Permutation(moving: 1, to: 7, count: 10).forEach(.move) { moves.append(($0.from, $0.to)) }
         #expect(moves.count == 1)
         #expect(moves.first?.0 == 1)
         #expect(moves.first?.1 == 7)
@@ -65,13 +83,13 @@ import Testing
 
     @Test func forEachMoveUsesCountMinusOneMovesForAReversal() {
         var moves: Int = 0
-        Permutation(reversing: 8).forEachMove { _, _ in moves += 1 }
+        Permutation(reversing: 8).forEach(.move) { _ in moves += 1 }
         #expect(moves == 7)
     }
 
     @Test func forEachMoveOfEmptyPermutationCallsNothing() {
         var moves: Int = 0
-        Permutation(shuffles: 0).forEachMove { _, _ in moves += 1 }
+        Permutation(shuffles: 0).forEach(.move) { _ in moves += 1 }
         #expect(moves == 0)
     }
 
@@ -116,7 +134,7 @@ import Testing
         for _ in 0..<300 {
             let permutation: Permutation = Permutation(shuffles: Int.random(in: 0...40, using: &generator), using: &generator)
             var moves: [[Int]] = []
-            permutation.forEachMove { moves.append([$0, $1]) }
+            permutation.forEach(.move) { moves.append([$0.from, $0.to]) }
             #expect(moves == replayedMoves(of: permutation))
         }
     }
