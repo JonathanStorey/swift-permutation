@@ -1,13 +1,13 @@
 // repository: https://github.com/JonathanStorey/swift-permutation
-// path: Collections/PermutableCollection+PermutationsTests.swift
-// dependencies: [Collections/Arrangement.swift, Collections/IdentifiedSet.swift, Collections/PermutableCollection+Permutations.swift, Support/Player.swift]
+// path: Collections/Arrangement+PermutationsTests.swift
+// dependencies: [Collections/Arrangement.swift, Collections/Arrangement+Permutations.swift, Permutation/Permutation+Rank.swift]
 
 import Testing
 @testable import Permutation
 
-@Suite struct PermutableCollectionPermutationsTests {
+@Suite struct ArrangementPermutationsTests {
 
-    @Test(arguments: 0...6) func visitsEveryOrderOnceAndLeavesTheCollectionAlone(count: Int) {
+    @Test(arguments: 0...6) func visitsEveryOrderOnceAndLeavesTheArrangementAlone(count: Int) {
         var arrangement: Arrangement<Int> = Arrangement(0..<count)
         arrangement.reverse()
         let start: [Int] = Array(arrangement)
@@ -23,18 +23,13 @@ import Testing
         #expect(Array(arrangement) == start)
     }
 
-    @Test func firstOrderIsTheCurrentOne() {
-        let roster: IdentifiedSet<Player> = IdentifiedSet([Player(id: 1, name: "ann"), Player(id: 2, name: "bob"), Player(id: 3, name: "cy")])
-        let orders: [[Int]] = roster.permutations.map { $0.map(\.id) }
-        #expect(orders.first == [1, 2, 3])
-        #expect(Set(orders).count == 6)
-    }
-
-    @Test func eachOrderIsOneSwapFromTheLast() {
-        let orders: [[Int]] = Arrangement(0..<5).permutations.map(Array.init)
-        for (previous, next) in zip(orders, orders.dropFirst()) {
-            #expect(zip(previous, next).filter { $0 != $1 }.count == 2)
+    @Test func ordersFollowTheRank() {
+        var arrangement: Arrangement<String> = ["a", "b", "c", "d"]
+        arrangement.reverse()
+        for (rank, order) in arrangement.permutations.enumerated() {
+            #expect(order.permutation == Permutation(rank: Permutation.Rank(rank)))
         }
+        #expect(arrangement.permutations.first { _ in true }?.isInOriginalOrder == true)
     }
 
     @Test func breakStopsAHugeWalkAtOnce() {

@@ -134,10 +134,10 @@ for _ in 0..<6 {                  // 3! orders
 }
 ```
 
-`permutations` walks the same `n!` orders lazily, one swap apart, without touching the collection, so a search can stop with `break` or `first(where:)`:
+`permutations` walks the same `n!` orders lazily in that rank order, starting from the original order, without touching the arrangement, so a search can stop with `break` or `first(where:)`:
 
 ```swift
-for order in hand.permutations { print(order) }     // all 6 orders, starting with the current one
+for order in hand.permutations { print(order) }          // all 6 orders; the k-th has permutation == Permutation(rank: k)
 let found = hand.permutations.first { $0.first == "c" }  // stops at the first match
 ```
 
