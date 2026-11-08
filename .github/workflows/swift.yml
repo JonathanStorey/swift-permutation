@@ -56,12 +56,4 @@ jobs:
           printf '\nProbe: ``Permutation`` and ``Permutation/Permutation``.\n' >> Sources/Permutation/Permutation.docc/Arrangement.md
           printf '\nProbe: ``Permutation`` and ``Permutation/Permutation``.\n' >> Sources/Permutation/Permutation.docc/Documentation.md
           xcrun docc convert Sources/Permutation/Permutation.docc --fallback-display-name Permutation --fallback-bundle-identifier io.github.jonathanstorey.permutation --additional-symbol-graph-dir .build/symbol-graphs --output-path .build/probe 2>&1 | tail -20
-          for f in .build/probe/data/documentation/permutation.json .build/probe/data/documentation/permutation/arrangement.json; do echo "$f"; python3 -c "import json;d=json.load(open('$f'));print([k for k in d['references'] if k.rstrip('/').lower().endswith('/permutation') or k.lower().endswith('/permutation/permutation')])"; grep -o 'Probe: [^}]*' "$f" | head -2; python3 -c "
-import json;d=json.load(open('$f'))
-def walk(x):
-    if isinstance(x,dict):
-        if x.get('type')=='paragraph' and any(i.get('text','').startswith('Probe') for i in x.get('inlineContent',[]) if isinstance(i,dict)): print(x['inlineContent'])
-        for v in x.values(): walk(v)
-    elif isinstance(x,list):
-        for v in x: walk(v)
-walk(d)"; done
+          for f in .build/probe/data/documentation/permutation.json .build/probe/data/documentation/permutation/arrangement.json; do echo "$f"; python3 Benchmarks/Scripts/probe.py "$f"; done
