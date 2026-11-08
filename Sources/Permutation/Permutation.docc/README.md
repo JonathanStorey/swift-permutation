@@ -176,15 +176,17 @@ extension Playlist: PermutableCollection {
 
 ### Performance
 
-Every collection in this package stores its elements in an array that reordering never changes, and reorders a table of 4-byte offsets instead. A sort, shuffle, reverse or rotate therefore moves offsets rather than elements, and leaves the hash index untouched, so the speedups grow with the size of the elements.
+Every collection in this package stores its elements in an array that reordering never changes, and reorders a table of 4-byte offsets instead. A sort, shuffle, reverse, rotate, move or partition therefore moves offsets rather than elements, and leaves the hash index untouched, so the speedups grow with the size of the elements. The figures below hold 64-byte records, and a call that discards its `Permutation` result skips building it.
 
-| Reorder | ``Arrangement`` vs `Array` | ``PermutableSet`` vs `OrderedSet` | ``IdentifiedSet`` vs `IdentifiedArray` |
-| --- | ---: | ---: | ---: |
-| Sort | 1.6× faster | 1.1× faster | 9.2× faster |
-| Shuffle | 2.3× faster | 3.9× faster | 11× faster |
-| Reverse | 2.8× faster | 9.8× faster | 15× faster |
-| Rotate | 1.3× faster | 11× faster | 110× faster |
-| Move one element | 2.0× faster | 2.4× slower | 187× faster |
+| Reorder at 16,384 elements | ``Arrangement`` vs `Array` | ``PermutableSet`` vs `OrderedSet` | ``IdentifiedSet`` vs `IdentifiedArray` | ``PermutableDictionary`` vs `OrderedDictionary` |
+| --- | ---: | ---: | ---: | ---: |
+| Sort | 2.0× faster | 2.4× faster | 11× faster | 14× faster |
+| Shuffle | 1.5× faster | 2.6× faster | 2.5× faster | 2.1× faster |
+| Reverse | 17× faster | 67× faster | 75× faster | 75× faster |
+| Rotate | 1.6× slower | 19× faster | 81× faster | 13× faster |
+| Move one element | 12× faster | 13× faster | 971× faster | 26× faster |
+| Move every tenth element | 12× faster | 29× faster | 281× faster | 21× faster |
+| Partition, stable here only | 1.2× faster | 3.0× faster | 2.9× faster | 2.3× faster |
 
 Some reorders skip the elements entirely and work on the permutation's cycles. Repeating a shuffle 1,000 times on an `Array` of 16,384 records takes 444 ms. Raising the shuffle to the 1,000th power with ``Permutation/raised(to:)`` and applying it once takes 163 µs, about 2,700× faster.
 
