@@ -58,6 +58,8 @@ PAIRS = [
         "sort by key",
         "shuffle",
         "reverse",
+        "rotate by a third",
+        "move first to last",
         "sort by value",
         "shuffle values among keys",
     ]),

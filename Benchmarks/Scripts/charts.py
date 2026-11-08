@@ -3,13 +3,14 @@
 
 Usage: python3 Scripts/charts.py results.json Charts
 
-Every chart pairs one of this package's collections with the collection it replaces. The package's
-collection is always a solid green line and the other is always a dashed red line, so the winner of each
-panel reads at a glance. Each panel is one operation, plotting time per element (the fastest run divided
-by the size) against size on log scales, and is labeled with the speedup at the largest size both finished.
+Each chart is one operation, with one panel for every pair that has it: Arrangement and Array,
+PermutableSet and OrderedSet, PermutableDictionary and OrderedDictionary, IdentifiedSet and IdentifiedArray.
+The package's collection is always a solid green line and the other is always a dashed red line, so the
+winner of each panel reads at a glance. Each panel plots time per element (the fastest run divided by the
+size) against size on log scales, and is labeled with the speedup at the largest size both finished.
 
-It also draws speedups.png: one bar per reorder at 16,384 elements, green to the right of 1× where the
-package's collection is faster and red to the left where it is slower.
+It also draws speedups.png: one bar per reorder and pair at 16,384 elements, green to the right of 1×
+where the package's collection is faster and red to the left where it is slower.
 """
 
 import json
@@ -33,55 +34,28 @@ GRID = "#d8dee4"
 SUMMARY_SIZE = 16384
 
 
-# (file stem, panel title prefix, our type, their type, [(panel title, our task suffix, their task suffix)])
+# Each pair: the package's collection, the collection it replaces, and their task title prefixes.
 PAIRS = [
-    ("arrangement", "Arrangement", "Array", "Arrangement<Record>", "Array<Record>", {
-        "reordering": [
-            ("sort", "sort(by:)"), ("shuffle", "shuffle()"), ("reverse", "reverse()"),
-            ("rotate by a third", "rotate by a third"), ("move first to last", "move first to last"),
-        ],
-    }),
-    ("ordered-set", "PermutableSet", "OrderedSet", "PermutableSet<Int>", "OrderedSet<Int>", {
-        "reordering": [
-            ("sort", "sort"), ("shuffle", "shuffle"), ("reverse", "reverse"),
-            ("rotate by a third", "rotate by a third"), ("move first to last", "move first to last"),
-        ],
-        "membership": [
-            ("init from array", "init from array"), ("append one at a time", "append one at a time"),
-            ("successful contains", "successful contains"), ("iteration", "iteration"),
-            ("remove 1% one at a time", "remove 1% one at a time"),
-        ],
-        "algebra": [
-            ("union", "union half-overlapping"), ("intersection", "intersection half-overlapping"),
-            ("subtracting", "subtracting half-overlapping"),
-        ],
-    }),
-    ("identified-array", "IdentifiedSet", "IdentifiedArray", "IdentifiedSet<Record>", "IdentifiedArray<Record>", {
-        "reordering": [
-            ("sort", "sort(by:)"), ("shuffle", "shuffle()"), ("reverse", "reverse()"),
-            ("rotate by a third", "rotate by a third"), ("move first to last", "move first to last"),
-        ],
-        "membership": [
-            ("init from array", "init from array"), ("append one at a time", "append one at a time"),
-            ("contains(id:)", "successful contains(id:)"), ("subscript(id:)", "subscript(id:) read"),
-            ("iteration", "iteration"), ("remove(id:) 1%", "remove(id:) 1%"),
-            ("removeAll(where:) half", "removeAll(where:) half"),
-        ],
-    }),
-    ("ordered-dictionary", "PermutableDictionary", "OrderedDictionary", "PermutableDictionary<Int, Int>", "OrderedDictionary<Int, Int>", {
-        "reordering": [
-            ("sort by key", "sort by key"), ("sort by value", "sort by value"), ("shuffle", "shuffle"),
-            ("reverse", "reverse"), ("shuffle values among keys", "shuffle values among keys"),
-        ],
-        "membership": [
-            ("init", "init from keys and values"), ("insert one at a time", "subscript insert one at a time"),
-            ("lookup", "subscript lookup"), ("iteration", "iteration"),
-            ("removeValue(forKey:) 1%", "removeValue(forKey:) 1%"),
-        ],
-    }),
+    ("Arrangement", "Array", "Arrangement<Record>", "Array<Record>"),
+    ("PermutableSet", "OrderedSet", "PermutableSet<Int>", "OrderedSet<Int>"),
+    ("PermutableDictionary", "OrderedDictionary", "PermutableDictionary<Int, Int>", "OrderedDictionary<Int, Int>"),
+    ("IdentifiedSet", "IdentifiedArray", "IdentifiedSet<Record>", "IdentifiedArray<Record>"),
 ]
 
-TITLES = {"reordering": "Reordering", "membership": "Building, lookup and removal", "algebra": "Set operations"}
+# Each operation: file stem, chart title, whether it is a reorder, and the task suffix for each pair that has it.
+OPERATIONS = [
+    ("sort", "Sort", True, {"Arrangement": "sort(by:)", "PermutableSet": "sort", "PermutableDictionary": "sort by key", "IdentifiedSet": "sort(by:)"}),
+    ("shuffle", "Shuffle", True, {"Arrangement": "shuffle()", "PermutableSet": "shuffle", "PermutableDictionary": "shuffle", "IdentifiedSet": "shuffle()"}),
+    ("reverse", "Reverse", True, {"Arrangement": "reverse()", "PermutableSet": "reverse", "PermutableDictionary": "reverse", "IdentifiedSet": "reverse()"}),
+    ("rotate", "Rotate by a third", True, {name: "rotate by a third" for name, *_ in PAIRS}),
+    ("move", "Move first to last", True, {name: "move first to last" for name, *_ in PAIRS}),
+    ("init", "Build from an array", False, {"PermutableSet": "init from array", "PermutableDictionary": "init from keys and values", "IdentifiedSet": "init from array"}),
+    ("append", "Append one at a time", False, {"PermutableSet": "append one at a time", "PermutableDictionary": "subscript insert one at a time", "IdentifiedSet": "append one at a time"}),
+    ("lookup", "Look up every element", False, {"PermutableSet": "successful contains", "PermutableDictionary": "subscript lookup", "IdentifiedSet": "subscript(id:) read"}),
+    ("remove", "Remove 1% one at a time", False, {"PermutableSet": "remove 1% one at a time", "PermutableDictionary": "removeValue(forKey:) 1%", "IdentifiedSet": "remove(id:) 1%"}),
+    ("iteration", "Iterate", False, {"PermutableSet": "iteration", "PermutableDictionary": "iteration", "IdentifiedSet": "iteration"}),
+    ("set-operations", "Union, intersection and subtraction", False, {}),
+]
 
 
 def seconds(sample):
@@ -129,6 +103,7 @@ def style(axes):
     axes.set_yscale("log")
     axes.xaxis.set_major_locator(LogLocator(base=2, numticks=12))
     axes.xaxis.set_major_formatter(FuncFormatter(count))
+    axes.yaxis.set_major_locator(LogLocator(base=10, subs=(1.0, 2.0, 5.0), numticks=12))
     axes.yaxis.set_major_formatter(FuncFormatter(duration))
     axes.yaxis.set_minor_formatter(FuncFormatter(lambda *_: ""))
     axes.grid(True, which="major", color=GRID, linewidth=0.8)
@@ -140,46 +115,74 @@ def style(axes):
     axes.tick_params(colors=MUTED, labelsize=8, length=0)
 
 
-def panel_grid(results, ours_name, theirs_name, ours_type, theirs_type, panels, heading, path):
-    drawn = [(title, series(results, f"{ours_type} {ours}"), series(results, f"{theirs_type} {theirs}"))
-             for title, ours, theirs in ((t, s, s) for t, s in panels)]
-    drawn = [entry for entry in drawn if entry[1] and entry[2]]
-    if not drawn:
-        return
-    columns = min(3, len(drawn))
-    rows = math.ceil(len(drawn) / columns)
-    figure, grid = plt.subplots(rows, columns, figsize=(4.2 * columns, 3.1 * rows + 0.9), squeeze=False)
-    for axes in grid.flat[len(drawn):]:
+def draw_panel(axes, title, ours, theirs):
+    style(axes)
+    axes.plot(list(theirs), list(theirs.values()), color=RED, linewidth=2, linestyle=(0, (5, 3)))
+    axes.plot(list(ours), list(ours.values()), color=GREEN, linewidth=2.6)
+    axes.set_title(title, loc="left", fontsize=10.5, color=INK, fontweight="bold", pad=18)
+    shared = [size for size in ours if size in theirs]
+    if shared:
+        text, color = speedup_label(theirs[shared[-1]] / ours[shared[-1]])
+        axes.text(0, 1.02, f"{text} at {count(shared[-1])}", transform=axes.transAxes, fontsize=9,
+                  color=color, fontweight="bold", va="bottom")
+
+
+def figure_for(panels, heading, path, legend_names):
+    columns = min(4, len(panels))
+    rows = math.ceil(len(panels) / columns)
+    figure, grid = plt.subplots(rows, columns, figsize=(3.9 * columns, 3.1 * rows + 0.9), squeeze=False)
+    for axes in grid.flat[len(panels):]:
         axes.set_visible(False)
-    for axes, (title, ours, theirs) in zip(grid.flat, drawn):
-        style(axes)
-        axes.plot(list(theirs), list(theirs.values()), color=RED, linewidth=2, linestyle=(0, (5, 3)))
-        axes.plot(list(ours), list(ours.values()), color=GREEN, linewidth=2.6)
-        shared = [size for size in ours if size in theirs]
-        axes.set_title(title, loc="left", fontsize=11, color=INK, fontweight="bold", pad=18)
-        if shared:
-            text, color = speedup_label(theirs[shared[-1]] / ours[shared[-1]])
-            axes.text(0, 1.02, f"{text} at {count(shared[-1])}", transform=axes.transAxes, fontsize=9,
-                      color=color, fontweight="bold", va="bottom")
-    legend = [Line2D([0], [0], color=GREEN, linewidth=2.6, label=ours_name),
-              Line2D([0], [0], color=RED, linewidth=2, linestyle=(0, (5, 3)), label=theirs_name)]
+    for axes, (title, ours, theirs) in zip(grid.flat, panels):
+        draw_panel(axes, title, ours, theirs)
+    legend = [Line2D([0], [0], color=GREEN, linewidth=2.6, label=legend_names[0]),
+              Line2D([0], [0], color=RED, linewidth=2, linestyle=(0, (5, 3)), label=legend_names[1])]
     figure.legend(handles=legend, loc="upper right", ncol=2, frameon=False, fontsize=10)
-    figure.suptitle(f"{heading}: {ours_name} and {theirs_name}", x=0.01, ha="left", fontsize=13,
-                    color=INK, fontweight="bold")
+    figure.suptitle(heading, x=0.01, ha="left", fontsize=13, color=INK, fontweight="bold")
     figure.text(0.01, 0.005, "Time per element, log scales. Lower is better.", fontsize=8, color=MUTED)
-    figure.tight_layout(rect=(0, 0.02, 1, 0.94))
+    figure.tight_layout(rect=(0, 0.02, 1, 0.93))
     figure.savefig(path, dpi=160, facecolor="white")
     plt.close(figure)
 
 
+def operation_chart(results, stem, heading, tasks, directory):
+    panels = []
+    for ours_name, theirs_name, ours_type, theirs_type in PAIRS:
+        suffix = tasks.get(ours_name)
+        if not suffix:
+            continue
+        ours = series(results, f"{ours_type} {suffix}")
+        theirs = series(results, f"{theirs_type} {suffix}")
+        if ours and theirs:
+            panels.append((f"{ours_name} vs {theirs_name}", ours, theirs))
+    if panels:
+        figure_for(panels, heading, os.path.join(directory, f"{stem}.png"),
+                   ("This package's collection", "The collection it replaces"))
+
+
+def set_operations_chart(results, directory):
+    panels = []
+    for title in ("union", "intersection", "subtracting"):
+        ours = series(results, f"PermutableSet<Int> {title} half-overlapping")
+        theirs = series(results, f"OrderedSet<Int> {title} half-overlapping")
+        if ours and theirs:
+            panels.append((f"{title}, half overlapping", ours, theirs))
+    if panels:
+        figure_for(panels, "Set operations", os.path.join(directory, "set-operations.png"),
+                   ("PermutableSet", "OrderedSet"))
+
+
 def speedups(results, path):
     bars = []
-    for _stem, ours_name, theirs_name, ours_type, theirs_type, groups in PAIRS:
-        for title, suffix in groups.get("reordering", []):
-            ours = series(results, f"{ours_type} {suffix}").get(SUMMARY_SIZE)
-            theirs = series(results, f"{theirs_type} {suffix}").get(SUMMARY_SIZE)
+    for _stem, heading, is_reorder, tasks in OPERATIONS:
+        if not is_reorder:
+            continue
+        for ours_name, theirs_name, ours_type, theirs_type in PAIRS:
+            suffix = tasks.get(ours_name)
+            ours = series(results, f"{ours_type} {suffix}").get(SUMMARY_SIZE) if suffix else None
+            theirs = series(results, f"{theirs_type} {suffix}").get(SUMMARY_SIZE) if suffix else None
             if ours and theirs:
-                bars.append((f"{ours_name} vs {theirs_name}", title, theirs / ours))
+                bars.append((heading, f"{ours_name} vs {theirs_name}", theirs / ours))
     if not bars:
         return
     figure, axes = plt.subplots(figsize=(9, 0.34 * len(bars) + 1.6))
@@ -233,10 +236,11 @@ def main(source, directory):
         data = json.load(file)
     results = {task["title"]: task["results"] for task in data["tasks"]}
     os.makedirs(directory, exist_ok=True)
-    for stem, ours_name, theirs_name, ours_type, theirs_type, groups in PAIRS:
-        for group, panels in groups.items():
-            panel_grid(results, ours_name, theirs_name, ours_type, theirs_type, panels, TITLES[group],
-                       os.path.join(directory, f"{stem}-{group}.png"))
+    for stem, heading, _is_reorder, tasks in OPERATIONS:
+        if stem == "set-operations":
+            set_operations_chart(results, directory)
+        else:
+            operation_chart(results, stem, heading, tasks, directory)
     speedups(results, os.path.join(directory, "speedups.png"))
 
 
